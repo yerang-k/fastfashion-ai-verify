@@ -60,6 +60,7 @@ function handle_(p) {
       case 'deleteStudent': return out_(deleteStudent_(p));
       case 'help': return out_(help_(p));
       case 'saveGroup': return out_(saveGroup_(p));
+      case 'clearRecorder': return out_(clearRecorder_(p));
       case 'getGroup': return out_(getGroup_(p));
       case 'getShare': return out_(getShare_());
       case 'teacherAll': return out_(teacherAll_(p));
@@ -248,13 +249,13 @@ function setLesson_(p) {
   return { ok: true };
 }
 
-// 교사가 학생에게 보여 줄 '현재 단계'를 지정한다(단계 id 0~6). 비우면(null) 학생이 자유롭게 이동한다.
+// 교사가 학생에게 보여 줄 '현재 단계'를 지정한다(단계 id 0~7). 비우면(null) 학생이 자유롭게 이동한다.
 function setStage_(p) {
   if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var l = lessonGet_() || {};
   var n = parseInt(p.stage, 10);
   if (p.stage === null || p.stage === '' || p.stage === undefined) l.current = null;
-  else if (isNaN(n) || n < 0 || n > 6) return { ok: false, error: 'bad stage' };
+  else if (isNaN(n) || n < 0 || n > 7) return { ok: false, error: 'bad stage' };
   else l.current = n;
   cfgSet_('lesson', JSON.stringify(l));
   return { ok: true, current: l.current };
@@ -346,15 +347,20 @@ function loadGroup_(sh, g) {
   return { row: row, fields: f };
 }
 
-var GROUP_FIELDS = ['g_src', 'g_acc', 'g_rel', 'g_verdict', 'g_reason', 'g_rewrite', 'g_speaker', 'g_recorder'];
+// 모둠이 '발표할 내용'만 담는다(개인 검증 기록은 각 학생의 응답에 따로 저장). 기록자는 칸이 아니라 모둠 기록의 _rec(기록자 코드)로 따로 관리
+var GROUP_FIELDS = ['g_verdict', 'g_reason', 'g_rewrite', 'g_speaker'];
 
 function saveGroup_(p) {
   var g = studentGroup_(p); // 화면이 보낸 모둠 번호가 아니라, 서버에 저장된 '내 모둠'만 쓸 수 있음
   if (!g) return { ok: false, error: 'not yours' };
   var sh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
   var cur = loadGroup_(sh, g);
-  var f = cur.fields, inc = p.fields || {};
-  GROUP_FIELDS.forEach(function (k) {
+  var f = cur.fields, inc = p.fields || {}, code = cleanCode_(p.code);
+  // 기록자: 정해지지 않았을 때만 누구나 맡을 수 있고, 맡은 사람만 내려놓을 수 있다. 모둠 기록은 기록자만 쓸 수 있다(기록자가 없거나 다른 사람이면 서버가 쓰기를 무시)
+  if (p.rec === 'claim' && !f._rec) f._rec = { v: code, t: Date.now() };
+  else if (p.rec === 'release' && f._rec && f._rec.v === code) delete f._rec;
+  var locked = !f._rec || f._rec.v !== code;
+  if (!locked) GROUP_FIELDS.forEach(function (k) {
     var n = inc[k];
     if (!n || typeof n.t !== 'number') return;
     if (!f[k] || n.t > f[k].t) f[k] = { v: String(n.v == null ? '' : n.v).slice(0, 3000), t: n.t };
@@ -363,7 +369,17 @@ function saveGroup_(p) {
   if (json.length > MAX_JSON) return { ok: false, error: 'too large' };
   if (cur.row < 0) sh.appendRow([g, new Date(), json]);
   else sh.getRange(cur.row, 2, 1, 2).setValues([[new Date(), json]]);
-  return { ok: true, fields: f };
+  return { ok: true, fields: f, locked: locked };
+}
+
+// 교사용: 기록자가 결석하거나 기기가 꺼졌을 때 기록자를 풀어 준다
+function clearRecorder_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  var g = cleanGroup_(p.group);
+  if (!g) return { ok: false, error: 'group required' };
+  var sh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS), cur = loadGroup_(sh, g);
+  if (cur.row > 0 && cur.fields._rec) { delete cur.fields._rec; sh.getRange(cur.row, 2, 1, 2).setValues([[new Date(), JSON.stringify(cur.fields)]]); }
+  return { ok: true };
 }
 
 function getGroup_(p) {

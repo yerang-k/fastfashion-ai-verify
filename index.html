@@ -17,6 +17,7 @@ header h1{margin:0;font-size:1.2rem}.status{display:flex;gap:10px;align-items:ce
 .time{float:right;font-weight:400;color:var(--sub);font-size:.9rem}
 textarea,input[type=text],select{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:8px;font-size:1rem;font-family:inherit}
 textarea{min-height:90px;resize:vertical}
+textarea:disabled,input:disabled{background:#f1f0ec;color:#777;cursor:not-allowed}
 .btn{background:var(--main);color:#fff;border:none;padding:11px 20px;border-radius:8px;font-size:1rem;cursor:pointer}
 .btn.ghost{background:#fff;color:var(--main);border:1.5px solid var(--main)}.btn.small{padding:7px 12px;font-size:.88rem}
 .nav{display:flex;justify-content:space-between;margin-top:14px}
@@ -93,18 +94,38 @@ td select,td input{padding:6px;font-size:.9rem}
  </section>
 
  <section class="stage card" data-i="3">
-  <h2>4. 모둠 탐구: 우리 모둠 문장 검증 <span class="time">17분</span></h2>
-  <div class="todo">지금 할 일: 우리 모둠이 맡은 문장을 자료 3개와 대조해 판정하고, 보고서에 쓸 수 있게 고쳐 써요.</div>
+  <h2>4. 개인 검증: 내가 먼저 판정해 보기 <span class="time">9분</span></h2>
+  <div class="todo">지금 할 일: 혼자서 우리 모둠 문장을 자료 3개와 대조해 판정하고, 보고서에 쓸 수 있게 고쳐 써요. <span class="small">(이 단계는 각자 해요. 모둠 의견은 다음 단계에서 모아요.)</span></div>
   <div id="myClaim"></div>
   <h3>📚 확인용 자료 카드</h3>
   <div class="grid3" id="mySrc"></div>
-  <h3>🔎 모둠 검증 기록지</h3>
+  <h3>🔎 내 검증 기록지</h3>
   <div class="grid3">
-   <div class="box"><h4>① 출처</h4><textarea data-save id="g_src" placeholder="AI가 말한 출처가 있나요? 원 출처를 추적할 수 있나요?"></textarea></div>
-   <div class="box"><h4>② 정확성</h4><textarea data-save id="g_acc" placeholder="자료들과 비교하면? 숫자·조건·연도가 같은가요?"></textarea></div>
-   <div class="box"><h4>③ 신뢰성</h4><textarea data-save id="g_rel" placeholder="가장 믿을 수 있는 자료는? 믿기 어려운 자료는? 이유는?"></textarea></div>
+   <div class="box"><h4>① 출처</h4><textarea data-save id="i_src" placeholder="AI가 말한 출처가 있나요? 원 출처를 추적할 수 있나요?"></textarea></div>
+   <div class="box"><h4>② 정확성</h4><textarea data-save id="i_acc" placeholder="자료들과 비교하면? 숫자·조건·연도가 같은가요?"></textarea></div>
+   <div class="box"><h4>③ 신뢰성</h4><textarea data-save id="i_rel" placeholder="가장 믿을 수 있는 자료는? 믿기 어려운 자료는? 이유는?"></textarea></div>
   </div>
-  <h3>모둠 판정</h3>
+  <h3>내 판정</h3>
+  <div class="verdict">
+   <label class="v-ok"><input type="radio" name="i_verdict" value="확인됨" data-save><span>✅ 확인됨</span></label>
+   <label class="v-part"><input type="radio" name="i_verdict" value="부분적으로 맞음" data-save><span>🟠 부분적으로 맞음 (조건·범위 설명 필요)</span></label>
+   <label class="v-unk"><input type="radio" name="i_verdict" value="확인 불가" data-save><span>❓ 확인 불가</span></label>
+   <label class="v-bad"><input type="radio" name="i_verdict" value="사실 아님" data-save><span>❌ 사실 아님</span></label>
+  </div>
+  <p><b>판정 근거 한 문장</b> (내 생각)</p>
+  <textarea id="i_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
+  <p><b>보고서용으로 고쳐 쓴 문장</b> — 판정에 맞게 고치고 <b>출처와 조건</b>을 함께 쓰세요. 쓸 수 없다면 “이 문장은 인용하지 않는다”와 이유를 쓰세요.</p>
+  <textarea id="i_rewrite" data-save style="min-height:110px" placeholder="예: … 로 추정된다(○○ 기관, 2019). 단, 산정 기준에 따라 …까지 차이가 있다."></textarea>
+  <div class="nav"><button class="btn ghost" onclick="go(2)">이전</button><button class="btn" onclick="go(7)">다음</button></div>
+ </section>
+
+ <section class="stage card" data-i="7">
+  <h2>5. 모둠 정리: 발표할 내용 정하기 <span class="time">8분</span></h2>
+  <div class="todo">지금 할 일: 모둠원이 각자 판정한 것을 나누고, 모둠이 <b>발표할</b> 판정·근거·고쳐 쓴 문장을 하나로 정리해요. 입력은 <b>기록자 한 명</b>만 해요.</div>
+  <div id="myClaim7"></div>
+  <details open><summary>내가 먼저 쓴 개인 검증 보기</summary><div class="box" id="myIndiv" style="margin-top:8px"></div></details>
+  <div class="box" id="recBox" style="margin-top:14px"></div>
+  <h3>모둠 판정 (발표용)</h3>
   <div class="verdict">
    <label class="v-ok"><input type="radio" name="g_verdict" value="확인됨" data-save><span>✅ 확인됨</span></label>
    <label class="v-part"><input type="radio" name="g_verdict" value="부분적으로 맞음" data-save><span>🟠 부분적으로 맞음 (조건·범위 설명 필요)</span></label>
@@ -113,10 +134,10 @@ td select,td input{padding:6px;font-size:.9rem}
   </div>
   <p><b>판정 근거 한 문장</b> (발표 때 그대로 읽을 문장)</p>
   <textarea id="g_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
-  <p><b>보고서용으로 고쳐 쓴 문장</b> — 판정에 맞게 고치고 <b>출처와 조건</b>을 함께 쓰세요. 쓸 수 없다면 “이 문장은 인용하지 않는다”와 이유를 쓰세요.</p>
+  <p><b>보고서용으로 고쳐 쓴 문장</b> (발표용) — 판정에 맞게 고치고 <b>출처와 조건</b>을 함께 쓰세요. 쓸 수 없다면 “이 문장은 인용하지 않는다”와 이유를 쓰세요.</p>
   <textarea id="g_rewrite" data-save style="min-height:110px" placeholder="예: … 로 추정된다(○○ 기관, 2019). 단, 산정 기준에 따라 …까지 차이가 있다."></textarea>
-  <div class="role"><input type="text" data-save id="g_speaker" placeholder="발표자 코드"><input type="text" data-save id="g_recorder" placeholder="기록자 코드"></div>
-  <div class="nav"><button class="btn ghost" onclick="go(2)">이전</button><button class="btn" onclick="go(4)">다음</button></div>
+  <div class="role" style="margin-top:8px"><input type="text" data-save id="g_speaker" placeholder="발표자 코드"></div>
+  <div class="nav"><button class="btn ghost" onclick="go(3)">이전</button><button class="btn" data-dir="1" onclick="go(4)">다음</button></div>
  </section>
 
  <section class="stage card" data-i="4">
@@ -169,6 +190,7 @@ const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'');let data=JSON.parse(l
 if(data.code&&(data.code.length>12||/\s/.test(data.code)))delete data.code; // 서버에서 잘못 내려온 코드(날짜 문자열 등)는 버림
 let cur=data._stage||0;
 const $=id=>document.getElementById(id);
+const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ---- 수업 구조(단계·모둠·주장·진행 통제): 교사가 서버에 저장한 설정, 없으면 기본값 ---- */
 let LESSON=normLesson((()=>{try{return JSON.parse(localStorage.getItem(KEY+'_lesson')||'null');}catch(e){return null;}})());
 let built=false;
@@ -195,11 +217,13 @@ function applyLesson(raw){
  if(data.group&&!LESSON.groups.some(g=>g.n===+data.group)){delete data.group;}
  buildStatic();restore();show(cur);syncStage();}
 function renderGroup(){
+ renderRec();
  const g=+data.group||0;const c=claimOfGroup(LESSON,g);
  $('grpBadge').textContent='모둠: '+(g?g+'모둠':'-');
  document.querySelectorAll('.groups label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
- if(!c){$('myClaim').innerHTML='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('mySrc').innerHTML='';return;}
- $('myClaim').innerHTML=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p><p class="small">💡 생각 열쇠: ${c.hint}</p></div>`;
+ $('myIndiv').innerHTML=[['판정',data.i_verdict],['근거 한 문장',data.i_reason],['보고서용 문장',data.i_rewrite]].map(([l,v])=>`<p style="margin:4px 0"><b>${l}:</b> ${escH(v)||'<span class="small">(아직 안 썼어요)</span>'}</p>`).join('');
+ if(!c){const none='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('myClaim').innerHTML=none;$('myClaim7').innerHTML=none;$('mySrc').innerHTML='';return;}
+ const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p><p class="small">💡 생각 열쇠: ${c.hint}</p></div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
  $('mySrc').innerHTML=c.src.map((s,i)=>`<div class="box"><span class="tag">${s.type}</span><h4>자료 ${'ABCDE'[i]} ·${s.title}</h4><p class="small" style="margin:0">${s.body}</p></div>`).join('');
  document.querySelectorAll('#shareTable tr').forEach(r=>r.classList.remove('mine'));
  const row=$('row'+g);if(row){row.classList.add('mine');
@@ -215,7 +239,7 @@ function show(i){const o=order();if(!o.includes(i))i=o[0];cur=i;
  const bar=$('stageBar');bar.classList.toggle('show',locked());
  if(locked()){const st=LESSON.stages.find(x=>x.id===cur);bar.innerHTML=`선생님이 진행 중이에요 · 지금은 <b>${p+1}. ${st?st.name:''}</b> 단계 <span class="small">— 선생님이 다음으로 넘기면 화면이 자동으로 바뀌어요.</span>`;}
  $('mirrorPre').textContent=data.pre||'-';renderGroup();}
-function go(i){show(i);data._stage=cur;save();if(cur===4)pollShare();if(cur>=3&&cur<=5)pollGroup();window.scrollTo({top:0,behavior:'smooth'});}
+function go(i){show(i);data._stage=cur;save();if(cur===4)pollShare();if(needGroup())pollGroup();window.scrollTo({top:0,behavior:'smooth'});}
 function tryGo(id){if(locked())return;const p=order().indexOf(id);if(p<0)return;go(id);}
 function step(d){if(locked())return false;const o=order(),p=o.indexOf(cur),t=(p<0?0:p)+d;if(t<0||t>=o.length)return false;go(o[t]);return true;}
 /* 교사가 지정한 현재 단계를 따라감. 준비(코드·모둠 입력)를 마치지 않은 학생은 준비 단계에 머문다. */
@@ -239,7 +263,9 @@ const hhmm=()=>new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-d
 function setBadge(s){$('saveBadge').textContent=data._submitted?'📤 제출 완료':s==='err'?'⚠️ 서버 저장 실패 · 다시 시도 중':s==='ok'?'☁️ 서버에 저장됨 '+hhmm():ONLINE?'☁️ 저장 중…':'💾 이 기기에 저장됨 '+hhmm();}
 function save(){collect();localStorage.setItem(KEY,JSON.stringify(data));setBadge();if(ONLINE)queueSync();}
 /* ---- 서버 연동 ---- */
-const GROUP_FIELDS=['g_src','g_acc','g_rel','g_verdict','g_reason','g_rewrite','g_speaker','g_recorder'];
+const GROUP_FIELDS=['g_verdict','g_reason','g_rewrite','g_speaker']; // 모둠이 발표할 내용(기록자만 입력). 개인 검증 칸은 i_ 로 시작하며 각자의 응답에만 저장됨
+const needGroup=()=>cur===7||cur===4; // 모둠 기록이 화면에 필요한 단계(모둠 정리·모둠 공유)
+let REC=''; // 이 모둠의 기록자 코드('' = 아직 없음). 정해지면 기록자만 모둠 기록 칸을 쓸 수 있다
 const ONLINE=!!API_URL;
 const DEV=(()=>{try{let d=localStorage.getItem(KEY+'_dev');if(!d){d=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem(KEY+'_dev',d);}return d;}catch(e){return 'x';}})();
 async function api(action,payload,post){const body=Object.assign({action,class:CLASS_ID},payload||{});
@@ -253,9 +279,24 @@ async function pushStudent(){if(!ONLINE||!data.code||!data.group)return true;
 function markGroup(k){data._gt=data._gt||{};const t=Date.now();data._gt[k]=t;gdirty[k]={v:data[k]==null?'':data[k],t};clearTimeout(gTimer);gTimer=setTimeout(pushGroup,1000);}
 async function pushGroup(){clearTimeout(gTimer);if(!ONLINE||!data.group||!Object.keys(gdirty).length)return true;
  const f=gdirty;gdirty={};
- try{const r=await api('saveGroup',{group:+data.group,code:data.code,dev:DEV,fields:f},true);applyGroup(r.fields);return true;}
+ try{const r=await api('saveGroup',{group:+data.group,code:data.code,dev:DEV,fields:f},true);
+  if(r.locked&&data._gt)for(const k in f)delete data._gt[k]; // 기록자가 따로 있어 내 입력이 반영되지 않았으면 화면을 모둠 기록으로 되돌림
+  applyGroup(r.fields);return true;}
  catch(e){for(const k in f)if(!gdirty[k])gdirty[k]=f[k];gTimer=setTimeout(pushGroup,5000);return false;}}
-function applyGroup(fields){data._gt=data._gt||{};let ch=false;
+/* 기록자: 한 명이 맡으면 나머지 모둠원은 모둠 기록 칸을 읽기만 할 수 있다(서버도 다른 사람의 쓰기를 무시) */
+const REC_INPUTS='#g_reason,#g_rewrite,#g_speaker,input[name="g_verdict"]';
+function renderRec(){const box=$('recBox');if(!box)return;const me=!!REC&&REC===data.code;
+ document.querySelectorAll(REC_INPUTS).forEach(e=>e.disabled=!me); // 기록자가 정해지기 전에는 아무도, 정해진 뒤에는 기록자만 입력할 수 있음
+ box.innerHTML=me?`✍️ <b>내가 기록자예요.</b> 우리 모둠이 발표할 내용을 아래에 입력하세요. 다른 모둠원은 입력할 수 없어요. <button class="btn small ghost" onclick="recAct('release')">기록자 내려놓기</button>`
+  :REC?`✍️ <b>기록자: ${escH(REC)}</b> — 발표할 내용은 기록자만 입력할 수 있어요. 나는 토의에 참여하고, 아래에 채워지는 내용을 확인해 주세요.`
+  :`✍️ <b>먼저 기록자를 정해 주세요.</b> 기록자가 정해지기 전에는 아무도 입력할 수 없어요. 우리 모둠 기록자가 되었다면 <button class="btn small" onclick="recAct('claim')">내가 기록자예요</button> 를 누르세요.`;}
+async function recAct(kind){if(!ONLINE||!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
+ if(kind==='claim'&&!confirm('내가 기록자가 되면 다른 모둠원은 이 모둠 기록을 입력할 수 없어요. 기록자가 맞나요?'))return;
+ try{await pushStudent();const r=await api('saveGroup',{group:+data.group,code:data.code,dev:DEV,fields:{},rec:kind},true);applyGroup(r.fields);
+  if(kind==='claim')toast(REC===data.code?'기록자가 되었어요 ✍️':'이미 다른 친구가 기록자예요');}
+ catch(e){toast('기록자를 바꾸지 못했어요. 잠시 뒤 다시 눌러 주세요');}}
+function applyGroup(fields){if(fields){REC=(fields._rec&&fields._rec.v)||'';renderRec();}
+ data._gt=data._gt||{};let ch=false;
  GROUP_FIELDS.forEach(k=>{const n=fields&&fields[k];if(!n||gdirty[k]||n.t<=(data._gt[k]||0))return;
   const els=document.querySelectorAll(`[id="${k}"],[name="${k}"]`);
   if(els[0]&&els[0].type==='radio')els.forEach(e=>e.checked=(e.value===n.v));
@@ -272,7 +313,7 @@ async function pollShare(){if(!ONLINE||cur!==4||document.hidden)return;
    row.querySelector('select').value=g.g_verdict;row.querySelector('input').value=g.g_reason.slice(0,80);data._shA[n]=key;ch=true;}
   if(ch)save();}catch(e){}}
 function onGroupChange(){collect();
- if(data._grpApplied&&data._grpApplied!==data.group){GROUP_FIELDS.forEach(k=>{document.querySelectorAll(`[id="${k}"],[name="${k}"]`).forEach(e=>{if(e.type==='radio')e.checked=false;else e.value='';});delete data[k];});data._gt={};gdirty={};}
+ if(data._grpApplied&&data._grpApplied!==data.group){GROUP_FIELDS.forEach(k=>{document.querySelectorAll(`[id="${k}"],[name="${k}"]`).forEach(e=>{if(e.type==='radio')e.checked=false;else e.value='';});delete data[k];});data._gt={};gdirty={};REC='';}
  data._grpApplied=data.group;pollGroup();}
 async function askHelp(){if(!ONLINE){toast('선생님께 손을 들어 알려 주세요');return;}
  if(!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
@@ -281,7 +322,7 @@ function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k
  if(el.type==='radio')el.checked=(el.value===data[k]);else if(el.type==='checkbox')el.checked=!!data[k];else el.value=data[k];});
  if(data.code)$('codeBadge').textContent='참여 코드: '+data.code;}
 async function submitAll(){collect();const miss=[];
- if(order().includes(3)){if(!data.g_verdict)miss.push('모둠 판정');if(!data.g_rewrite)miss.push('고쳐 쓴 문장');} // 모둠 탐구 단계를 뺀 수업이면 묻지 않음
+ if(order().includes(3)){if(!data.i_verdict)miss.push('내 판정');if(!data.i_rewrite)miss.push('고쳐 쓴 문장');} // 개인 검증 단계를 뺀 수업이면 묻지 않음
  if(!data.post)miss.push('지금의 판단');if(!data.reflect)miss.push('정리');
  if(miss.length&&!locked()){toast('아직 비어 있어요: '+miss.join(', '));return;} // 교사가 단계를 고정한 동안은 되돌아가 채울 수 없으니 막지 않고 제출(교사 화면에 '작성 없음'으로 보임)
  const prev=data._submitted;data._submitted=new Date().toLocaleTimeString('ko-KR');
@@ -299,12 +340,11 @@ async function pollLesson(){if(!ONLINE||document.hidden)return;
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
 buildStatic();restore();go(cur);syncStage();
 function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();
- if(GROUP_FIELDS.includes(k))(data._mine=data._mine||{})[k]=e.target.value; // 모둠 기록지 칸에 '내가 직접 쓴 값'을 따로 보관 — 모둠원 글이 화면 칸을 덮어써도 내 답은 내 응답에 그대로 남음
  save();if(ONLINE&&GROUP_FIELDS.includes(k))markGroup(k);renderGroup();}
 document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
 let polling=false; // 서버가 느릴 때 요청이 쌓이지 않게, 이전 조회가 끝나기 전이면 이번 차례는 건너뜀
 async function pollTick(){if(polling)return;polling=true;
- try{await pollLesson();if(cur>=3&&cur<=5)await pollGroup();await pollShare();}finally{polling=false;}}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollLesson();if(cur>=3&&cur<=5)pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
+ try{await pollLesson();if(needGroup())await pollGroup();await pollShare();}finally{polling=false;}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollLesson();if(needGroup())pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
 if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}pollLesson();setInterval(pollTick,4000);}
 </script></body></html>

@@ -185,6 +185,7 @@ async function refresh(force){
  renderResults();return true;
 }
 async function toggleShare(){const r=await api('setShare',{open:!DB.shareOpen});if(r.ok){toast(r.shareOpen?'모둠 판정을 공개했어요':'비공개로 바꿨어요');refresh();}else toast('실패했어요');}
+async function clearRec(g){if(!confirm(`${g}모둠 기록자를 풀까요? 모둠원 누구나 다시 기록자를 맡을 수 있어요.`))return;const r=await api('clearRecorder',{group:g});if(r.ok){toast('기록자를 풀었어요');refresh();}else toast('풀지 못했어요');}
 async function clearHelp(i){await api('helpClear',{code:HELP[i].code});refresh();}
 function buildTabs(){$('tabs').innerHTML=TABS.map((n,i)=>`<button onclick="showTab(${i})">${n}</button>`).join('');}
 function showTab(i){document.querySelectorAll('.tab').forEach((s,j)=>s.classList.toggle('show',i===j));document.querySelectorAll('#tabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
@@ -223,8 +224,9 @@ function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){
 function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
  const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${esc(v||'미판정')}</span>`;
  const card=(gr,extra)=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},m=S.filter(s=>+s.group===gr.n).length;
-  return `<div class="sv-g"><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(c.n+'. '+c.t):''}</p>${extra(f)}</div>`;};
- if(id===3)return `<div class="sv-panel"><h3>모둠별 담당 문장 · 판정 진행</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
+  return `<div class="sv-g"><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(c.n+'. '+c.t):''}</p>${extra(f,gr)}</div>`;};
+ if(id===3)return `<div class="sv-panel"><h3>모둠별 담당 문장 · 개인 검증 진행</h3><div class="sv-groups">${G.map(gr=>card(gr,(f,g)=>{const m=S.filter(s=>+s.group===g.n);return `<span class="m">개인 판정 ${m.filter(s=>s.data.i_verdict).length}/${m.length}명</span>`;})).join('')}</div></div>`;
+ if(id===7)return `<div class="sv-panel"><h3>모둠 정리 · 발표할 내용</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>`<span class="m">${f._rec?'✍️ 기록자 정함':'✍️ 기록자 미정'}</span> `+vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
  if(id===4)return `<div class="sv-panel"><h3>모둠 발표 · 판정 ${DB.shareOpen?'공개 중':'(공개 전 — 발표가 끝나면 공개하세요)'}</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p>${esc((f.g_reason&&f.g_reason.v)||'')}</p>`:'<span class="m">발표 대기</span>')).join('')}</div></div>`;
  if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
  if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>신뢰할 수 있는 자료와 일치</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>맞지만 조건·범위 설명이 빠짐</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>출처를 찾을 수 없음</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>신뢰할 수 있는 자료와 어긋남</p></div></div></div>`;
@@ -244,6 +246,7 @@ function renderStageView(){
 
 /* ---- 현황 ---- */
 const submitted=s=>s.submittedAt>0;
+const posOf=id=>{const i=visStages(LS).findIndex(s=>s.id===id);return i<0?id+1:i+1;}; // 단계 id가 아니라 화면에 보이는 순서(몇 번째 단계인지)
 let HELP=[];
 function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
  const rows=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
@@ -252,9 +255,9 @@ function renderLive(){
  const S=DB.students;HELP=S.filter(s=>s.helpAt);
  let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
  if(HELP.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+HELP.map((r,i)=>`<div>${esc(r.group)}모둠 · <span class="cd">${esc(r.code)}</span> · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`).join('')+`</div>`;
- h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th><th>제출</th><th>모둠 판정</th><th>고쳐 쓴 문장</th></tr>`;
+ h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th><th>제출</th><th>개인 판정</th><th>모둠 판정</th><th>고쳐 쓴 문장</th><th>기록자</th></tr>`;
  LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g),m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
-  h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td><td>${m.filter(submitted).length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td></tr>`;});
+  h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td><td>${m.filter(submitted).length}</td><td>${m.filter(s=>s.data.i_verdict).length}/${m.length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td><td>${f._rec?`<span class="cd">${esc(f._rec.v)}</span> <button class="btn small ghost" onclick="clearRec(${g})">해제</button>`:'<span class="small">미정</span>'}</td></tr>`;});
  h+=`</table><p class="small" style="margin-bottom:0">학생 코드·모둠을 고치려면 <a href="#" onclick="openStudentMgr();return false" style="color:var(--accent-dk);font-weight:700">⚙️ 수업 설정 › 학생 관리</a>로 가세요.</p></div>`;
  $('live').innerHTML=h;renderStudentMgr();
 }
@@ -263,7 +266,7 @@ function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.ac
  el.innerHTML=`<p class="small">코드나 모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
   <table><tr><th>코드</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" class="cd" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
   <td><select id="rg${i}">${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${LS.groups.some(g=>g.n===+r.group)?'':`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`}</select></td>
-  <td>${r.live?(r.stage+1)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
+  <td>${r.live?posOf(r.stage)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
   <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
 function toggleHide(){const on=document.body.classList.toggle('hide-codes');$('hideBtn').textContent=on?'🙈 코드 가림 켜짐':'👁 코드 보임';}
 function openStudentMgr(){showTab(2);const d=$('a5');if(d){d.open=true;OPEN.a5=true;d.scrollIntoView({behavior:'smooth'});}}
@@ -275,20 +278,19 @@ async function delRow(i){const r=ROWS[i];if(!confirm(`${r.code} 학생의 응답
 
 /* ---- 결과 정리 (마무리 단계용) ---- */
 function bars(rows,total){return rows.map(([l,n])=>`<div class="bar"><div class="l">${esc(l)}</div><div class="t"><div class="f" style="width:${total?Math.round(n/total*100):0}%"></div></div><div class="n">${n}명 (${total?Math.round(n/total*100):0}%)</div></div>`).join('');}
-// 모둠 기록지는 화면상 '나중에 쓴 사람 것'이 공유되지만, 학생 각자가 직접 쓴 값은 각자의 응답(_mine)에 모두 남아 있다
-const mineOf=s=>(s.data&&s.data._mine)||{};
-function memberAnswers(g){const ms=DB.students.filter(s=>+s.group===g&&Object.keys(mineOf(s)).length);if(!ms.length)return '';
- return `<details><summary>모둠원별 작성 내용 (${ms.length}명)</summary>`+ms.map((s,i)=>{const m=mineOf(s),d=k=>esc(m[k])||'-';
-  return `<div class="quote"><b>모둠원 ${i+1}</b> · 판정 ${vBadge(m.g_verdict)}<br><b>근거:</b> ${d('g_reason')}<br><b>보고서용 문장:</b> ${d('g_rewrite')}<br><b>출처·정확성·신뢰성:</b> ${d('g_src')} / ${d('g_acc')} / ${d('g_rel')}</div>`;}).join('')+`</details>`;}
+// 개인 검증 기록(i_*)은 학생 각자의 응답에 저장돼 있다. 모둠 기록(g_*)은 모둠이 발표할 내용(기록자 입력)
+function memberAnswers(g){const ms=DB.students.filter(s=>+s.group===g&&s.data&&(s.data.i_verdict||s.data.i_reason||s.data.i_rewrite||s.data.i_src));if(!ms.length)return '';
+ return `<details><summary>모둠원 개인 검증 기록 (${ms.length}명)</summary>`+ms.map((s,i)=>{const m=s.data,d=k=>esc(m[k])||'-';
+  return `<div class="quote"><b>모둠원 ${i+1}</b> · 판정 ${vBadge(m.i_verdict)}<br><b>근거:</b> ${d('i_reason')}<br><b>보고서용 문장:</b> ${d('i_rewrite')}<br><b>출처·정확성·신뢰성:</b> ${d('i_src')} / ${d('i_acc')} / ${d('i_rel')}</div>`;}).join('')+`</details>`;}
 function renderResults(){
  const S=DB.students,done=S.filter(submitted);
  let h=`<div class="card nopresent"><button class="btn" onclick="document.body.classList.add('present');window.scrollTo(0,0)">🖥 발표 화면으로 보기</button> <span class="small">(Esc 로 돌아옵니다) · 아래 결과는 제출한 ${done.length}명 기준이며, 학생 코드는 표시하지 않아요.</span></div>`;
  h+=`<div class="card"><h2>① 모둠별 검증 결과</h2>`;
  LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g)||{n:'',t:''},f=DB.groups[g]||{},v=k=>f[k]&&f[k].v||'';
   h+=`<div class="claim"><div><b>${esc(c.n)}.</b> ${esc(c.t)}</div><div style="margin:4px 0">${g}모둠 판정: ${vBadge(v('g_verdict'))}</div>
-   <div class="quote"><b>근거:</b> ${esc(v('g_reason'))||'<span class="small">(작성 없음)</span>'}</div>
-   <div class="quote"><b>보고서용 문장:</b> ${esc(v('g_rewrite'))||'<span class="small">(작성 없음)</span>'}</div>
-   <details><summary>출처·정확성·신뢰성 기록 보기</summary><div class="quote"><b>출처:</b> ${esc(v('g_src'))}</div><div class="quote"><b>정확성:</b> ${esc(v('g_acc'))}</div><div class="quote"><b>신뢰성:</b> ${esc(v('g_rel'))}</div></details>${memberAnswers(g)}</div>`;});
+   <div class="quote"><b>모둠 발표 근거:</b> ${esc(v('g_reason'))||'<span class="small">(작성 없음)</span>'}</div>
+   <div class="quote"><b>모둠 발표 보고서용 문장:</b> ${esc(v('g_rewrite'))||'<span class="small">(작성 없음)</span>'}</div>
+   ${memberAnswers(g)}</div>`;});
  h+=`</div>`;
  h+=`<div class="card"><h2>② 처음 판단과 지금 판단</h2><div class="grid2"><div><h3>처음 (2단계)</h3>${bars(PRE.map(o=>[o,done.filter(s=>s.data.pre===o).length]),done.length)}</div><div><h3>지금 (6단계)</h3>${bars(POST.map(o=>[o,done.filter(s=>s.data.post===o).length]),done.length)}</div></div>
   <h3>판단의 이동 (행: 처음 → 열: 지금)</h3><table><tr><th></th>${POST.map(o=>`<th>${esc(o)}</th>`).join('')}</tr>${PRE.map(p=>`<tr><th>${esc(p)}</th>${POST.map(q=>`<td>${done.filter(s=>s.data.pre===p&&s.data.post===q).length}명</td>`).join('')}</tr>`).join('')}</table></div>`;
@@ -390,10 +392,10 @@ const csv=rows=>'﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
 function exportCSV(kind){
  if(kind==='students'){
   const head=['코드','모둠','제출시각','처음 판단','처음 이유','지금 판단','다짐(확인 절차)','전체 토의','피드백',...SELF.map((_,i)=>'자기평가'+(i+1)),'개인 판정','개인 근거','개인 보고서용 문장','개인 출처','개인 정확성','개인 신뢰성'];
-  const rows=DB.students.map(s=>{const d=s.data,m=mineOf(s);return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':''),m.g_verdict,m.g_reason,m.g_rewrite,m.g_src,m.g_acc,m.g_rel];});
+  const rows=DB.students.map(s=>{const d=s.data;return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':''),d.i_verdict,d.i_reason,d.i_rewrite,d.i_src,d.i_acc,d.i_rel];});
   download('학생응답.csv',csv([head,...rows]),'text/csv;charset=utf-8');
  }else{
-  const K=[['g_verdict','판정'],['g_reason','근거 한 문장'],['g_rewrite','보고서용 문장'],['g_src','출처'],['g_acc','정확성'],['g_rel','신뢰성'],['g_speaker','발표자'],['g_recorder','기록자']];
+  const K=[['g_verdict','판정'],['g_reason','근거 한 문장'],['g_rewrite','보고서용 문장'],['g_speaker','발표자'],['_rec','기록자']];
   const rows=LS.groups.map(gr=>[gr.n+'모둠',(claimOfGroup(LS,gr.n)||{}).t||'',...K.map(([k])=>((DB.groups[gr.n]||{})[k]||{}).v||'')]);
   download('모둠기록지.csv',csv([['모둠','담당 주장',...K.map(k=>k[1])],...rows]),'text/csv;charset=utf-8');
  }
