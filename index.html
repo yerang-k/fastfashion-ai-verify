@@ -215,7 +215,7 @@ function show(i){const o=order();if(!o.includes(i))i=o[0];cur=i;
  const bar=$('stageBar');bar.classList.toggle('show',locked());
  if(locked()){const st=LESSON.stages.find(x=>x.id===cur);bar.innerHTML=`선생님이 진행 중이에요 · 지금은 <b>${p+1}. ${st?st.name:''}</b> 단계 <span class="small">— 선생님이 다음으로 넘기면 화면이 자동으로 바뀌어요.</span>`;}
  $('mirrorPre').textContent=data.pre||'-';renderGroup();}
-function go(i){show(i);data._stage=cur;save();if(cur===4)pollShare();window.scrollTo({top:0,behavior:'smooth'});}
+function go(i){show(i);data._stage=cur;save();if(cur===4)pollShare();if(cur>=3&&cur<=5)pollGroup();window.scrollTo({top:0,behavior:'smooth'});}
 function tryGo(id){if(locked())return;const p=order().indexOf(id);if(p<0)return;go(id);}
 function step(d){if(locked())return false;const o=order(),p=o.indexOf(cur),t=(p<0?0:p)+d;if(t<0||t>=o.length)return false;go(o[t]);return true;}
 /* 교사가 지정한 현재 단계를 따라감. 준비(코드·모둠 입력)를 마치지 않은 학생은 준비 단계에 머문다. */
@@ -300,6 +300,6 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTi
 buildStatic();restore();go(cur);syncStage();
 function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();save();if(ONLINE&&GROUP_FIELDS.includes(k))markGroup(k);renderGroup();}
 document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollLesson();pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
-if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}pollLesson();setInterval(()=>{pollLesson();pollGroup();pollShare();},4000);}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollLesson();if(cur>=3&&cur<=5)pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
+if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}pollLesson();setInterval(()=>{pollLesson();if(cur>=3&&cur<=5)pollGroup();pollShare();},4000);}
 </script></body></html>
