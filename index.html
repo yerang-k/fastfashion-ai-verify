@@ -283,7 +283,7 @@ function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k
 async function submitAll(){collect();const miss=[];
  if(order().includes(3)){if(!data.g_verdict)miss.push('모둠 판정');if(!data.g_rewrite)miss.push('고쳐 쓴 문장');} // 모둠 탐구 단계를 뺀 수업이면 묻지 않음
  if(!data.post)miss.push('지금의 판단');if(!data.reflect)miss.push('정리');
- if(miss.length){toast('아직 비어 있어요: '+miss.join(', '));return;}
+ if(miss.length&&!locked()){toast('아직 비어 있어요: '+miss.join(', '));return;} // 교사가 단계를 고정한 동안은 되돌아가 채울 수 없으니 막지 않고 제출(교사 화면에 '작성 없음'으로 보임)
  const prev=data._submitted;data._submitted=new Date().toLocaleTimeString('ko-KR');
  if(ONLINE){toast('제출 중…');await pushGroup();
   if(!await pushStudent()){data._submitted=prev;localStorage.setItem(KEY,JSON.stringify(data));setBadge('err');toast('서버에 저장하지 못했어요. 네트워크를 확인하고 다시 눌러 주세요');return;}}
@@ -298,8 +298,13 @@ async function pollLesson(){if(!ONLINE||document.hidden)return;
  try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);}catch(e){}}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
 buildStatic();restore();go(cur);syncStage();
-function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();save();if(ONLINE&&GROUP_FIELDS.includes(k))markGroup(k);renderGroup();}
+function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();
+ if(GROUP_FIELDS.includes(k))(data._mine=data._mine||{})[k]=e.target.value; // 모둠 기록지 칸에 '내가 직접 쓴 값'을 따로 보관 — 모둠원 글이 화면 칸을 덮어써도 내 답은 내 응답에 그대로 남음
+ save();if(ONLINE&&GROUP_FIELDS.includes(k))markGroup(k);renderGroup();}
 document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
+let polling=false; // 서버가 느릴 때 요청이 쌓이지 않게, 이전 조회가 끝나기 전이면 이번 차례는 건너뜀
+async function pollTick(){if(polling)return;polling=true;
+ try{await pollLesson();if(cur>=3&&cur<=5)await pollGroup();await pollShare();}finally{polling=false;}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollLesson();if(cur>=3&&cur<=5)pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
-if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}pollLesson();setInterval(()=>{pollLesson();if(cur>=3&&cur<=5)pollGroup();pollShare();},4000);}
+if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}pollLesson();setInterval(pollTick,4000);}
 </script></body></html>
