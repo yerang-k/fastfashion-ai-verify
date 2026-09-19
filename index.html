@@ -283,8 +283,14 @@ function applyMe(me){if(!me||!data._ready)return;let ch=false;
  if(me.code&&me.code!==data.code){data.code=me.code;$('code').value=me.code;$('codeBadge').textContent='참여 코드: '+me.code;ch=true;}
  if(me.group&&+me.group!==+data.group&&LESSON.groups.some(g=>g.n===+me.group)){setGroupRadio(me.group);onGroupChange();ch=true;}
  if(ch){toast('선생님이 참여 코드/모둠을 바꿨어요');save();renderGroup();}}
+/* 교사의 '모두 이 단계로 이동' 명령: 명령마다(seq) 한 번만 따름. 아직 준비 전인 학생은 이동시키지 않고 '본 것'으로만 표시 */
+function applyForce(){const f=LESSON.force;if(!f||f.seq<=(data._forceSeen||0))return;
+ data._forceSeen=f.seq;
+ if(!data._ready){save();return;}
+ const s=LESSON.stages.find(x=>x.id===f.stage);
+ if(s&&s.on&&f.stage!==cur){go(f.stage);toast('선생님이 「'+s.name+'」 단계로 이동시켰어요');}else save();}
 async function pollLesson(){if(!ONLINE||document.hidden)return;
- try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);}catch(e){}}
+ try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);applyForce();}catch(e){}}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
 buildStatic();restore();go(cur);
 function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();save();if(ONLINE&&GROUP_FIELDS.includes(k))markGroup(k);renderGroup();}

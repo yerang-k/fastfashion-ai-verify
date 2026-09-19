@@ -159,8 +159,13 @@ function renderControl(){
  h+=`<button class="btn small" onclick="setOpen(${op==null?0:Math.min(vs.length-1,op+1)})" ${op!=null&&op>=vs.length-1?'disabled':''}>다음 단계 열기 ▶</button>`;
  h+=`<button class="btn small ghost" onclick="setOpen(null)" ${op==null?'disabled':''}>제한 없음</button></div><div class="stagebtns">`;
  h+=vs.map((s,p)=>`<button class="btn small ${op===p?'':'ghost'}" onclick="setOpen(${p})">${p+1}. ${esc(s.name)}</button>`).join('')+`</div>`;
+ h+=`<h3>📣 모든 학생을 이 단계로 이동</h3><p class="small">누르면 접속 중인 모든 학생 화면이 그 단계로 넘어가요(잠긴 단계면 그 단계까지 함께 열려요). 아직 ‘준비’를 마치지 않은 학생은 옮기지 않습니다.${LS.force?` · 마지막 명령: ${esc((LS.stages.find(s=>s.id===LS.force.stage)||{}).name||'')} (${LS.force.seq}회째)`:''}</p><div class="stagebtns">`;
+ h+=vs.map((s,p)=>`<button class="btn small" onclick="pushStage(${p})">${p+1}. ${esc(s.name)}(으)로 이동</button>`).join('')+`</div>`;
  $('ctl').innerHTML=h;
 }
+async function pushStage(p){const s=visStages(LS)[p];if(!s||!confirm(`접속 중인 모든 학생을 「${s.name}」 단계로 이동시킬까요?`))return;
+ const r=await api('forceStage',{stage:s.id,openTo:p});
+ if(r.ok){toast(`「${s.name}」 단계로 이동 명령을 보냈어요`);refresh();}else toast('보내지 못했어요');}
 async function setOpen(p){const r=await api('setOpenTo',{openTo:p});if(r.ok){toast(p==null?'제한을 풀었어요':'학생 이동 범위를 바꿨어요');refresh();}else toast('실패했어요');}
 
 /* ---- 현황 (학생별 코드·모둠 수정 포함) ---- */

@@ -40,6 +40,7 @@ function handle_(p) {
       case 'getLesson': return out_(getLesson_(p));
       case 'setLesson': return out_(setLesson_(p));
       case 'setOpenTo': return out_(setOpenTo_(p));
+      case 'forceStage': return out_(forceStage_(p));
       case 'setRoster': return out_(setRoster_(p));
       case 'updateStudent': return out_(updateStudent_(p));
       case 'deleteStudent': return out_(deleteStudent_(p));
@@ -181,6 +182,7 @@ function setLesson_(p) {
   var merged = {};
   for (var k in p.lesson) merged[k] = p.lesson[k];
   merged.openTo = stored.openTo == null ? null : stored.openTo; // 진행 통제는 별도 버튼으로만 바뀜
+  merged.force = stored.force || null;
   var json = JSON.stringify(merged);
   if (json.length > MAX_JSON) return { ok: false, error: 'too large' };
   cfgSet_('lesson', json);
@@ -194,6 +196,20 @@ function setOpenTo_(p) {
   l.openTo = (p.openTo === null || p.openTo === '' || isNaN(n)) ? null : n;
   cfgSet_('lesson', JSON.stringify(l));
   return { ok: true, openTo: l.openTo };
+}
+
+// 모든 학생을 지정한 단계로 이동시키는 명령. seq 가 올라갈 때마다 학생 화면이 한 번씩 이동한다.
+// 이동할 단계가 잠겨 있으면 그 단계까지 함께 열어 준다(p.openTo = 보이는 단계 중 순번).
+function forceStage_(p) {
+  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  var stage = parseInt(p.stage, 10);
+  if (isNaN(stage) || stage < 0 || stage > 6) return { ok: false, error: 'bad stage' };
+  var l = lessonGet_() || {};
+  l.force = { stage: stage, seq: ((l.force && l.force.seq) || 0) + 1 };
+  var pos = parseInt(p.openTo, 10);
+  if (!isNaN(pos) && l.openTo != null && l.openTo < pos) l.openTo = pos;
+  cfgSet_('lesson', JSON.stringify(l));
+  return { ok: true, force: l.force, openTo: l.openTo == null ? null : l.openTo };
 }
 
 /* ---------- 명단 · 학생 관리 (교사) ---------- */

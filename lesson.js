@@ -12,7 +12,8 @@ const DEFAULT_LESSON={
  groups:[{n:1,size:4,claim:1},{n:2,size:4,claim:2},{n:3,size:4,claim:3},{n:4,size:4,claim:4},{n:5,size:3,claim:5}],
  claims:null,      // null이면 content.js 의 CLAIMS(기본 자료)를 사용
  openTo:null,      // null=학생이 모든 단계로 이동 가능, 숫자=보이는 단계 중 그 순번(0부터)까지만 이동 가능
- rosterOnly:false  // true면 명단에 등록된 참여 코드만 입장 가능
+ rosterOnly:false, // true면 명단에 등록된 참여 코드만 입장 가능
+ force:null        // 교사가 '모두 이 단계로 이동'을 누르면 {stage:단계id, seq:누른 횟수}
 };
 const REQUIRED_STAGES=[0,5]; // 준비(코드·모둠 입력)와 정리(제출)는 숨길 수 없음
 const MAX_GROUPS=10,MAX_CLAIMS=10,MAX_SRC=5;
@@ -35,6 +36,7 @@ function normLesson(raw){
   L.groups=raw.groups.slice(0,MAX_GROUPS).map((g,i)=>({n:i+1,size:Math.max(1,Math.min(12,+g.size||4)),claim:Math.max(1,Math.min(ncl,+g.claim||1))}));
  L.groups.forEach(g=>{if(g.claim>ncl)g.claim=1;});
  L.rosterOnly=!!raw.rosterOnly;
+ L.force=(raw.force&&+raw.force.seq>0&&DEFAULT_LESSON.stages.some(s=>s.id===+raw.force.stage))?{stage:+raw.force.stage,seq:+raw.force.seq}:null; // 교사의 '모두 이동' 명령
  const vis=L.stages.filter(s=>s.on).length;
  L.openTo=(raw.openTo==null||raw.openTo==='')?null:Math.max(0,Math.min(vis-1,+raw.openTo||0));
  return L;
