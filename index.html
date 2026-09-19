@@ -165,7 +165,8 @@ td select,td input{padding:6px;font-size:.9rem}
 <button class="help" onclick="askHelp()">🙋 도움이 필요해요</button>
 <div class="toast" id="toast"></div>
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script><script>
-const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'');let data=JSON.parse(localStorage.getItem(KEY)||'{}');let cur=data._stage||0;
+const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'');let data=JSON.parse(localStorage.getItem(KEY)||'{}');
+if(data.code&&(data.code.length>12||/\s/.test(data.code)))delete data.code; // 서버에서 잘못 내려온 코드(날짜 문자열 등)는 버림let cur=data._stage||0;
 const $=id=>document.getElementById(id);
 /* ---- 수업 구조(단계·모둠·주장·진행 통제): 교사가 서버에 저장한 설정, 없으면 기본값 ---- */
 let LESSON=normLesson((()=>{try{return JSON.parse(localStorage.getItem(KEY+'_lesson')||'null');}catch(e){return null;}})());
@@ -289,7 +290,7 @@ async function submitAll(){collect();const miss=[];
 function resetAll(){if(confirm('이 기기의 응답을 모두 지울까요?\n(서버에 이미 저장된 응답은 그대로 남아요)')){localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_dev');location.reload();}}
 /* 교사가 바꾼 수업 설정·내 코드/모둠을 주기적으로 받아 반영 */
 function applyMe(me){if(!me||!data._ready)return;let ch=false;
- if(me.code&&me.code!==data.code){data.code=me.code;$('code').value=me.code;$('codeBadge').textContent='참여 코드: '+me.code;ch=true;}
+ if(me.code&&me.code!==data.code&&me.code.length<=12&&!/\s/.test(me.code)){data.code=me.code;$('code').value=me.code;$('codeBadge').textContent='참여 코드: '+me.code;ch=true;}
  if(me.group&&+me.group!==+data.group&&LESSON.groups.some(g=>g.n===+me.group)){setGroupRadio(me.group);onGroupChange();ch=true;}
  if(ch){toast('선생님이 참여 코드/모둠을 바꿨어요');save();renderGroup();}}
 async function pollLesson(){if(!ONLINE||document.hidden)return;
