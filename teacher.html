@@ -55,29 +55,42 @@ header select{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(
 body.stagemode-on{background:#111;color:#f4f4f2;font-size:22px}
 body.stagemode-on header,body.stagemode-on .wrap{display:none!important}
 body.stagemode-on #stageView{display:flex}
-#stageView{display:none;flex-direction:column;min-height:100vh;padding:4vh 5vw;gap:3vh;position:relative}
-#stageView .sv-top{display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-size:1.1rem;letter-spacing:.06em}
-#stageView .sv-now{flex:1;display:flex;flex-direction:column;justify-content:center}
-#stageView .sv-no{color:var(--accent);font-size:1.6rem;font-weight:700}
-#stageView .sv-name{font-size:clamp(3rem,9vw,7rem);font-weight:800;line-height:1.1;margin:.1em 0}
-#stageView .sv-time{font-size:1.4rem;color:#a8a8a4}
-#stageView .sv-timer{font-size:clamp(4rem,12vw,10rem);font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent)}
+#stageView{display:none;flex-direction:column;min-height:100vh;padding:3.5vh 4.5vw;gap:2.6vh;position:relative}
+#stageView .sv-top{display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-size:1.05rem;letter-spacing:.06em}
+#stageView .sv-main{display:grid;grid-template-columns:1.5fr 1fr;gap:4vw;align-items:center}
+@media(max-width:900px){#stageView .sv-main{grid-template-columns:1fr}}
+#stageView .sv-no{color:var(--accent);font-size:1.5rem;font-weight:700;letter-spacing:.04em}
+#stageView .sv-name{font-size:clamp(3rem,8vw,6.5rem);font-weight:800;line-height:1.1;margin:.08em 0 .15em}
+#stageView .sv-todo{font-size:clamp(1.5rem,2.6vw,2.4rem);line-height:1.45;font-weight:600;color:#f4f4f2;border-left:6px solid var(--accent);padding-left:1.2vw}
+#stageView .sv-clock{text-align:right}
+#stageView .sv-timer{font-size:clamp(4rem,11vw,9rem);font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent);line-height:1}
+#stageView .sv-time{font-size:1.2rem;color:#a8a8a4;margin:.3em 0 .6em}
+#stageView .sv-bar{height:12px;background:#2a2a28;border-radius:6px;overflow:hidden}
+#stageView .sv-bar i{display:block;height:100%;background:var(--accent);width:0;transition:width 1s linear}
+#stageView .sv-points{display:flex;gap:1.2vw;flex-wrap:wrap;counter-reset:pt}
+#stageView .sv-points div{flex:1;min-width:14vw;background:#1e1e1c;border:1.5px solid #3a3a38;border-radius:14px;padding:1.4vh 1.2vw;font-size:clamp(1.1rem,1.7vw,1.6rem);line-height:1.4;counter-increment:pt}
+#stageView .sv-points div::before{content:counter(pt);display:inline-flex;width:1.7em;height:1.7em;align-items:center;justify-content:center;background:var(--accent);color:#111;font-weight:800;border-radius:50%;margin-right:.6em;font-size:.9em}
+#stageView .sv-panel{background:#181816;border:1.5px solid #3a3a38;border-radius:16px;padding:2vh 1.6vw}
+#stageView .sv-panel h3{margin:0 0 1.2vh;font-size:1.15rem;color:var(--accent);letter-spacing:.04em}
+#stageView .sv-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(15vw,1fr));gap:1vw}
+#stageView .sv-g{border:1.5px solid #3a3a38;border-radius:12px;padding:1.2vh 1vw;background:#1e1e1c}
+#stageView .sv-g b{font-size:1.3rem}
+#stageView .sv-g p{margin:.4em 0;font-size:1rem;color:#c8c8c4;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#stageView .sv-g .m{font-size:.95rem;color:#8a8a86}
+#stageView .sv-v{display:inline-block;padding:2px 12px;border-radius:14px;font-size:.95rem;font-weight:700;border:1.5px solid #5a5a58;color:#a8a8a4}
+#stageView .sv-v.ok{background:#f4f4f2;border-color:#f4f4f2;color:#111}#stageView .sv-v.part{background:var(--accent);border-color:var(--accent);color:#111}
+#stageView .sv-v.unk{border-style:dashed;color:#e8e8e4}#stageView .sv-v.bad{border-color:#f4f4f2;color:#f4f4f2}
+#stageView .sv-prog{height:22px;background:#2a2a28;border-radius:11px;overflow:hidden;margin:1vh 0}
+#stageView .sv-prog i{display:block;height:100%;background:var(--accent)}
 #stageView .sv-steps{display:flex;gap:8px;flex-wrap:wrap}
 #stageView .sv-steps span{padding:8px 16px;border:1.5px solid #3a3a38;border-radius:22px;color:#8a8a86;font-size:1rem}
 #stageView .sv-steps span.on{background:var(--accent);border-color:var(--accent);color:#111;font-weight:800}
 #stageView .sv-steps span.past{color:#d8d8d4;border-color:#5a5a58}
-#stageView .sv-stat{display:flex;gap:4vw;font-size:1.3rem;color:#d8d8d4;flex-wrap:wrap}
-#stageView .sv-stat b{font-size:2.6rem;color:#fff;margin-right:.2em}
+#stageView .sv-stat{display:flex;gap:4vw;font-size:1.25rem;color:#d8d8d4;flex-wrap:wrap}
+#stageView .sv-stat b{font-size:2.4rem;color:#fff;margin-right:.2em}
 #stageView .sv-ctl{position:absolute;right:2vw;bottom:2vh;display:flex;gap:8px;opacity:.35}
 #stageView .sv-ctl:hover{opacity:1}
 #stageView .sv-ctl button{background:#2a2a28;color:#f4f4f2;border:1px solid #444;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit;font-size:.9rem}
-.acc{background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin:0 0 12px}
-.acc>summary{padding:16px 22px;cursor:pointer;font-size:1.08rem;font-weight:700;color:var(--txt);list-style:none;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-.acc>summary::-webkit-details-marker{display:none}
-.acc>summary::before{content:'▸';color:var(--accent-dk);transition:transform .15s;display:inline-block}
-.acc[open]>summary::before{transform:rotate(90deg)}
-.acc>summary .small{font-weight:400}
-.accbody{padding:0 22px 22px}
 body.present{font-size:20px}body.present header,body.present .tabs,body.present .nopresent{display:none}
 </style></head><body>
 <header>
@@ -204,11 +217,25 @@ function startStageTimer(){const m=stageMinutes();if(m)startTimer(m*60);}
 /* ---- 무대 화면(프로젝터용): 큰 글씨로 현재 단계·타이머·참여 현황 ---- */
 function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}catch(e){}}
  else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
+function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
+ const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${esc(v||'미판정')}</span>`;
+ const card=(gr,extra)=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},m=S.filter(s=>+s.group===gr.n).length;
+  return `<div class="sv-g"><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(c.n+'. '+c.t):''}</p>${extra(f)}</div>`;};
+ if(id===3)return `<div class="sv-panel"><h3>모둠별 담당 문장 · 판정 진행</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
+ if(id===4)return `<div class="sv-panel"><h3>모둠 발표 · 판정 ${DB.shareOpen?'공개 중':'(공개 전 — 발표가 끝나면 공개하세요)'}</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p>${esc((f.g_reason&&f.g_reason.v)||'')}</p>`:'<span class="m">발표 대기</span>')).join('')}</div></div>`;
+ if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
+ if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>신뢰할 수 있는 자료와 일치</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>맞지만 조건·범위 설명이 빠짐</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>출처를 찾을 수 없음</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>신뢰할 수 있는 자료와 어긋남</p></div></div></div>`;
+ return '';
+}
+let TOTAL=0; // 지금 돌고 있는 타이머의 전체 시간(초)
 function renderStageView(){
- if(!DB)return;const vs=visStages(LS),cur=LS.current,pos=vs.findIndex(s=>s.id===cur),st=vs[pos],S=DB.students,help=S.filter(x=>x.helpAt).length;
+ if(!DB)return;const vs=visStages(LS),cur=LS.current,pos=vs.findIndex(s=>s.id===cur),st=vs[pos],S=DB.students,help=S.filter(x=>x.helpAt).length,g=st&&STAGE_GUIDE[st.id];
+ const pct=TOTAL?Math.max(0,Math.min(100,Math.round(left/TOTAL*100))):0;
  $('stageView').innerHTML=`<div class="sv-top"><span>AI 답변, 믿어도 될까? · ${esc(clsLabel(CLASS_ID))}</span><span>${esc(location.host)}</span></div>
-  <div class="sv-now">${st?`<div class="sv-no">${pos+1} / ${vs.length}</div><div class="sv-name">${esc(st.name)}</div><div class="sv-time">${esc(st.time)}</div>`:`<div class="sv-name">자유 진행</div><div class="sv-time">학생이 자유롭게 이동할 수 있어요</div>`}
-   <div class="sv-timer" id="stageTimer">${$('timer').textContent}</div></div>
+  <div class="sv-main"><div>${st?`<div class="sv-no">지금은 ${pos+1} / ${vs.length} 단계</div><div class="sv-name">${esc(st.name)}</div>${g?`<div class="sv-todo">${esc(g.todo)}</div>`:''}`:`<div class="sv-name">자유 진행</div><div class="sv-todo">학생이 자유롭게 이동할 수 있어요</div>`}</div>
+   <div class="sv-clock"><div class="sv-timer" id="stageTimer">${$('timer').textContent}</div><div class="sv-time">${st?'권장 '+esc(st.time):''}</div><div class="sv-bar"><i id="stageBar" style="width:${pct}%"></i></div></div></div>
+  ${g?`<div class="sv-points">${g.points.map(p=>`<div>${esc(p)}</div>`).join('')}</div>`:''}
+  ${st?svPanel(st.id):''}
   <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
   <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div>${help?`<div><b>${help}</b>도움 요청</div>`:''}</div>
   <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
@@ -365,8 +392,8 @@ function exportCSV(kind){
 function exportJSON(){download('ai-verify-전체.json',JSON.stringify(DB,null,2),'application/json');}
 
 /* ---- 타이머 ---- */
-let tm=null,left=0;function startTimer(s){left=s;clearInterval(tm);tick();tm=setInterval(tick,1000);}function stopTimer(){clearInterval(tm);}
-function tick(){const t=$('timer');t.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');const txt=t.textContent,sv=$('stageTimer');if(sv)sv.textContent=txt;t.style.fontWeight=left<=30?'900':'';t.style.color=left<=30?'#a8875a':'';if(left<=0){clearInterval(tm);toast('시간이 끝났어요 ⏰');}left--;}
+let tm=null,left=0;function startTimer(s){left=s;TOTAL=s;clearInterval(tm);tick();tm=setInterval(tick,1000);}function stopTimer(){clearInterval(tm);}
+function tick(){const t=$('timer');t.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');const txt=t.textContent,sv=$('stageTimer'),sb=$('stageBar');if(sv)sv.textContent=txt;if(sb&&TOTAL)sb.style.width=Math.max(0,Math.round(left/TOTAL*100))+'%';t.style.fontWeight=left<=30?'900':'';t.style.color=left<=30?'#a8875a':'';if(left<=0){clearInterval(tm);toast('시간이 끝났어요 ⏰');}left--;}
 
 try{const p=sessionStorage.getItem(PIN_KEY);if(p&&API_URL){$('pin').value=p;login();}}catch(e){}
 </script></body></html>
