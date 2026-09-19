@@ -91,11 +91,13 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-ctl{position:absolute;right:2vw;bottom:2vh;display:flex;gap:8px;opacity:.35}
 #stageView .sv-ctl:hover{opacity:1}
 #stageView .sv-ctl button{background:#2a2a28;color:#f4f4f2;border:1px solid #444;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit;font-size:.9rem}
+/* 학생 코드(학년-반-번호)는 기본으로 흐리게 — 프로젝터에 비쳐도 읽히지 않고, 마우스를 올리거나 클릭하면 보임 */
+body.hide-codes .cd{filter:blur(7px);transition:filter .15s}body.hide-codes .cd:hover,body.hide-codes .cd:focus{filter:none}
 body.present{font-size:20px}body.present header,body.present .tabs,body.present .nopresent{display:none}
-</style></head><body>
+</style></head><body class="hide-codes">
 <header>
  <h1>교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서 · 고2 · 50분</span></h1>
- <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
+ <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
 </header>
 <div class="wrap">
  <div class="card" id="login" style="max-width:420px;margin:40px auto">
@@ -249,7 +251,7 @@ function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
 function renderLive(){
  const S=DB.students;HELP=S.filter(s=>s.helpAt);
  let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
- if(HELP.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+HELP.map((r,i)=>`<div>${esc(r.group)}모둠 · ${esc(r.code)} · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`).join('')+`</div>`;
+ if(HELP.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+HELP.map((r,i)=>`<div>${esc(r.group)}모둠 · <span class="cd">${esc(r.code)}</span> · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`).join('')+`</div>`;
  h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th><th>제출</th><th>모둠 판정</th><th>고쳐 쓴 문장</th></tr>`;
  LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g),m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
   h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td><td>${m.filter(submitted).length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td></tr>`;});
@@ -259,10 +261,11 @@ function renderLive(){
 function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.activeElement)&&el.contains(document.activeElement)))return;
  ROWS=buildRows();
  el.innerHTML=`<p class="small">코드나 모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
-  <table><tr><th>코드</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
+  <table><tr><th>코드</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" class="cd" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
   <td><select id="rg${i}">${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${LS.groups.some(g=>g.n===+r.group)?'':`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`}</select></td>
   <td>${r.live?(r.stage+1)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
   <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
+function toggleHide(){const on=document.body.classList.toggle('hide-codes');$('hideBtn').textContent=on?'🙈 코드 가림 켜짐':'👁 코드 보임';}
 function openStudentMgr(){showTab(2);const d=$('a5');if(d){d.open=true;OPEN.a5=true;d.scrollIntoView({behavior:'smooth'});}}
 async function saveRow(i){const r=ROWS[i],nc=$('rc'+i).value.trim(),ng=+$('rg'+i).value;if(!nc){toast('코드를 입력해 주세요');return;}
  const res=await api('updateStudent',{code:r.code,newCode:nc,group:ng});

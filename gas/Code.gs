@@ -187,7 +187,8 @@ function getStudent_(p) {
   var rg = rosterMap_()[code] || 0;
   var lesson = lessonGet_() || {};
   var res = { ok: true, found: row > 0, rosterFound: !!rg, rosterGroup: rg, rosterOnly: !!lesson.rosterOnly };
-  if (row > 0) res.dev = String(sh.getRange(row, 3).getValue());
+  // 기기 번호(dev)는 본인 확인용 비밀이라 내려주지 않고, 요청한 기기와 같은지만 알려 준다
+  if (row > 0) res.sameDev = String(sh.getRange(row, 3).getValue()) === String(p.dev || '');
   return res;
 }
 
@@ -318,8 +319,21 @@ function help_(p) {
   var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(sh, 1, code);
   if (row < 0) return { ok: false, error: 'no student' };
+  if (!studentGroup_(p)) return { ok: false, error: 'not yours' };
   sh.getRange(row, 6).setValue(new Date());
   return { ok: true };
+}
+
+// 요청자(코드+기기번호)가 저장된 학생 행과 맞으면 그 학생의 모둠 번호를, 아니면 0을 돌려준다(다른 모둠 기록 읽기·쓰기 방지)
+function studentGroup_(p) {
+  var code = cleanCode_(p.code), dev = String(p.dev || '');
+  if (!code || !dev) return 0;
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
+  var row = findRow_(sh, 1, code);
+  if (row < 0) return 0;
+  var v = sh.getRange(row, 2, 1, 2).getValues()[0]; // [모둠, 기기번호]
+  if (String(v[1]) !== dev) return 0;
+  return cleanGroup_(rosterMap_()[code] || v[0]);
 }
 
 /* ---------- 모둠 공동 기록지 (필드별로 나중에 쓴 값이 이김) ---------- */
@@ -335,8 +349,8 @@ function loadGroup_(sh, g) {
 var GROUP_FIELDS = ['g_src', 'g_acc', 'g_rel', 'g_verdict', 'g_reason', 'g_rewrite', 'g_speaker', 'g_recorder'];
 
 function saveGroup_(p) {
-  var g = cleanGroup_(p.group);
-  if (!g) return { ok: false, error: 'group required' };
+  var g = studentGroup_(p); // 화면이 보낸 모둠 번호가 아니라, 서버에 저장된 '내 모둠'만 쓸 수 있음
+  if (!g) return { ok: false, error: 'not yours' };
   var sh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
   var cur = loadGroup_(sh, g);
   var f = cur.fields, inc = p.fields || {};
@@ -353,8 +367,8 @@ function saveGroup_(p) {
 }
 
 function getGroup_(p) {
-  var g = cleanGroup_(p.group);
-  if (!g) return { ok: false, error: 'group required' };
+  var g = studentGroup_(p);
+  if (!g) return { ok: false, error: 'not yours' };
   return { ok: true, fields: loadGroup_(sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS), g).fields };
 }
 
