@@ -265,7 +265,8 @@ async function ready(){collect();if(!data.code){toast('참여 코드를 입력�
 function collect(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!k)return;
  if(el.type==='radio'){if(el.checked)data[k]=el.value;}else if(el.type==='checkbox')data[k]=el.checked;else data[k]=el.value;});}
 const hhmm=()=>new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-const pending=()=>!!data._ipend||Object.keys(gdirty).length>0; // 저장하기를 누르지 않은 내용이 있는지(개인 검증·모둠 정리)
+const stagePending=n=>!!((data._pend&&data._pend[n])||(data._unsent&&data._unsent[n])); // n단계에 저장하기를 누르지 않은(또는 아직 서버에 못 올린) 내용이 있는지
+const pending=()=>SAVE_STAGES.some(stagePending)||Object.keys(gdirty).length>0; // 어느 단계든 저장 전 내용이 있는지
 function setBadge(s){$('saveBadge').textContent=data._submitted?'📤 제출 완료':pending()?'✏️ 저장 전 · 이 기기에만 임시 저장됨':s==='err'?'⚠️ 서버 저장 실패 · 다시 시도 중':s==='ok'?'☁️ 서버에 저장됨 '+hhmm():ONLINE?'☁️ 저장 중…':'💾 이 기기에 저장됨 '+hhmm();}
 function save(noSync){collect();localStorage.setItem(KEY,JSON.stringify(data));setBadge();if(ONLINE&&!noSync)queueSync();}
 /* ---- 서버 연동 ---- */
@@ -277,14 +278,20 @@ const DEV=(()=>{try{let d=localStorage.getItem(KEY+'_dev');if(!d){d=Math.random(
 async function api(action,payload,post){const body=Object.assign({action,class:CLASS_ID},payload||{});
  const r=post?await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}):await fetch(API_URL+'?'+new URLSearchParams(body));
  const j=await r.json();if(!j.ok)throw new Error(j.error||'api');return j;}
-let sTimer=null,gTimer=null,gdirty={},iSeq=0;
+let sTimer=null,gTimer=null,gdirty={},snapSeq=0;
 (data._gpend||[]).forEach(k=>{gdirty[k]={v:data[k]==null?'':data[k],t:(data._gt&&data._gt[k])||Date.now()};}); // 새로고침해도 저장 전인 모둠 기록을 이어서 저장할 수 있게 복원
 function queueSync(){clearTimeout(sTimer);sTimer=setTimeout(pushStudent,1500);}
+/* 개인 응답은 단계별로 따로 저장한다. 서버에는 '저장하기(또는 자동 저장)로 저장해 둔 값(_snap)'만 보내고, 아직 저장하지 않은 입력은 이 기기에만 남는다. */
+const stageKeys=sid=>{const ks=[],sec=document.querySelector('.stage[data-i="'+sid+'"]');if(sec)sec.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(k&&!ks.includes(k))ks.push(k);});return ks;};
+function snapStage(sid){collect();data._snap=data._snap||{};stageKeys(sid).forEach(k=>{data._snap[k]=data[k];});(data._pend=data._pend||{})[sid]=false;(data._unsent=data._unsent||{})[sid]=++snapSeq;}
+function serverData(){const d=Object.assign({},data),snap=data._snap||{};
+ SAVE_STAGES.forEach(sid=>stageKeys(sid).forEach(k=>{delete d[k];}));Object.assign(d,snap);
+ delete d._snap;delete d._pend;delete d._unsent;delete d._sv;delete d._ipend;return d;}
 async function pushStudent(){if(!ONLINE||!data.code||!data.group)return true;
- const seq=iSeq;
- try{await api('saveStudent',{code:data.code,group:+data.group,dev:DEV,data:data,submitted:!!data._submitted},true);
-  if(seq===iSeq){data._ipend=false;localStorage.setItem(KEY,JSON.stringify(data));}
-  showPending();if(!pending())setBadge('ok');return true;}
+ const sent=Object.assign({},data._unsent||{});
+ try{await api('saveStudent',{code:data.code,group:+data.group,dev:DEV,data:serverData(),submitted:!!data._submitted},true);
+  for(const k in sent)if(data._unsent&&data._unsent[k]===sent[k]){delete data._unsent[k];if(!data._sv||typeof data._sv!=='object')data._sv={};data._sv[k]=hhmm();} // 서버에 올라간 단계마다 저장 시각 기록(저장하기·자동 저장 모두)
+  localStorage.setItem(KEY,JSON.stringify(data));showPending();if(!pending())setBadge('ok');return true;}
  catch(e){setBadge('err');queueSync();return false;}}
 function markGroup(k){data._gt=data._gt||{};const t=Date.now();data._gt[k]=t;gdirty[k]={v:data[k]==null?'':data[k],t};data._gpend=Object.keys(gdirty);} // 저장하기를 누를 때까지 서버로 보내지 않음
 async function pushGroup(){clearTimeout(gTimer);if(!ONLINE||!data.group||!Object.keys(gdirty).length)return true;
@@ -295,21 +302,21 @@ async function pushGroup(){clearTimeout(gTimer);if(!ONLINE||!data.group||!Object
  catch(e){for(const k in f)if(!gdirty[k])gdirty[k]=f[k];showPending();gTimer=setTimeout(pushGroup,5000);return false;}}
 /* ---- 저장하기 버튼: 개인 검증(단계 3)·모둠 정리(단계 7)는 다 쓴 뒤 버튼을 눌러야 서버에 저장 ---- */
 const SAVE_STAGES=[1,3,4,5]; // 학생이 직접 응답을 쓰는 단계(저장하기 버튼이 있는 단계). 7(모둠 정리)은 기록자 전용 별도 저장
-function showPending(){const pI=!!data._ipend,p7=Object.keys(gdirty).length>0,t7=$('saveState7');
- SAVE_STAGES.forEach(n=>{const t=$('saveState'+n);if(t)t.textContent=pI?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요.':data._sv?'✅ 저장했어요 ('+data._sv+')':'다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)';});
+function showPending(){const p7=Object.keys(gdirty).length>0,t7=$('saveState7'),sv=(data._sv&&typeof data._sv==='object')?data._sv:{};
+ SAVE_STAGES.forEach(n=>{const t=$('saveState'+n);if(t)t.textContent=stagePending(n)?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요.':sv[n]?'✅ 저장했어요 ('+sv[n]+')':'다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)';});
  if(t7)t7.textContent=p7?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요. (저장해야 다른 모둠원 화면에 보여요)':data._sv7?'✅ 저장했어요 ('+data._sv7+')':'기록자만 저장할 수 있어요. 저장하면 다른 모둠원 화면에 보여요.';
  if(pending())setBadge();}
 async function saveActivity(n){collect();
  if(!ONLINE){toast('서버에 연결되지 않아 이 기기에만 저장돼요');return;}
  if(!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
  let ok;
- if(n!==7){ok=await pushStudent();if(ok)data._sv=hhmm();} // 개인 응답은 한 번에 함께 저장됨
+ if(n!==7){snapStage(n);ok=await pushStudent();if(ok){if(!data._sv||typeof data._sv!=='object')data._sv={};data._sv[n]=hhmm();}} // 이 단계에서 쓴 것만 저장(다른 단계의 저장 전 내용은 그대로 이 기기에만 남음)
  else{if(REC!==data.code){toast('기록자만 저장할 수 있어요');return;}ok=await pushGroup();if(ok&&!Object.keys(gdirty).length)data._sv7=hhmm();}
  localStorage.setItem(KEY,JSON.stringify(data));showPending();
  toast(ok?'저장했어요 ✅':'저장하지 못했어요. 네트워크를 확인하고 다시 눌러 주세요');}
 function autoSaveLeaving(){ // 저장하기를 누르지 않고 이 단계를 떠나도 쓴 내용이 사라지지 않게 자동 저장(개인 기록은 이어서 go()의 save()가 서버로 보냄)
  if(cur===7&&Object.keys(gdirty).length){pushGroup();toast('저장하지 않은 내용을 자동으로 저장했어요');}
- else if(SAVE_STAGES.includes(cur)&&data._ipend)toast('저장하지 않은 내용을 자동으로 저장했어요');}
+ else if(SAVE_STAGES.includes(cur)&&stagePending(cur)){snapStage(cur);toast('저장하지 않은 내용을 자동으로 저장했어요');}} // 떠나는 단계만 저장해 두고, 이어서 go()의 save()가 서버로 보냄
 /* 기록자: 한 명이 맡으면 나머지 모둠원은 모둠 기록 칸을 읽기만 할 수 있다(서버도 다른 사람의 쓰기를 무시) */
 const REC_INPUTS='#g_reason,#g_rewrite,#g_speaker,input[name="g_verdict"]';
 function renderRec(){const box=$('recBox');if(!box)return;const me=!!REC&&REC===data.code;
@@ -353,6 +360,7 @@ async function submitAll(){collect();const miss=[];
  if(!data.post)miss.push('지금의 판단');if(!data.reflect)miss.push('정리');
  if(miss.length&&!locked()){toast('아직 비어 있어요: '+miss.join(', '));return;} // 교사가 단계를 고정한 동안은 되돌아가 채울 수 없으니 막지 않고 제출(교사 화면에 '작성 없음'으로 보임)
  const prev=data._submitted;data._submitted=new Date().toLocaleTimeString('ko-KR');
+ SAVE_STAGES.forEach(snapStage); // 제출은 모든 단계의 응답을 저장
  if(ONLINE){toast('제출 중…');await pushGroup();
   if(!await pushStudent()){data._submitted=prev;localStorage.setItem(KEY,JSON.stringify(data));setBadge('err');toast('서버에 저장하지 못했어요. 네트워크를 확인하고 다시 눌러 주세요');return;}}
  save();if(locked()||!step(1))toast('제출 완료! 수고했어요 👏');}
@@ -368,7 +376,7 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTi
 buildStatic();restore();go(cur);syncStage();
 function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();
  const sec=e.target.closest?e.target.closest('.stage'):null,sid=sec?+sec.dataset.i:-1;
- if(SAVE_STAGES.includes(sid)){iSeq++;data._ipend=true;save(true);renderGroup();return;} // 학생이 응답을 쓰는 칸: 이 기기에는 바로 임시 저장, 서버에는 저장하기를 눌러야 보냄(준비 단계의 코드·모둠은 '준비 완료'로 처리)
+ if(SAVE_STAGES.includes(sid)){(data._pend=data._pend||{})[sid]=true;save(true);renderGroup();return;} // 학생이 응답을 쓰는 칸: 이 기기에는 바로 임시 저장, 서버에는 저장하기를 눌러야 보냄(준비 단계의 코드·모둠은 '준비 완료'로 처리)
  if(GROUP_FIELDS.includes(k)){collect();if(ONLINE)markGroup(k);save(true);renderGroup();return;} // 모둠 정리 칸도 마찬가지
  save();renderGroup();}
 document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
