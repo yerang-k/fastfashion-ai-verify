@@ -103,7 +103,7 @@ function findRow_(sh, keyCol, key) {
   var last = sh.getLastRow();
   if (last < 2) return -1;
   var vals = sh.getRange(2, keyCol, last - 1, 1).getValues();
-  for (var i = 0; i < vals.length; i++) if (String(vals[i][0]) === String(key)) return i + 2;
+  for (var i = 0; i < vals.length; i++) { var v = vals[i][0]; if ((v instanceof Date ? v.toISOString() : String(v)) === String(key)) return i + 2; }
   return -1;
 }
 
@@ -189,7 +189,11 @@ function getLesson_(p) {
   var row = dev ? findRow_(sh, 3, dev) : -1;
   if (row < 0 && code) row = findRow_(sh, 1, code);
   var effCode = code, grp = 0;
-  if (row > 0) { effCode = String(sh.getRange(row, 1).getValue()); grp = parseInt(sh.getRange(row, 2).getValue(), 10) || 0; }
+  if (row > 0) {
+    var cv = sh.getRange(row, 1).getValue();
+    if (cv instanceof Date) row = -1; // 날짜로 변질된 옛 행은 무시(교사 화면에서 삭제)
+    else { effCode = String(cv); grp = parseInt(sh.getRange(row, 2).getValue(), 10) || 0; }
+  }
   var rg = effCode ? (rosterMap_()[effCode] || 0) : 0;
   if (rg) grp = rg;
   var me = (row > 0 || rg) ? { code: effCode, group: grp } : null;
