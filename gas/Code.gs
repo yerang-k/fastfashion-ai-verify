@@ -74,13 +74,20 @@ function out_(obj) {
 }
 
 /* ---------- 시트 도우미 ---------- */
+var TEXT_FMT_DONE_ = {};
 function sheet_(name, head) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(name);
   if (!sh) {
+    // 코드 열을 먼저 텍스트로 고정해야 '2-3-07' 같은 코드가 날짜로 바뀌지 않는다
     sh = ss.insertSheet(name);
+    if (/^(학생응답|명단)/.test(name)) sh.getRange('A:A').setNumberFormat('@');
     sh.appendRow(head);
     sh.setFrozenRows(1);
+    TEXT_FMT_DONE_[name] = true;
+  } else if (/^(학생응답|명단)/.test(name) && !TEXT_FMT_DONE_[name]) {
+    sh.getRange('A:A').setNumberFormat('@'); // 이미 있는 시트도 코드 열을 텍스트로(이후 입력분부터 적용)
+    TEXT_FMT_DONE_[name] = true;
   }
   return sh;
 }
