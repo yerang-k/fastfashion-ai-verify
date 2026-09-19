@@ -35,6 +35,7 @@ function doPost(e) {
 }
 
 var READ_ACTIONS_ = { getStudent: 1, getLesson: 1, getGroup: 1, getShare: 1, teacherAll: 1 };
+var STUDENT_ACTIONS_ = { saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getShare: 1 };
 var CLASS_ = ''; // 이번 요청의 반(기본 반은 빈 문자열)
 function cleanClass_(c) { return String(c || '').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20); }
 function sn_(name) { return CLASS_ ? name + '_' + CLASS_ : name; } // 반별 시트 이름
@@ -42,6 +43,8 @@ function ck_(key) { return CLASS_ ? key + '__' + CLASS_ : key; } // 반별 설�
 
 function handle_(p) {
   CLASS_ = cleanClass_(p['class']);
+  // 학생 쪽 요청은 교사가 만든 반에만 허용(주소에 아무 반 이름이나 붙여 시트가 계속 생기는 것을 막음). 반은 교사 화면(PIN)에서만 만들어짐
+  if (CLASS_ && STUDENT_ACTIONS_[p.action] && !SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sn_(SHEET_STUDENTS))) return out_({ ok: false, error: 'no class' });
   var lock = null;
   try {
     // 읽기만 하는 요청은 줄을 세우지 않고 바로 처리한다(학생 수만큼 쌓여 느려지는 것을 방지). 쓰기만 잠금.
@@ -61,6 +64,7 @@ function handle_(p) {
       case 'getShare': return out_(getShare_());
       case 'teacherAll': return out_(teacherAll_(p));
       case 'setShare': return out_(setShare_(p));
+      case 'setClock': return out_(setClock_(p));
       case 'helpClear': return out_(helpClear_(p));
       default: return out_({ ok: false, error: 'unknown action' });
     }
@@ -162,6 +166,8 @@ function saveStudent_(p) {
   var dev = String(p.dev || '');
   var rowC = findRow_(sh, 1, code);
   var rowD = dev ? findRow_(sh, 3, dev) : -1; // 같은 기기가 코드를 고친 경우 → 이름만 바꿈
+  // '명단만 입장'이 켜져 있으면 서버도 막는다(화면의 확인을 우회해 직접 요청을 보내도 명단 밖 코드는 저장되지 않음)
+  if (!rg && rowC < 0 && (lessonGet_() || {}).rosterOnly) return { ok: false, error: 'not in roster' };
   var row = rowC > 0 ? rowC : rowD;
   var submittedAt = p.submitted ? now : '';
   if (row < 0) {
@@ -229,7 +235,7 @@ function getLesson_(p) {
 }
 
 function setLesson_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
   if (!p.lesson || typeof p.lesson !== 'object') return { ok: false, error: 'bad lesson' };
   var stored = lessonGet_() || {};
   var merged = {};
@@ -243,7 +249,7 @@ function setLesson_(p) {
 
 // 교사가 학생에게 보여 줄 '현재 단계'를 지정한다(단계 id 0~6). 비우면(null) 학생이 자유롭게 이동한다.
 function setStage_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var l = lessonGet_() || {};
   var n = parseInt(p.stage, 10);
   if (p.stage === null || p.stage === '' || p.stage === undefined) l.current = null;
@@ -255,7 +261,7 @@ function setStage_(p) {
 
 /* ---------- 명단 · 학생 관리 (교사) ---------- */
 function setRoster_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var list = (p.list || []).slice(0, 500), map = {}, order = [];
   list.forEach(function (r) {
     var c = cleanCode_(r.code), g = cleanGroup_(r.group);
@@ -281,7 +287,7 @@ function setRoster_(p) {
 }
 
 function updateStudent_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var code = cleanCode_(p.code);
   var newCode = cleanCode_(p.newCode) || code;
   var g = p.group == null || p.group === '' ? 0 : cleanGroup_(p.group);
@@ -298,7 +304,7 @@ function updateStudent_(p) {
 }
 
 function deleteStudent_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var code = cleanCode_(p.code);
   var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(ssh, 1, code);
@@ -373,18 +379,31 @@ function getShare_() {
 }
 
 /* ---------- 교사 (PIN 필요) ---------- */
-function pinOk_(pin) {
+// 틀린 횟수는 '요청한 사람(p.cid = 그 기기가 만든 임의 번호)'마다 따로 센다. 학생이 틀려도 그 학생만 10분 잠기고 교사는 영향 없음.
+// 다만 cid는 요청자가 마음대로 바꿀 수 있어서, 전체 실패가 10분에 100번을 넘으면(누가 cid를 바꿔 가며 PIN을 찍는 상황)
+// 이미 PIN으로 로그인한 적 있는 기기(6시간 유지)만 통과시킨다 → 수업 전에 교사 화면·무대 화면 기기를 모두 한 번씩 로그인해 둘 것.
+function pinOk_(p) {
   var cache = CacheService.getScriptCache();
-  var fails = parseInt(cache.get('pinfail') || '0', 10);
-  if (fails >= 10) return false; // 10회 실패 시 10분간 잠금
+  var cid = String(p.cid || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 40) || 'anon';
+  var kc = 'pinfail:c:' + cid, kt = 'pintrust:' + cid, kg = 'pinfail:all';
+  var fails = parseInt(cache.get(kc) || '0', 10);
+  if (fails >= 10) return false; // 이 기기는 10분간 잠금
+  var trusted = cache.get(kt) !== null;
+  var all = parseInt(cache.get(kg) || '0', 10);
+  if (all >= 100 && !trusted) return false;
   var real = PropertiesService.getScriptProperties().getProperty('TEACHER_PIN');
-  if (real && String(pin) === String(real)) return true;
-  cache.put('pinfail', String(fails + 1), 600);
+  if (real && String(p.pin) === String(real)) {
+    if (fails) cache.remove(kc);
+    if (!trusted) cache.put(kt, '1', 21600);
+    return true;
+  }
+  cache.put(kc, String(fails + 1), 600);
+  cache.put(kg, String(all + 1), 600);
   return false;
 }
 
 function teacherAll_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var last = sh.getLastRow();
   var students = [];
@@ -401,7 +420,7 @@ function teacherAll_(p) {
   var groups = {};
   for (var g = 1; g <= MAXG; g++) { var gf = loadGroup_(gsh, g).fields; if (Object.keys(gf).length) groups[g] = gf; }
   var rm = rosterMap_(), roster = Object.keys(rm).map(function (c) { return { code: c, group: rm[c] }; });
-  return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_ };
+  return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_, clock: parseInt(cfgGet_('clock') || '0', 10) || 0, now: Date.now() };
 }
 
 // 만들어진 반 목록('학생응답' 시트 기준). 기본 반은 빈 문자열.
@@ -416,14 +435,21 @@ function classList_() {
 
 function toMs_(v) { return v instanceof Date ? v.getTime() : 0; }
 
+// 수업 시계: 시작한 시각(서버 시각, ms)을 반별로 저장. 여러 기기(조작용·무대용)가 같은 시계를 보게 하고 새로고침해도 이어짐. 시간이 흘러도 단계에는 영향 없음
+function setClock_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  cfgSet_('clock', p.on ? String(Date.now()) : '');
+  return { ok: true };
+}
+
 function setShare_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
   cfgSet_('shareOpen', p.open ? 'true' : 'false');
   return { ok: true, shareOpen: !!p.open };
 }
 
 function helpClear_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(sh, 1, cleanCode_(p.code));
   if (row > 0) sh.getRange(row, 6).setValue('');

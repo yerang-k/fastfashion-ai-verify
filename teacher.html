@@ -113,7 +113,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
    <div class="phrow">
     <button class="btn small ghost" id="prevBtn" onclick="stepStage(-1)">◀ 이전 단계</button><button class="btn small" id="nextBtn" onclick="stepStage(1)">다음 단계 ▶</button>
     <span class="timer" id="timer" style="font-size:1.8rem">00:00</span>
-    <button class="btn small ghost" id="stageTimerBtn" onclick="startStageTimer()">이 단계 타이머</button> <button class="btn small ghost" onclick="startTimer(120)">2분</button><button class="btn small ghost" onclick="startTimer(300)">5분</button><button class="btn small ghost" onclick="startTimer(600)">10분</button> <button class="btn small ghost" onclick="stopTimer()">정지</button>
+    <span class="small" id="clockInfo"></span> <button class="btn small ghost" id="clockBtn" onclick="toggleClock()">▶ 수업 시작</button>
    </div>
    <div class="phrow"><span class="small" id="flowInfo"></span></div>
    <div class="phrow"><button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
@@ -158,8 +158,10 @@ const hms=t=>t?new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-
 const CLN=()=>claimsOf(LS);
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
 
+// 이 기기의 임의 번호: 서버가 PIN 실패 횟수를 '사람(기기)별'로 따로 세는 데 씀(학생이 틀려도 교사 기기는 잠기지 않음)
+const CID=(()=>{try{let c=localStorage.getItem('aiverify_teacher_cid');if(!c){c=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('aiverify_teacher_cid',c);}return c;}catch(e){return 'x'+Math.random().toString(36).slice(2);}})();
 async function api(action,payload){
- const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,pin,class:CLASS_ID},payload||{}))});
+ const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,pin,cid:CID,class:CLASS_ID},payload||{}))});
  return r.json();
 }
 async function login(){
@@ -173,7 +175,7 @@ async function login(){
 }
 const typing=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
 async function refresh(force){
- const r=await api('teacherAll');if(!r.ok)return false;DB=r;LS=normLesson(r.lesson);if(holdStage&&Date.now()<holdStage.until)LS.current=holdStage.id;else holdStage=null;
+ const r=await api('teacherAll');if(!r.ok)return false;DB=r;LS=normLesson(r.lesson);CLOCK=r.clock||0;OFFSET=r.now?r.now-Date.now():0;if(holdStage&&Date.now()<holdStage.until)LS.current=holdStage.id;else holdStage=null;
  $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
  if(force||!dirty){if(force||!typing(document.activeElement)||!$('settings').contains(document.activeElement)){DR=clone(LS);dirty=false;renderSettings();}}
  renderClasses();renderControl();renderStageView();
@@ -204,7 +206,6 @@ function renderControl(){
  $('pchips').innerHTML=vs.map((s,p)=>`<button class="pchip ${cur===s.id?'on':''}" onclick="setStage(${s.id})">${p+1}. ${esc(s.name)} <span class="small" style="color:inherit;opacity:.7">${esc(s.time)}</span></button>`).join('')
   +`<button class="pchip free ${cur==null?'on':''}" onclick="setStage(null)">자유 이동</button>`;
  $('prevBtn').disabled=cur==null||pos<=0;$('nextBtn').disabled=cur==null||pos>=vs.length-1;
- $('stageTimerBtn').style.display=stageMinutes()?'':'none';$('stageTimerBtn').textContent='이 단계 타이머 '+stageMinutes()+'분';
  $('flowInfo').innerHTML=`<b>모둠 편성:</b> ${LS.groups.map(g=>`${g.n}모둠 ${g.size}명(주장 ${g.claim})`).join(' · ')}`;
 }
 let holdStage=null; // 방금 누른 단계를 서버 응답이 오기 전에도 화면에 유지
@@ -213,11 +214,9 @@ async function setStage(id){const prev=LS.current;holdStage={id,until:Date.now()
  if(r.ok){const s=LS.stages.find(x=>x.id===id);toast(id==null?'학생이 자유롭게 이동할 수 있어요':`학생 화면을 「${s?s.name:''}」 단계로 넘겼어요`);refresh();}
  else{holdStage=null;LS.current=prev;renderControl();renderStageView();toast('바꾸지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}}
 function stepStage(d){const vs=visStages(LS),pos=vs.findIndex(s=>s.id===LS.current),t=vs[pos+d];if(t)setStage(t.id);}
-function stageMinutes(){const s=LS.stages.find(x=>x.id===LS.current);const m=s&&String(s.time).match(/(\d+)\s*분/);return m?+m[1]:0;}
-function startStageTimer(){const m=stageMinutes();if(m)startTimer(m*60);}
 
 /* ---- 무대 화면(프로젝터용): 큰 글씨로 현재 단계·타이머·참여 현황 ---- */
-function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}catch(e){}}
+function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
  else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
 function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
  const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${esc(v||'미판정')}</span>`;
@@ -229,18 +228,16 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
  if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>신뢰할 수 있는 자료와 일치</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>맞지만 조건·범위 설명이 빠짐</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>출처를 찾을 수 없음</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>신뢰할 수 있는 자료와 어긋남</p></div></div></div>`;
  return '';
 }
-let TOTAL=0; // 지금 돌고 있는 타이머의 전체 시간(초)
 function renderStageView(){
  if(!DB)return;const vs=visStages(LS),cur=LS.current,pos=vs.findIndex(s=>s.id===cur),st=vs[pos],S=DB.students,help=S.filter(x=>x.helpAt).length,g=st&&STAGE_GUIDE[st.id];
- const pct=TOTAL?Math.max(0,Math.min(100,Math.round(left/TOTAL*100))):0;
  $('stageView').innerHTML=`<div class="sv-top"><span>AI 답변, 믿어도 될까? · ${esc(clsLabel(CLASS_ID))}</span><span>${esc(location.host)}</span></div>
   <div class="sv-main"><div>${st?`<div class="sv-no">지금은 ${pos+1} / ${vs.length} 단계</div><div class="sv-name">${esc(st.name)}</div>${g?`<div class="sv-todo">${esc(g.todo)}</div>`:''}`:`<div class="sv-name">자유 진행</div><div class="sv-todo">학생이 자유롭게 이동할 수 있어요</div>`}</div>
-   <div class="sv-clock"><div class="sv-timer" id="stageTimer">${$('timer').textContent}</div><div class="sv-time">${st?'권장 '+esc(st.time):''}</div><div class="sv-bar"><i id="stageBar" style="width:${pct}%"></i></div></div></div>
+   <div class="sv-clock"><div class="sv-timer" id="stageTimer">${fmt(elapsed())}</div><div class="sv-time" id="svTime">${esc(clockText(st))}</div><div class="sv-bar"><i id="stageBar" style="width:${clockPct()}%"></i></div></div></div>
   ${g?`<div class="sv-points">${g.points.map(p=>`<div>${esc(p)}</div>`).join('')}</div>`:''}
   ${st?svPanel(st.id):''}
   <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
   <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div>${help?`<div><b>${help}</b>도움 요청</div>`:''}</div>
-  <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
+  <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="toggleClock()">${CLOCK?'시계 초기화':'▶ 수업 시작'}</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
 }
 
 /* ---- 현황 ---- */
@@ -275,6 +272,11 @@ async function delRow(i){const r=ROWS[i];if(!confirm(`${r.code} 학생의 응답
 
 /* ---- 결과 정리 (마무리 단계용) ---- */
 function bars(rows,total){return rows.map(([l,n])=>`<div class="bar"><div class="l">${esc(l)}</div><div class="t"><div class="f" style="width:${total?Math.round(n/total*100):0}%"></div></div><div class="n">${n}명 (${total?Math.round(n/total*100):0}%)</div></div>`).join('');}
+// 모둠 기록지는 화면상 '나중에 쓴 사람 것'이 공유되지만, 학생 각자가 직접 쓴 값은 각자의 응답(_mine)에 모두 남아 있다
+const mineOf=s=>(s.data&&s.data._mine)||{};
+function memberAnswers(g){const ms=DB.students.filter(s=>+s.group===g&&Object.keys(mineOf(s)).length);if(!ms.length)return '';
+ return `<details><summary>모둠원별 작성 내용 (${ms.length}명)</summary>`+ms.map((s,i)=>{const m=mineOf(s),d=k=>esc(m[k])||'-';
+  return `<div class="quote"><b>모둠원 ${i+1}</b> · 판정 ${vBadge(m.g_verdict)}<br><b>근거:</b> ${d('g_reason')}<br><b>보고서용 문장:</b> ${d('g_rewrite')}<br><b>출처·정확성·신뢰성:</b> ${d('g_src')} / ${d('g_acc')} / ${d('g_rel')}</div>`;}).join('')+`</details>`;}
 function renderResults(){
  const S=DB.students,done=S.filter(submitted);
  let h=`<div class="card nopresent"><button class="btn" onclick="document.body.classList.add('present');window.scrollTo(0,0)">🖥 발표 화면으로 보기</button> <span class="small">(Esc 로 돌아옵니다) · 아래 결과는 제출한 ${done.length}명 기준이며, 학생 코드는 표시하지 않아요.</span></div>`;
@@ -283,7 +285,7 @@ function renderResults(){
   h+=`<div class="claim"><div><b>${esc(c.n)}.</b> ${esc(c.t)}</div><div style="margin:4px 0">${g}모둠 판정: ${vBadge(v('g_verdict'))}</div>
    <div class="quote"><b>근거:</b> ${esc(v('g_reason'))||'<span class="small">(작성 없음)</span>'}</div>
    <div class="quote"><b>보고서용 문장:</b> ${esc(v('g_rewrite'))||'<span class="small">(작성 없음)</span>'}</div>
-   <details><summary>출처·정확성·신뢰성 기록 보기</summary><div class="quote"><b>출처:</b> ${esc(v('g_src'))}</div><div class="quote"><b>정확성:</b> ${esc(v('g_acc'))}</div><div class="quote"><b>신뢰성:</b> ${esc(v('g_rel'))}</div></details></div>`;});
+   <details><summary>출처·정확성·신뢰성 기록 보기</summary><div class="quote"><b>출처:</b> ${esc(v('g_src'))}</div><div class="quote"><b>정확성:</b> ${esc(v('g_acc'))}</div><div class="quote"><b>신뢰성:</b> ${esc(v('g_rel'))}</div></details>${memberAnswers(g)}</div>`;});
  h+=`</div>`;
  h+=`<div class="card"><h2>② 처음 판단과 지금 판단</h2><div class="grid2"><div><h3>처음 (2단계)</h3>${bars(PRE.map(o=>[o,done.filter(s=>s.data.pre===o).length]),done.length)}</div><div><h3>지금 (6단계)</h3>${bars(POST.map(o=>[o,done.filter(s=>s.data.post===o).length]),done.length)}</div></div>
   <h3>판단의 이동 (행: 처음 → 열: 지금)</h3><table><tr><th></th>${POST.map(o=>`<th>${esc(o)}</th>`).join('')}</tr>${PRE.map(p=>`<tr><th>${esc(p)}</th>${POST.map(q=>`<td>${done.filter(s=>s.data.pre===p&&s.data.post===q).length}명</td>`).join('')}</tr>`).join('')}</table></div>`;
@@ -293,7 +295,9 @@ function renderResults(){
   <div class="card"><h2>⑤ 전체 토의 · 피드백</h2><details><summary>전체 토의 답변 보기</summary>${list('discuss')}</details><details><summary>친구 모둠에 대한 피드백 보기</summary>${list('feedback')}</details></div>`;
  $('results').innerHTML=h;
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.body.classList.remove('present');document.body.classList.remove('stagemode-on');}});
+// Esc는 발표용 결과 보기만 닫는다. 무대 화면은 브라우저 전체화면이 실제로 풀릴 때만(또는 '나가기' 버튼) 닫혀서, 실수로 누른 키 하나에 교사용 화면이 프로젝터에 뜨지 않음
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.body.classList.remove('present');});
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)document.body.classList.remove('stagemode-on');});
 
 /* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
 const mark=()=>{dirty=true;};
@@ -382,8 +386,8 @@ const csvCell=v=>{v=String(v==null?'':v);if(/^[=+\-@]/.test(v))v="'"+v;return '"
 const csv=rows=>'﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
 function exportCSV(kind){
  if(kind==='students'){
-  const head=['코드','모둠','제출시각','처음 판단','처음 이유','지금 판단','다짐(확인 절차)','전체 토의','피드백',...SELF.map((_,i)=>'자기평가'+(i+1))];
-  const rows=DB.students.map(s=>{const d=s.data;return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':'')];});
+  const head=['코드','모둠','제출시각','처음 판단','처음 이유','지금 판단','다짐(확인 절차)','전체 토의','피드백',...SELF.map((_,i)=>'자기평가'+(i+1)),'개인 판정','개인 근거','개인 보고서용 문장','개인 출처','개인 정확성','개인 신뢰성'];
+  const rows=DB.students.map(s=>{const d=s.data,m=mineOf(s);return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':''),m.g_verdict,m.g_reason,m.g_rewrite,m.g_src,m.g_acc,m.g_rel];});
   download('학생응답.csv',csv([head,...rows]),'text/csv;charset=utf-8');
  }else{
   const K=[['g_verdict','판정'],['g_reason','근거 한 문장'],['g_rewrite','보고서용 문장'],['g_src','출처'],['g_acc','정확성'],['g_rel','신뢰성'],['g_speaker','발표자'],['g_recorder','기록자']];
@@ -394,8 +398,28 @@ function exportCSV(kind){
 function exportJSON(){download('ai-verify-전체.json',JSON.stringify(DB,null,2),'application/json');}
 
 /* ---- 타이머 ---- */
-let tm=null,left=0;function startTimer(s){left=s;TOTAL=s;clearInterval(tm);tick();tm=setInterval(tick,1000);}function stopTimer(){clearInterval(tm);}
-function tick(){const t=$('timer');t.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');const txt=t.textContent,sv=$('stageTimer'),sb=$('stageBar');if(sv)sv.textContent=txt;if(sb&&TOTAL)sb.style.width=Math.max(0,Math.round(left/TOTAL*100))+'%';t.style.fontWeight=left<=30?'900':'';t.style.color=left<=30?'#a8875a':'';if(left<=0){clearInterval(tm);toast('시간이 끝났어요 ⏰');}left--;}
+/* ---- 수업 시계: '수업 시작'을 누른 순간부터 끝까지 흘러가는 시간. 표시·확인용일 뿐, 단계를 막거나 넘기지 않음 ---- */
+let CLOCK=0,OFFSET=0; // CLOCK=시작 시각(서버 ms, 0=아직 시작 전), OFFSET=서버 시계 − 이 기기 시계
+const fmt=s=>{s=Math.max(0,s);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
+const elapsed=()=>CLOCK?Math.max(0,Math.floor((Date.now()+OFFSET-CLOCK)/1000)):0;
+const totalSec=()=>visStages(LS).reduce((a,s)=>{const m=String(s.time).match(/(\d+)\s*분/);return a+(m?+m[1]:0);},0)*60;
+const clockPct=()=>totalSec()?Math.min(100,Math.round(elapsed()/totalSec()*100)):0;
+function clockText(st){const T=totalSec(),e=elapsed(),parts=[];
+ if(st)parts.push('이 단계 권장 '+st.time);
+ if(!CLOCK)parts.push("'수업 시작'을 누르면 시간이 흘러가요");
+ else if(T)parts.push(e<=T?'수업 '+Math.round(T/60)+'분 중 남은 '+fmt(T-e):fmt(e-T)+' 초과');
+ return parts.join(' · ');}
+async function toggleClock(){
+ if(CLOCK&&!confirm('수업 시계를 처음(00:00)으로 되돌릴까요?'))return;
+ const r=await api('setClock',{on:!CLOCK});
+ if(r.ok)await refresh();else toast('시계를 바꾸지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}
+function tick(){const t=$('timer');if(!t)return;const txt=fmt(elapsed()),T=totalSec(),over=CLOCK&&T&&elapsed()>T;
+ t.textContent=txt;t.style.color=over?'#a8875a':'';
+ $('clockBtn').textContent=CLOCK?'시계 초기화':'▶ 수업 시작';
+ $('clockInfo').textContent=clockText(null);
+ const sv=$('stageTimer'),sb=$('stageBar'),st=$('svTime');if(sv)sv.textContent=txt;if(sb)sb.style.width=clockPct()+'%';
+ if(st){const s=visStages(LS).find(x=>x.id===LS.current);st.textContent=clockText(s);}}
+setInterval(tick,1000);
 
 try{const p=sessionStorage.getItem(PIN_KEY);if(p&&API_URL){$('pin').value=p;login();}}catch(e){}
 </script></body></html>
