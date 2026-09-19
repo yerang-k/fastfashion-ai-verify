@@ -116,6 +116,7 @@ td select,td input{padding:6px;font-size:.9rem}
   <textarea id="i_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
   <p><b>보고서용으로 고쳐 쓴 문장</b> — 판정에 맞게 고치고 <b>출처와 조건</b>을 함께 쓰세요. 쓸 수 없다면 “이 문장은 인용하지 않는다”와 이유를 쓰세요.</p>
   <textarea id="i_rewrite" data-save style="min-height:110px" placeholder="예: … 로 추정된다(○○ 기관, 2019). 단, 산정 기준에 따라 …까지 차이가 있다."></textarea>
+  <div style="margin-top:16px;padding:12px 14px;border:1.5px solid var(--main);border-radius:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" onclick="saveActivity(3)">💾 저장하기</button> <span class="small" id="saveState3">다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)</span></div>
   <div class="nav"><button class="btn ghost" onclick="go(2)">이전</button><button class="btn" onclick="go(7)">다음</button></div>
  </section>
 
@@ -137,6 +138,7 @@ td select,td input{padding:6px;font-size:.9rem}
   <p><b>보고서용으로 고쳐 쓴 문장</b> (발표용) — 판정에 맞게 고치고 <b>출처와 조건</b>을 함께 쓰세요. 쓸 수 없다면 “이 문장은 인용하지 않는다”와 이유를 쓰세요.</p>
   <textarea id="g_rewrite" data-save style="min-height:110px" placeholder="예: … 로 추정된다(○○ 기관, 2019). 단, 산정 기준에 따라 …까지 차이가 있다."></textarea>
   <div class="role" style="margin-top:8px"><input type="text" data-save id="g_speaker" placeholder="발표자 코드"></div>
+  <div style="margin-top:16px;padding:12px 14px;border:1.5px solid var(--main);border-radius:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="saveBtn7" onclick="saveActivity(7)">💾 저장하기</button> <span class="small" id="saveState7"></span></div>
   <div class="nav"><button class="btn ghost" onclick="go(3)">이전</button><button class="btn" data-dir="1" onclick="go(4)">다음</button></div>
  </section>
 
@@ -217,7 +219,7 @@ function applyLesson(raw){
  if(data.group&&!LESSON.groups.some(g=>g.n===+data.group)){delete data.group;}
  buildStatic();restore();show(cur);syncStage();}
 function renderGroup(){
- renderRec();
+ renderRec();showPending();
  const g=+data.group||0;const c=claimOfGroup(LESSON,g);
  $('grpBadge').textContent='모둠: '+(g?g+'모둠':'-');
  document.querySelectorAll('.groups label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
@@ -239,7 +241,7 @@ function show(i){const o=order();if(!o.includes(i))i=o[0];cur=i;
  const bar=$('stageBar');bar.classList.toggle('show',locked());
  if(locked()){const st=LESSON.stages.find(x=>x.id===cur);bar.innerHTML=`선생님이 진행 중이에요 · 지금은 <b>${p+1}. ${st?st.name:''}</b> 단계 <span class="small">— 선생님이 다음으로 넘기면 화면이 자동으로 바뀌어요.</span>`;}
  $('mirrorPre').textContent=data.pre||'-';renderGroup();}
-function go(i){show(i);data._stage=cur;save();if(cur===4)pollShare();if(needGroup())pollGroup();window.scrollTo({top:0,behavior:'smooth'});}
+function go(i){if(i!==cur)autoSaveLeaving();show(i);data._stage=cur;save();if(cur===4)pollShare();if(needGroup())pollGroup();window.scrollTo({top:0,behavior:'smooth'});}
 function tryGo(id){if(locked())return;const p=order().indexOf(id);if(p<0)return;go(id);}
 function step(d){if(locked())return false;const o=order(),p=o.indexOf(cur),t=(p<0?0:p)+d;if(t<0||t>=o.length)return false;go(o[t]);return true;}
 /* 교사가 지정한 현재 단계를 따라감. 준비(코드·모둠 입력)를 마치지 않은 학생은 준비 단계에 머문다. */
@@ -260,8 +262,9 @@ async function ready(){collect();if(!data.code){toast('참여 코드를 입력�
 function collect(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!k)return;
  if(el.type==='radio'){if(el.checked)data[k]=el.value;}else if(el.type==='checkbox')data[k]=el.checked;else data[k]=el.value;});}
 const hhmm=()=>new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-function setBadge(s){$('saveBadge').textContent=data._submitted?'📤 제출 완료':s==='err'?'⚠️ 서버 저장 실패 · 다시 시도 중':s==='ok'?'☁️ 서버에 저장됨 '+hhmm():ONLINE?'☁️ 저장 중…':'💾 이 기기에 저장됨 '+hhmm();}
-function save(){collect();localStorage.setItem(KEY,JSON.stringify(data));setBadge();if(ONLINE)queueSync();}
+const pending=()=>!!data._ipend||Object.keys(gdirty).length>0; // 저장하기를 누르지 않은 내용이 있는지(개인 검증·모둠 정리)
+function setBadge(s){$('saveBadge').textContent=data._submitted?'📤 제출 완료':pending()?'✏️ 저장 전 · 이 기기에만 임시 저장됨':s==='err'?'⚠️ 서버 저장 실패 · 다시 시도 중':s==='ok'?'☁️ 서버에 저장됨 '+hhmm():ONLINE?'☁️ 저장 중…':'💾 이 기기에 저장됨 '+hhmm();}
+function save(noSync){collect();localStorage.setItem(KEY,JSON.stringify(data));setBadge();if(ONLINE&&!noSync)queueSync();}
 /* ---- 서버 연동 ---- */
 const GROUP_FIELDS=['g_verdict','g_reason','g_rewrite','g_speaker']; // 모둠이 발표할 내용(기록자만 입력). 개인 검증 칸은 i_ 로 시작하며 각자의 응답에만 저장됨
 const needGroup=()=>cur===7||cur===4; // 모둠 기록이 화면에 필요한 단계(모둠 정리·모둠 공유)
@@ -271,22 +274,42 @@ const DEV=(()=>{try{let d=localStorage.getItem(KEY+'_dev');if(!d){d=Math.random(
 async function api(action,payload,post){const body=Object.assign({action,class:CLASS_ID},payload||{});
  const r=post?await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}):await fetch(API_URL+'?'+new URLSearchParams(body));
  const j=await r.json();if(!j.ok)throw new Error(j.error||'api');return j;}
-let sTimer=null,gTimer=null,gdirty={};
+let sTimer=null,gTimer=null,gdirty={},iSeq=0;
+(data._gpend||[]).forEach(k=>{gdirty[k]={v:data[k]==null?'':data[k],t:(data._gt&&data._gt[k])||Date.now()};}); // 새로고침해도 저장 전인 모둠 기록을 이어서 저장할 수 있게 복원
 function queueSync(){clearTimeout(sTimer);sTimer=setTimeout(pushStudent,1500);}
 async function pushStudent(){if(!ONLINE||!data.code||!data.group)return true;
- try{await api('saveStudent',{code:data.code,group:+data.group,dev:DEV,data:data,submitted:!!data._submitted},true);setBadge('ok');return true;}
+ const seq=iSeq;
+ try{await api('saveStudent',{code:data.code,group:+data.group,dev:DEV,data:data,submitted:!!data._submitted},true);
+  if(seq===iSeq){data._ipend=false;localStorage.setItem(KEY,JSON.stringify(data));}
+  showPending();if(!pending())setBadge('ok');return true;}
  catch(e){setBadge('err');queueSync();return false;}}
-function markGroup(k){data._gt=data._gt||{};const t=Date.now();data._gt[k]=t;gdirty[k]={v:data[k]==null?'':data[k],t};clearTimeout(gTimer);gTimer=setTimeout(pushGroup,1000);}
+function markGroup(k){data._gt=data._gt||{};const t=Date.now();data._gt[k]=t;gdirty[k]={v:data[k]==null?'':data[k],t};data._gpend=Object.keys(gdirty);} // 저장하기를 누를 때까지 서버로 보내지 않음
 async function pushGroup(){clearTimeout(gTimer);if(!ONLINE||!data.group||!Object.keys(gdirty).length)return true;
  const f=gdirty;gdirty={};
  try{const r=await api('saveGroup',{group:+data.group,code:data.code,dev:DEV,fields:f},true);
   if(r.locked&&data._gt)for(const k in f)delete data._gt[k]; // 기록자가 따로 있어 내 입력이 반영되지 않았으면 화면을 모둠 기록으로 되돌림
-  applyGroup(r.fields);return true;}
- catch(e){for(const k in f)if(!gdirty[k])gdirty[k]=f[k];gTimer=setTimeout(pushGroup,5000);return false;}}
+  applyGroup(r.fields);data._gpend=Object.keys(gdirty);localStorage.setItem(KEY,JSON.stringify(data));showPending();if(!pending())setBadge('ok');return true;}
+ catch(e){for(const k in f)if(!gdirty[k])gdirty[k]=f[k];showPending();gTimer=setTimeout(pushGroup,5000);return false;}}
+/* ---- 저장하기 버튼: 개인 검증(단계 3)·모둠 정리(단계 7)는 다 쓴 뒤 버튼을 눌러야 서버에 저장 ---- */
+function showPending(){const p3=!!data._ipend,p7=Object.keys(gdirty).length>0,t3=$('saveState3'),t7=$('saveState7');
+ if(t3)t3.textContent=p3?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요.':data._sv3?'✅ 저장했어요 ('+data._sv3+')':'다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)';
+ if(t7)t7.textContent=p7?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요. (저장해야 다른 모둠원 화면에 보여요)':data._sv7?'✅ 저장했어요 ('+data._sv7+')':'기록자만 저장할 수 있어요. 저장하면 다른 모둠원 화면에 보여요.';
+ if(pending())setBadge();}
+async function saveActivity(n){collect();
+ if(!ONLINE){toast('서버에 연결되지 않아 이 기기에만 저장돼요');return;}
+ if(!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
+ let ok;
+ if(n===3){ok=await pushStudent();if(ok)data._sv3=hhmm();}
+ else{if(REC!==data.code){toast('기록자만 저장할 수 있어요');return;}ok=await pushGroup();if(ok&&!Object.keys(gdirty).length)data._sv7=hhmm();}
+ localStorage.setItem(KEY,JSON.stringify(data));showPending();
+ toast(ok?'저장했어요 ✅':'저장하지 못했어요. 네트워크를 확인하고 다시 눌러 주세요');}
+function autoSaveLeaving(){ // 저장하기를 누르지 않고 이 단계를 떠나도 쓴 내용이 사라지지 않게 자동 저장(개인 기록은 이어서 go()의 save()가 서버로 보냄)
+ if(cur===7&&Object.keys(gdirty).length){pushGroup();toast('저장하지 않은 내용을 자동으로 저장했어요');}
+ else if(cur===3&&data._ipend)toast('저장하지 않은 내용을 자동으로 저장했어요');}
 /* 기록자: 한 명이 맡으면 나머지 모둠원은 모둠 기록 칸을 읽기만 할 수 있다(서버도 다른 사람의 쓰기를 무시) */
 const REC_INPUTS='#g_reason,#g_rewrite,#g_speaker,input[name="g_verdict"]';
 function renderRec(){const box=$('recBox');if(!box)return;const me=!!REC&&REC===data.code;
- document.querySelectorAll(REC_INPUTS).forEach(e=>e.disabled=!me); // 기록자가 정해지기 전에는 아무도, 정해진 뒤에는 기록자만 입력할 수 있음
+ document.querySelectorAll(REC_INPUTS).forEach(e=>e.disabled=!me);const sb=$('saveBtn7');if(sb)sb.disabled=!me; // 기록자가 정해지기 전에는 아무도, 정해진 뒤에는 기록자만 입력할 수 있음
  box.innerHTML=me?`✍️ <b>내가 기록자예요.</b> 우리 모둠이 발표할 내용을 아래에 입력하세요. 다른 모둠원은 입력할 수 없어요. <button class="btn small ghost" onclick="recAct('release')">기록자 내려놓기</button>`
   :REC?`✍️ <b>기록자: ${escH(REC)}</b> — 발표할 내용은 기록자만 입력할 수 있어요. 나는 토의에 참여하고, 아래에 채워지는 내용을 확인해 주세요.`
   :`✍️ <b>먼저 기록자를 정해 주세요.</b> 기록자가 정해지기 전에는 아무도 입력할 수 없어요. 우리 모둠 기록자가 되었다면 <button class="btn small" onclick="recAct('claim')">내가 기록자예요</button> 를 누르세요.`;}
@@ -340,7 +363,9 @@ async function pollLesson(){if(!ONLINE||document.hidden)return;
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
 buildStatic();restore();go(cur);syncStage();
 function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();
- save();if(ONLINE&&GROUP_FIELDS.includes(k))markGroup(k);renderGroup();}
+ if(k&&k.indexOf('i_')===0){iSeq++;data._ipend=true;save(true);renderGroup();return;} // 개인 검증 칸: 이 기기에는 바로 임시 저장, 서버에는 저장하기를 눌러야 보냄
+ if(GROUP_FIELDS.includes(k)){collect();if(ONLINE)markGroup(k);save(true);renderGroup();return;} // 모둠 정리 칸도 마찬가지
+ save();renderGroup();}
 document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
 let polling=false; // 서버가 느릴 때 요청이 쌓이지 않게, 이전 조회가 끝나기 전이면 이번 차례는 건너뜀
 async function pollTick(){if(polling)return;polling=true;
