@@ -10,6 +10,10 @@
  *      실행 사용자: 나 / 액세스 권한: 모든 사용자
  * 5. 나온 웹 앱 URL(…/exec)을 config.js 의 API_URL 에 붙여 넣습니다.
  * ※ 이 파일을 수정한 뒤에는 '배포 관리 > 수정 > 새 버전'으로 다시 배포해야 반영됩니다.
+ *
+ * [반 구분] 학생·교사 주소 뒤에 ?class=1-3 처럼 붙이면 그 반의 응답·명단·수업 설정이 따로 저장됩니다.
+ *   - 반을 붙이지 않으면 '기본 반'으로, 예전 시트(학생응답·모둠기록지·명단)를 그대로 이어 씁니다.
+ *   - 반마다 시트 이름 뒤에 _반이름 이 붙습니다(예: 학생응답_1-3). 교사 PIN은 모든 반이 같습니다.
  */
 
 var SHEET_STUDENTS = '학생응답';
@@ -30,7 +34,13 @@ function doPost(e) {
   return handle_(p);
 }
 
+var CLASS_ = ''; // 이번 요청의 반(기본 반은 빈 문자열)
+function cleanClass_(c) { return String(c || '').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20); }
+function sn_(name) { return CLASS_ ? name + '_' + CLASS_ : name; } // 반별 시트 이름
+function ck_(key) { return CLASS_ ? key + '__' + CLASS_ : key; } // 반별 설정 키
+
 function handle_(p) {
+  CLASS_ = cleanClass_(p['class']);
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
@@ -39,8 +49,7 @@ function handle_(p) {
       case 'getStudent': return out_(getStudent_(p));
       case 'getLesson': return out_(getLesson_(p));
       case 'setLesson': return out_(setLesson_(p));
-      case 'setOpenTo': return out_(setOpenTo_(p));
-      case 'forceStage': return out_(forceStage_(p));
+      case 'setStage': return out_(setStage_(p));
       case 'setRoster': return out_(setRoster_(p));
       case 'updateStudent': return out_(updateStudent_(p));
       case 'deleteStudent': return out_(deleteStudent_(p));
@@ -89,18 +98,18 @@ function cleanGroup_(g) { g = parseInt(g, 10); return g >= 1 && g <= MAXG ? g : 
 
 /* ---------- 명단(교사가 등록한 코드→모둠) : 학생 모둠의 기준 ---------- */
 function rosterMap_() {
-  var sh = sheet_(SHEET_ROSTER, HEAD_ROSTER);
+  var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var last = sh.getLastRow(), m = {};
   if (last >= 2) sh.getRange(2, 1, last - 1, 2).getValues().forEach(function (r) { m[String(r[0])] = parseInt(r[1], 10) || 0; });
   return m;
 }
 function rosterUpsert_(code, group) {
-  var sh = sheet_(SHEET_ROSTER, HEAD_ROSTER);
+  var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var row = findRow_(sh, 1, code);
   if (row < 0) sh.appendRow([code, group]); else sh.getRange(row, 2).setValue(group);
 }
 function rosterDelete_(code) {
-  var sh = sheet_(SHEET_ROSTER, HEAD_ROSTER);
+  var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var row = findRow_(sh, 1, code);
   if (row > 0) sh.deleteRow(row);
 }
@@ -113,7 +122,7 @@ function saveStudent_(p) {
   if (rg) group = rg; // 명단(교사 지정)이 있으면 항상 그 모둠
   var json = JSON.stringify(p.data || {});
   if (json.length > MAX_JSON) return { ok: false, error: 'too large' };
-  var sh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS);
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var now = new Date();
   var dev = String(p.dev || '');
   var rowC = findRow_(sh, 1, code);
@@ -134,7 +143,7 @@ function saveStudent_(p) {
 // 코드 사용 여부와 명단 정보만 알려 준다(응답 내용은 돌려주지 않음).
 function getStudent_(p) {
   var code = cleanCode_(p.code);
-  var sh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS);
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(sh, 1, code);
   var rg = rosterMap_()[code] || 0;
   var lesson = lessonGet_() || {};
@@ -146,13 +155,13 @@ function getStudent_(p) {
 /* ---------- 수업 설정(교사가 저장, 학생이 주기적으로 읽음) ---------- */
 function cfgGet_(key) {
   var sh = sheet_(SHEET_CONFIG, ['key', 'value']);
-  var row = findRow_(sh, 1, key);
+  var row = findRow_(sh, 1, ck_(key));
   return row > 0 ? String(sh.getRange(row, 2).getValue()) : '';
 }
 function cfgSet_(key, val) {
   var sh = sheet_(SHEET_CONFIG, ['key', 'value']);
-  var row = findRow_(sh, 1, key);
-  if (row < 0) sh.appendRow([key, val]); else sh.getRange(row, 2).setValue(val);
+  var row = findRow_(sh, 1, ck_(key));
+  if (row < 0) sh.appendRow([ck_(key), val]); else sh.getRange(row, 2).setValue(val);
 }
 function lessonGet_() {
   var t = cfgGet_('lesson');
@@ -163,7 +172,7 @@ function lessonGet_() {
 // 학생용: 수업 설정 + 이 기기(또는 코드)가 배정받은 코드·모둠
 function getLesson_(p) {
   var lesson = lessonGet_();
-  var sh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS);
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var dev = String(p.dev || ''), code = cleanCode_(p.code);
   var row = dev ? findRow_(sh, 3, dev) : -1;
   if (row < 0 && code) row = findRow_(sh, 1, code);
@@ -181,35 +190,23 @@ function setLesson_(p) {
   var stored = lessonGet_() || {};
   var merged = {};
   for (var k in p.lesson) merged[k] = p.lesson[k];
-  merged.openTo = stored.openTo == null ? null : stored.openTo; // 진행 통제는 별도 버튼으로만 바뀜
-  merged.force = stored.force || null;
+  merged.current = 'current' in stored ? stored.current : 0; // 현재 단계는 단계 버튼으로만 바뀜
   var json = JSON.stringify(merged);
   if (json.length > MAX_JSON) return { ok: false, error: 'too large' };
   cfgSet_('lesson', json);
   return { ok: true };
 }
 
-function setOpenTo_(p) {
+// 교사가 학생에게 보여 줄 '현재 단계'를 지정한다(단계 id 0~6). 비우면(null) 학생이 자유롭게 이동한다.
+function setStage_(p) {
   if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
   var l = lessonGet_() || {};
-  var n = parseInt(p.openTo, 10);
-  l.openTo = (p.openTo === null || p.openTo === '' || isNaN(n)) ? null : n;
+  var n = parseInt(p.stage, 10);
+  if (p.stage === null || p.stage === '' || p.stage === undefined) l.current = null;
+  else if (isNaN(n) || n < 0 || n > 6) return { ok: false, error: 'bad stage' };
+  else l.current = n;
   cfgSet_('lesson', JSON.stringify(l));
-  return { ok: true, openTo: l.openTo };
-}
-
-// 모든 학생을 지정한 단계로 이동시키는 명령. seq 가 올라갈 때마다 학생 화면이 한 번씩 이동한다.
-// 이동할 단계가 잠겨 있으면 그 단계까지 함께 열어 준다(p.openTo = 보이는 단계 중 순번).
-function forceStage_(p) {
-  if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
-  var stage = parseInt(p.stage, 10);
-  if (isNaN(stage) || stage < 0 || stage > 6) return { ok: false, error: 'bad stage' };
-  var l = lessonGet_() || {};
-  l.force = { stage: stage, seq: ((l.force && l.force.seq) || 0) + 1 };
-  var pos = parseInt(p.openTo, 10);
-  if (!isNaN(pos) && l.openTo != null && l.openTo < pos) l.openTo = pos;
-  cfgSet_('lesson', JSON.stringify(l));
-  return { ok: true, force: l.force, openTo: l.openTo == null ? null : l.openTo };
+  return { ok: true, current: l.current };
 }
 
 /* ---------- 명단 · 학생 관리 (교사) ---------- */
@@ -220,7 +217,7 @@ function setRoster_(p) {
     var c = cleanCode_(r.code), g = cleanGroup_(r.group);
     if (c && g) { if (!(c in map)) order.push(c); map[c] = g; }
   });
-  var sh = sheet_(SHEET_ROSTER, HEAD_ROSTER);
+  var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var cur = p.mode === 'replace' ? {} : rosterMap_();
   var curOrder = p.mode === 'replace' ? [] : Object.keys(cur);
   order.forEach(function (c) { if (!(c in cur)) curOrder.push(c); cur[c] = map[c]; });
@@ -228,7 +225,7 @@ function setRoster_(p) {
   if (last >= 2) sh.getRange(2, 1, last - 1, 2).clearContent();
   if (curOrder.length) sh.getRange(2, 1, curOrder.length, 2).setValues(curOrder.map(function (c) { return [c, cur[c]]; }));
   // 이미 접속한 학생의 모둠도 명단에 맞춤
-  var ssh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS), sl = ssh.getLastRow();
+  var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS), sl = ssh.getLastRow();
   if (sl >= 2) {
     var rng = ssh.getRange(2, 1, sl - 1, 2), vals = rng.getValues(), ch = false;
     vals.forEach(function (r) { var g = map[String(r[0])]; if (g && r[1] !== g) { r[1] = g; ch = true; } });
@@ -242,7 +239,7 @@ function updateStudent_(p) {
   var code = cleanCode_(p.code);
   var newCode = cleanCode_(p.newCode) || code;
   var g = p.group == null || p.group === '' ? 0 : cleanGroup_(p.group);
-  var ssh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS);
+  var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(ssh, 1, code);
   var roster = rosterMap_();
   if (newCode !== code && (findRow_(ssh, 1, newCode) > 0 || roster[newCode])) return { ok: false, error: 'dup' };
@@ -257,7 +254,7 @@ function updateStudent_(p) {
 function deleteStudent_(p) {
   if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
   var code = cleanCode_(p.code);
-  var ssh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS);
+  var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(ssh, 1, code);
   if (row > 0) ssh.deleteRow(row);
   rosterDelete_(code);
@@ -266,7 +263,7 @@ function deleteStudent_(p) {
 
 function help_(p) {
   var code = cleanCode_(p.code);
-  var sh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS);
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(sh, 1, code);
   if (row < 0) return { ok: false, error: 'no student' };
   sh.getRange(row, 6).setValue(new Date());
@@ -288,7 +285,7 @@ var GROUP_FIELDS = ['g_src', 'g_acc', 'g_rel', 'g_verdict', 'g_reason', 'g_rewri
 function saveGroup_(p) {
   var g = cleanGroup_(p.group);
   if (!g) return { ok: false, error: 'group required' };
-  var sh = sheet_(SHEET_GROUPS, HEAD_GROUPS);
+  var sh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
   var cur = loadGroup_(sh, g);
   var f = cur.fields, inc = p.fields || {};
   GROUP_FIELDS.forEach(function (k) {
@@ -306,19 +303,15 @@ function saveGroup_(p) {
 function getGroup_(p) {
   var g = cleanGroup_(p.group);
   if (!g) return { ok: false, error: 'group required' };
-  return { ok: true, fields: loadGroup_(sheet_(SHEET_GROUPS, HEAD_GROUPS), g).fields };
+  return { ok: true, fields: loadGroup_(sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS), g).fields };
 }
 
 /* ---------- 설정: 모둠 공유 공개 ---------- */
-function getConfig_() {
-  var sh = sheet_(SHEET_CONFIG, ['key', 'value']);
-  var row = findRow_(sh, 1, 'shareOpen');
-  return { shareOpen: row > 0 && String(sh.getRange(row, 2).getValue()) === 'true' };
-}
+function getConfig_() { return { shareOpen: cfgGet_('shareOpen') === 'true' }; }
 
 function getShare_() {
   if (!getConfig_().shareOpen) return { ok: true, open: false, groups: {} };
-  var sh = sheet_(SHEET_GROUPS, HEAD_GROUPS);
+  var sh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
   var groups = {};
   for (var g = 1; g <= MAXG; g++) {
     var f = loadGroup_(sh, g).fields;
@@ -346,7 +339,7 @@ function pinOk_(pin) {
 
 function teacherAll_(p) {
   if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
-  var sh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS);
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var last = sh.getLastRow();
   var students = [];
   if (last >= 2) {
@@ -358,27 +351,34 @@ function teacherAll_(p) {
       });
     });
   }
-  var gsh = sheet_(SHEET_GROUPS, HEAD_GROUPS);
+  var gsh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
   var groups = {};
   for (var g = 1; g <= MAXG; g++) { var gf = loadGroup_(gsh, g).fields; if (Object.keys(gf).length) groups[g] = gf; }
   var rm = rosterMap_(), roster = Object.keys(rm).map(function (c) { return { code: c, group: rm[c] }; });
-  return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster };
+  return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_ };
+}
+
+// 만들어진 반 목록('학생응답' 시트 기준). 기본 반은 빈 문자열.
+function classList_() {
+  var out = [];
+  SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(function (sh) {
+    var m = sh.getName().match(/^학생응답(?:_(.+))?$/);
+    if (m) out.push(m[1] || '');
+  });
+  return out;
 }
 
 function toMs_(v) { return v instanceof Date ? v.getTime() : 0; }
 
 function setShare_(p) {
   if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
-  var sh = sheet_(SHEET_CONFIG, ['key', 'value']);
-  var row = findRow_(sh, 1, 'shareOpen');
-  var val = p.open ? 'true' : 'false';
-  if (row < 0) sh.appendRow(['shareOpen', val]); else sh.getRange(row, 2).setValue(val);
+  cfgSet_('shareOpen', p.open ? 'true' : 'false');
   return { ok: true, shareOpen: !!p.open };
 }
 
 function helpClear_(p) {
   if (!pinOk_(p.pin)) return { ok: false, error: 'pin' };
-  var sh = sheet_(SHEET_STUDENTS, HEAD_STUDENTS);
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(sh, 1, cleanCode_(p.code));
   if (row > 0) sh.getRange(row, 6).setValue('');
   return { ok: true };
