@@ -225,10 +225,10 @@ function syncStage(){const c=LESSON.current;if(c==null)return;
  const st=LESSON.stages.find(x=>x.id===target);go(target);if(st&&data._ready)toast('선생님이 「'+st.name+'」 단계로 넘겼어요');}
 function setGroupRadio(g){document.querySelectorAll('input[name="group"]').forEach(e=>e.checked=(+e.value===+g));}
 async function ready(){collect();if(!data.code){toast('참여 코드를 입력해 주세요');return;}if(!data.group){toast('모둠을 선택해 주세요');return;}
- if(ONLINE){try{const r=await api('getStudent',{code:data.code});
+ if(ONLINE){try{const r=await api('getStudent',{code:data.code,dev:DEV});
   if(r.rosterOnly&&!r.rosterFound&&!r.found){toast('명단에 없는 참여 코드예요. 선생님께 확인해 주세요');return;}
   if(r.rosterFound&&r.rosterGroup&&+r.rosterGroup!==+data.group){setGroupRadio(r.rosterGroup);onGroupChange();toast(r.rosterGroup+'모둠으로 배정되어 있어요');}
-  if(r.found&&r.dev!==DEV&&!confirm('이미 이 참여 코드로 저장된 응답이 있어요.\n내 코드가 맞다면 [확인], 다른 친구가 쓰는 코드라면 [취소] 후 다른 코드를 입력하세요.'))return;
+  if(r.found&&!r.sameDev&&!confirm('이미 이 참여 코드로 저장된 응답이 있어요.\n내 코드가 맞다면 [확인], 다른 친구가 쓰는 코드라면 [취소] 후 다른 코드를 입력하세요.'))return;
  }catch(e){toast('서버에 연결하지 못했어요. 일단 이 기기에 저장돼요.');}}
  data._ready=true;$('codeBadge').textContent='참여 코드: '+data.code;
  if(locked()){save();toast(LESSON.current===0?'준비 완료! 선생님이 시작할 때까지 기다려 주세요':'준비 완료!');syncStage();}
@@ -253,7 +253,7 @@ async function pushStudent(){if(!ONLINE||!data.code||!data.group)return true;
 function markGroup(k){data._gt=data._gt||{};const t=Date.now();data._gt[k]=t;gdirty[k]={v:data[k]==null?'':data[k],t};clearTimeout(gTimer);gTimer=setTimeout(pushGroup,1000);}
 async function pushGroup(){clearTimeout(gTimer);if(!ONLINE||!data.group||!Object.keys(gdirty).length)return true;
  const f=gdirty;gdirty={};
- try{const r=await api('saveGroup',{group:+data.group,fields:f},true);applyGroup(r.fields);return true;}
+ try{const r=await api('saveGroup',{group:+data.group,code:data.code,dev:DEV,fields:f},true);applyGroup(r.fields);return true;}
  catch(e){for(const k in f)if(!gdirty[k])gdirty[k]=f[k];gTimer=setTimeout(pushGroup,5000);return false;}}
 function applyGroup(fields){data._gt=data._gt||{};let ch=false;
  GROUP_FIELDS.forEach(k=>{const n=fields&&fields[k];if(!n||gdirty[k]||n.t<=(data._gt[k]||0))return;
@@ -263,7 +263,7 @@ function applyGroup(fields){data._gt=data._gt||{};let ch=false;
   data[k]=n.v;data._gt[k]=n.t;ch=true;});
  if(ch){localStorage.setItem(KEY,JSON.stringify(data));renderGroup();}}
 async function pollGroup(){if(!ONLINE||!data.group||document.hidden)return;
- try{applyGroup((await api('getGroup',{group:+data.group})).fields);}catch(e){}}
+ try{applyGroup((await api('getGroup',{group:+data.group,code:data.code,dev:DEV})).fields);}catch(e){}}
 async function pollShare(){if(!ONLINE||cur!==4||document.hidden)return;
  try{const r=await api('getShare');$('shareNote').textContent=r.open?'':' (선생님이 공개하면 다른 모둠 판정이 자동으로 채워져요.)';
   if(!r.open)return;data._shA=data._shA||{};let ch=false;
@@ -276,7 +276,7 @@ function onGroupChange(){collect();
  data._grpApplied=data.group;pollGroup();}
 async function askHelp(){if(!ONLINE){toast('선생님께 손을 들어 알려 주세요');return;}
  if(!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
- try{await pushStudent();await api('help',{code:data.code},true);toast('선생님께 도움 요청을 보냈어요 🙋');}catch(e){toast('요청을 보내지 못했어요. 손을 들어 알려 주세요');}}
+ try{await pushStudent();await api('help',{code:data.code,dev:DEV},true);toast('선생님께 도움 요청을 보냈어요 🙋');}catch(e){toast('요청을 보내지 못했어요. 손을 들어 알려 주세요');}}
 function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!(k in data))return;
  if(el.type==='radio')el.checked=(el.value===data[k]);else if(el.type==='checkbox')el.checked=!!data[k];else el.value=data[k];});
  if(data.code)$('codeBadge').textContent='참여 코드: '+data.code;}
