@@ -10,19 +10,22 @@ header h1{margin:0;font-size:1.15rem}.status{display:flex;gap:10px;align-items:c
 .badge{background:rgba(255,255,255,.22);padding:4px 11px;border-radius:20px}
 .wrap{max-width:1100px;margin:0 auto;padding:20px}
 .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.tabs button{flex:1;min-width:110px;border:none;background:#e6e3f5;color:var(--sub);padding:10px 6px;border-radius:8px;font-size:.95rem;cursor:pointer}
+.tabs button{flex:1;min-width:100px;border:none;background:#e6e3f5;color:var(--sub);padding:10px 6px;border-radius:8px;font-size:.95rem;cursor:pointer}
 .tabs button.active{background:var(--main);color:#fff;font-weight:700}
 .card{background:#fff;border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:18px}
 .card h2{margin:0 0 10px;font-size:1.25rem}h3{margin:18px 0 8px;font-size:1.05rem}
-input[type=password],input[type=text]{padding:11px;border:1.5px solid var(--line);border-radius:8px;font-size:1rem;font-family:inherit}
+input[type=password],input[type=text],input[type=number],select,textarea{padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:.95rem;font-family:inherit;max-width:100%}
+textarea{width:100%;min-height:70px;resize:vertical}
 .btn{background:var(--main);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:.95rem;cursor:pointer}
-.btn.ghost{background:#fff;color:var(--main);border:1.5px solid var(--main)}.btn.small{padding:6px 11px;font-size:.85rem}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.btn.ghost{background:#fff;color:var(--main);border:1.5px solid var(--main)}.btn.small{padding:5px 10px;font-size:.85rem}.btn.danger{background:#fff;color:var(--bad);border:1.5px solid var(--bad)}
+.btn:disabled{opacity:.4;cursor:default}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:760px){.grid2{grid-template-columns:1fr}}
 .box{border:1.5px solid var(--line);border-radius:10px;padding:14px;background:#fff}.box h4{margin:0 0 6px;font-size:1rem}
 .small{font-size:.9rem;color:var(--sub)}
 .timer{font-size:2.4rem;font-weight:700;font-variant-numeric:tabular-nums}
-table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px solid var(--line);padding:7px 9px;vertical-align:top;text-align:left}th{background:#f3f0ff}
+table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}th{background:#f3f0ff}
+td input[type=text],td input[type=number],td select{width:100%}
 .chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.chip{background:#efeaff;border-radius:12px;padding:10px 16px;font-weight:600}.chip b{font-size:1.4rem;margin-right:4px}
 .chip.warn{background:#fdeaea;color:var(--bad)}
 .v{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.85rem;font-weight:700;color:#fff;background:var(--unk)}
@@ -31,6 +34,11 @@ table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px soli
 .claim{border-left:5px solid var(--main);padding:4px 0 4px 14px;margin:14px 0}
 .quote{background:#fafaff;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:.95rem}
 .help{background:#fdeaea}
+.stagebtns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.savebar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--main);padding:10px 16px;margin:0 -22px -22px;border-radius:0 0 14px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#fcfbff}
+.srcbox{border:1px dashed #b9b3e0;border-radius:8px;padding:8px;margin:8px 0}
+.lbl{font-size:.85rem;color:var(--sub);margin:6px 0 2px}
 details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--main)}
 .tab{display:none}.tab.show{display:block}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;pointer-events:none;z-index:9}.toast.on{opacity:1}
@@ -58,9 +66,13 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
     <div class="grid2">
      <div><div class="timer" id="timer">00:00</div>
       <button class="btn small" onclick="startTimer(120)">발표 2분</button> <button class="btn small" onclick="startTimer(300)">5분</button> <button class="btn small" onclick="startTimer(600)">10분</button> <button class="btn small" onclick="startTimer(1020)">17분</button> <button class="btn small ghost" onclick="stopTimer()">정지</button></div>
-     <div class="small"><b>흐름(50분):</b> 준비 3 · 생각 열기 5 · 목표 2 · 모둠 탐구 17 · 모둠 공유 13 · 정리 7 · 마무리 3<br>
-      <b>모둠 편성:</b> 1~4모둠 4명, 5모둠 3명 · 모둠 번호 = 담당 주장 번호</div>
+     <div class="small" id="flowInfo"></div>
     </div>
+   </div>
+   <div class="card">
+    <h2>학생 진행 통제</h2>
+    <p class="small">단계를 열어 주면 학생은 그 단계까지만 이동할 수 있어요. 눌러도 학생 화면에는 몇 초 안에 반영됩니다.</p>
+    <div id="ctl"></div>
    </div>
    <div class="card">
     <h2>5단계 모둠 공유 · 판정 공개</h2>
@@ -68,7 +80,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
     <button class="btn" id="shareBtn" onclick="toggleShare()">-</button>
    </div>
    <div class="card">
-    <h2>공개수업 답 열쇠 (참관자용)</h2>
+    <h2>공개수업 답 열쇠 (참관자용 · 기본 자료 기준)</h2>
     <p>①근거 없이 확산된 주장 ②추정치 불일치 ③조건 생략된 부분적 진실 ④존재 확인 안 되는 출처 ⑤비교적 확인됨(출처 표시 필요)</p>
     <h3>참관 포인트</h3>
     <div class="box"><h4>1. 준비하기</h4><p class="small" style="margin:0">모둠 편성(4·4·4·4·3)과 기기 준비 상태, 익명 참여 코드 사용 여부를 확인합니다.</p></div>
@@ -80,8 +92,9 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 
   <section class="tab" id="tab1"><div id="live"></div></section>
   <section class="tab" id="tab2"><div id="results"></div></section>
+  <section class="tab" id="tab3"><div id="settings"></div></section>
 
-  <section class="tab" id="tab3">
+  <section class="tab" id="tab4">
    <div class="card">
     <h2>데이터 내보내기</h2>
     <p class="small">엑셀에서 바로 열 수 있는 CSV와, 원본 그대로의 JSON을 받을 수 있어요. 스프레드시트(‘학생응답’·‘모둠기록지’ 시트)에도 같은 데이터가 쌓여 있습니다.</p>
@@ -93,20 +106,22 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
  </div>
 </div>
 <div class="toast" id="toast"></div>
-<script src="config.js"></script><script src="content.js"></script>
+<script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
 const PIN_KEY='aiverify_teacher_pin';
-let pin='',DB=null,poll=null;
-const TABS=['진행','현황','결과 정리','데이터'];
+let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[];
+const TABS=['진행','현황','결과 정리','수업 설정','데이터'];
 const VCLS={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'};
 const PRE=['그대로 인용해도 된다','일부는 확인이 필요하다','인용하면 안 된다'];
 const POST=['그대로 인용해도 된다','수정·출처 표시 후 부분 인용','인용하지 않는다'];
 const SELF=['AI 답변에서 확인이 필요한 문장을 골라낼 수 있다.','여러 자료를 비교해 ‘확인됨·부분적으로 맞음·확인 불가·사실 아님’을 구분할 수 있다.','자료를 만든 주체와 이해관계를 고려해 신뢰성을 판단할 수 있다.','판정 결과에 맞게 출처와 조건을 넣어 문장을 고쳐 활용할 수 있다.','모둠 탐구와 공유에 적극적으로 참여했다.'];
 const vBadge=v=>`<span class="v ${VCLS[v]||'none'}">${esc(v||'미판정')}</span>`;
 const hms=t=>t?new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'-';
-function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
+const CLN=()=>claimsOf(LS);
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
 
 async function api(action,payload){
  const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,pin},payload||{}))});
@@ -115,35 +130,64 @@ async function api(action,payload){
 async function login(){
  if(!API_URL){$('loginMsg').textContent='config.js 의 API_URL 이 비어 있어요. 서버(Apps Script) 주소를 먼저 넣어 주세요.';return;}
  pin=$('pin').value.trim();if(!pin)return;$('loginMsg').textContent='확인 중…';
- try{if(!await refresh()){$('loginMsg').textContent='PIN이 맞지 않거나 잠시 잠겨 있어요.';return;}}
+ try{if(!await refresh(true)){$('loginMsg').textContent='PIN이 맞지 않거나 잠시 잠겨 있어요.';return;}}
  catch(e){$('loginMsg').textContent='서버에 연결하지 못했어요.';return;}
  try{sessionStorage.setItem(PIN_KEY,pin);}catch(e){}
  $('login').style.display='none';$('app').style.display='block';buildTabs();showTab(1);
  poll=setInterval(()=>{if(!document.hidden)refresh().catch(()=>{});},10000);
 }
-async function refresh(){
- const r=await api('teacherAll');if(!r.ok)return false;DB=r;
+const typing=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+async function refresh(force){
+ const r=await api('teacherAll');if(!r.ok)return false;DB=r;LS=normLesson(r.lesson);
  $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
- renderLive();renderResults();return true;
+ if(force||!dirty){if(force||!typing(document.activeElement)||!$('settings').contains(document.activeElement)){DR=clone(LS);dirty=false;renderSettings();}}
+ renderControl();
+ if(force||!$('live').contains(document.activeElement)||!typing(document.activeElement))renderLive();
+ renderResults();return true;
 }
 async function toggleShare(){const r=await api('setShare',{open:!DB.shareOpen});if(r.ok){toast(r.shareOpen?'모둠 판정을 공개했어요':'비공개로 바꿨어요');refresh();}else toast('실패했어요');}
-async function clearHelp(code){await api('helpClear',{code});refresh();}
+async function clearHelp(i){await api('helpClear',{code:ROWS[i].code});refresh();}
 function buildTabs(){$('tabs').innerHTML=TABS.map((n,i)=>`<button onclick="showTab(${i})">${n}</button>`).join('');}
 function showTab(i){document.querySelectorAll('.tab').forEach((s,j)=>s.classList.toggle('show',i===j));document.querySelectorAll('#tabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
 
-/* ---- 현황 ---- */
+/* ---- 진행 통제 ---- */
+function renderControl(){
+ const vs=visStages(LS),op=LS.openTo;
+ $('flowInfo').innerHTML=`<b>흐름:</b> ${vs.map(s=>esc(s.name)+' '+esc(s.time)).join(' · ')}<br><b>모둠 편성:</b> ${LS.groups.map(g=>`${g.n}모둠 ${g.size}명(주장 ${g.claim})`).join(' · ')}`;
+ let h=`<p><b>${op==null?'제한 없음 — 학생이 자유롭게 이동':`${op+1}. ${esc(vs[op].name)} 단계까지 열림`}</b></p><div class="stagebtns">`;
+ h+=`<button class="btn small ghost" onclick="setOpen(${op==null?0:Math.max(0,op-1)})" ${op==null||op===0?'disabled':''}>◀ 한 단계 닫기</button>`;
+ h+=`<button class="btn small" onclick="setOpen(${op==null?0:Math.min(vs.length-1,op+1)})" ${op!=null&&op>=vs.length-1?'disabled':''}>다음 단계 열기 ▶</button>`;
+ h+=`<button class="btn small ghost" onclick="setOpen(null)" ${op==null?'disabled':''}>제한 없음</button></div><div class="stagebtns">`;
+ h+=vs.map((s,p)=>`<button class="btn small ${op===p?'':'ghost'}" onclick="setOpen(${p})">${p+1}. ${esc(s.name)}</button>`).join('')+`</div>`;
+ $('ctl').innerHTML=h;
+}
+async function setOpen(p){const r=await api('setOpenTo',{openTo:p});if(r.ok){toast(p==null?'제한을 풀었어요':'학생 이동 범위를 바꿨어요');refresh();}else toast('실패했어요');}
+
+/* ---- 현황 (학생별 코드·모둠 수정 포함) ---- */
 const submitted=s=>s.submittedAt>0;
 function renderLive(){
- const S=DB.students,help=S.filter(s=>s.helpAt);
+ const S=DB.students,help=S.filter(s=>s.helpAt),known={};
+ S.forEach(s=>known[s.code]=1);
+ ROWS=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
+ (DB.roster||[]).forEach(r=>{if(!known[r.code])ROWS.push({code:r.code,group:r.group,live:false});});
  let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${help.length?'warn':''}"><b>${help.length}</b>도움 요청</div></div>`;
- if(help.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+help.map(s=>`<div>${esc(s.group)}모둠 · ${esc(s.code)} · ${hms(s.helpAt)} <button class="btn small ghost" onclick="clearHelp('${esc(s.code).replace(/'/g,'')}')">확인함</button></div>`).join('')+`</div>`;
- h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여</th><th>제출</th><th>모둠 판정</th><th>고쳐 쓴 문장</th></tr>`;
- for(let g=1;g<=5;g++){const m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
-  h+=`<tr><td><b>${g}모둠</b></td><td class="small">${esc(CLAIMS[g-1].t)}</td><td>${m.length}/${g<5?4:3}</td><td>${m.filter(submitted).length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td></tr>`;}
- h+=`</table></div><div class="card"><h2>학생별 현황</h2><table><tr><th>코드</th><th>모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th></tr>`;
- h+=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>`<tr><td>${esc(s.code)}</td><td>${esc(s.group)}</td><td>${(s.data._stage||0)+1}단계</td><td>${submitted(s)?'✅ 제출':'작성 중'}</td><td>${hms(s.updatedAt)}</td></tr>`).join('');
+ if(help.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+ROWS.map((r,i)=>r.helpAt?`<div>${esc(r.group)}모둠 · ${esc(r.code)} · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`:'').join('')+`</div>`;
+ h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th><th>제출</th><th>모둠 판정</th><th>고쳐 쓴 문장</th></tr>`;
+ LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g),m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
+  h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td><td>${m.filter(submitted).length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td></tr>`;});
+ h+=`</table></div><div class="card"><h2>학생별 현황 · 코드/모둠 수정</h2><p class="small">코드나 모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
+  <table><tr><th>코드</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`;
+ h+=ROWS.map((r,i)=>`<tr><td><input type="text" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
+  <td><select id="rg${i}">${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${LS.groups.some(g=>g.n===+r.group)?'':`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`}</select></td>
+  <td>${r.live?(r.stage+1)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
+  <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('');
  $('live').innerHTML=h+`</table></div>`;
 }
+async function saveRow(i){const r=ROWS[i],nc=$('rc'+i).value.trim(),ng=+$('rg'+i).value;if(!nc){toast('코드를 입력해 주세요');return;}
+ const res=await api('updateStudent',{code:r.code,newCode:nc,group:ng});
+ if(res.ok){toast('저장했어요');refresh(true);}else toast(res.error==='dup'?'이미 사용 중인 코드예요':'저장하지 못했어요');}
+async function delRow(i){const r=ROWS[i];if(!confirm(`${r.code} 학생의 응답과 명단 등록을 삭제할까요? 되돌릴 수 없어요.`))return;
+ const res=await api('deleteStudent',{code:r.code});if(res.ok){toast('삭제했어요');refresh(true);}else toast('삭제하지 못했어요');}
 
 /* ---- 결과 정리 (마무리 단계용) ---- */
 function bars(rows,total){return rows.map(([l,n])=>`<div class="bar"><div class="l">${esc(l)}</div><div class="t"><div class="f" style="width:${total?Math.round(n/total*100):0}%"></div></div><div class="n">${n}명 (${total?Math.round(n/total*100):0}%)</div></div>`).join('');}
@@ -151,11 +195,11 @@ function renderResults(){
  const S=DB.students,done=S.filter(submitted);
  let h=`<div class="card nopresent"><button class="btn" onclick="document.body.classList.add('present');window.scrollTo(0,0)">🖥 발표 화면으로 보기</button> <span class="small">(Esc 로 돌아옵니다) · 아래 결과는 제출한 ${done.length}명 기준이며, 학생 코드는 표시하지 않아요.</span></div>`;
  h+=`<div class="card"><h2>① 모둠별 검증 결과</h2>`;
- for(let g=1;g<=5;g++){const c=CLAIMS[g-1],f=DB.groups[g]||{},v=k=>f[k]&&f[k].v||'';
-  h+=`<div class="claim"><div><b>${c.n}.</b> ${esc(c.t)}</div><div style="margin:4px 0">${g}모둠 판정: ${vBadge(v('g_verdict'))}</div>
+ LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g)||{n:'',t:''},f=DB.groups[g]||{},v=k=>f[k]&&f[k].v||'';
+  h+=`<div class="claim"><div><b>${esc(c.n)}.</b> ${esc(c.t)}</div><div style="margin:4px 0">${g}모둠 판정: ${vBadge(v('g_verdict'))}</div>
    <div class="quote"><b>근거:</b> ${esc(v('g_reason'))||'<span class="small">(작성 없음)</span>'}</div>
    <div class="quote"><b>보고서용 문장:</b> ${esc(v('g_rewrite'))||'<span class="small">(작성 없음)</span>'}</div>
-   <details><summary>출처·정확성·신뢰성 기록 보기</summary><div class="quote"><b>출처:</b> ${esc(v('g_src'))}</div><div class="quote"><b>정확성:</b> ${esc(v('g_acc'))}</div><div class="quote"><b>신뢰성:</b> ${esc(v('g_rel'))}</div></details></div>`;}
+   <details><summary>출처·정확성·신뢰성 기록 보기</summary><div class="quote"><b>출처:</b> ${esc(v('g_src'))}</div><div class="quote"><b>정확성:</b> ${esc(v('g_acc'))}</div><div class="quote"><b>신뢰성:</b> ${esc(v('g_rel'))}</div></details></div>`;});
  h+=`</div>`;
  h+=`<div class="card"><h2>② 처음 판단과 지금 판단</h2><div class="grid2"><div><h3>처음 (2단계)</h3>${bars(PRE.map(o=>[o,done.filter(s=>s.data.pre===o).length]),done.length)}</div><div><h3>지금 (6단계)</h3>${bars(POST.map(o=>[o,done.filter(s=>s.data.post===o).length]),done.length)}</div></div>
   <h3>판단의 이동 (행: 처음 → 열: 지금)</h3><table><tr><th></th>${POST.map(o=>`<th>${esc(o)}</th>`).join('')}</tr>${PRE.map(p=>`<tr><th>${esc(p)}</th>${POST.map(q=>`<td>${done.filter(s=>s.data.pre===p&&s.data.post===q).length}명</td>`).join('')}</tr>`).join('')}</table></div>`;
@@ -166,6 +210,84 @@ function renderResults(){
  $('results').innerHTML=h;
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.body.classList.remove('present');});
+
+/* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
+const mark=()=>{dirty=true;};
+function renderSettings(){
+ if(!DR)return;const CL=claimsOf(DR);
+ let h=`<div class="card"><h2>① 단계 구성</h2><p class="small">이름·시간을 고치고, 순서를 바꾸고, 단계를 숨길 수 있어요. ‘준비’(코드·모둠 입력)와 ‘정리’(제출)는 숨길 수 없고, ‘준비’는 항상 맨 앞입니다.</p>
+  <table><tr><th style="width:90px">순서</th><th>단계 이름(학생 화면 버튼)</th><th style="width:110px">시간</th><th style="width:70px">표시</th></tr>`;
+ h+=DR.stages.map((s,i)=>{const req=REQUIRED_STAGES.includes(s.id);const fixed=s.id===0;
+  return `<tr><td><button class="btn small ghost" onclick="moveStage(${i},-1)" ${fixed||i===0||DR.stages[i-1].id===0?'disabled':''}>▲</button> <button class="btn small ghost" onclick="moveStage(${i},1)" ${fixed||i===DR.stages.length-1?'disabled':''}>▼</button></td>
+   <td><input type="text" value="${esc(s.name)}" maxlength="20" oninput="DR.stages[${i}].name=this.value;mark()"></td>
+   <td><input type="text" value="${esc(s.time)}" maxlength="10" oninput="DR.stages[${i}].time=this.value;mark()"></td>
+   <td style="text-align:center"><input type="checkbox" ${s.on?'checked':''} ${req?'disabled':''} onchange="DR.stages[${i}].on=this.checked;mark()"></td></tr>`;}).join('');
+ h+=`</table></div>`;
+
+ h+=`<div class="card"><h2>② 모둠 구성</h2><p class="small">모둠 수(최대 ${MAX_GROUPS}), 모둠별 인원, 담당 주장을 정합니다. 모둠은 뒤에서부터만 줄일 수 있어요(번호가 바뀌면 학생 기록이 섞이기 때문).</p>
+  <table><tr><th style="width:80px">모둠</th><th style="width:110px">인원</th><th>담당 주장</th></tr>`;
+ h+=DR.groups.map((g,i)=>`<tr><td><b>${g.n}모둠</b></td><td><input type="number" min="1" max="12" value="${g.size}" oninput="DR.groups[${i}].size=+this.value||1;mark()"></td>
+  <td><select onchange="DR.groups[${i}].claim=+this.value;mark()">${CL.map(c=>`<option value="${c.n}" ${g.claim===c.n?'selected':''}>${c.n}. ${esc(c.t.slice(0,34))}${c.t.length>34?'…':''}</option>`).join('')}</select></td></tr>`).join('');
+ h+=`</table><div style="margin-top:8px"><button class="btn small ghost" onclick="addGroup()" ${DR.groups.length>=MAX_GROUPS?'disabled':''}>＋ 모둠 추가</button> <button class="btn small danger" onclick="delGroup()" ${DR.groups.length<=1?'disabled':''}>마지막 모둠 삭제</button></div></div>`;
+
+ h+=`<div class="card"><h2>③ 주장 · 자료 카드</h2>`;
+ if(!DR.claims){
+  h+=`<p class="small">지금은 <b>기본 자료</b>(패스트패션 주장 ${CLAIMS.length}개)를 쓰고 있어요. 수정하려면 기본 자료를 복사해서 편집을 시작하세요. 기본 자료 원본은 바뀌지 않고, 언제든 되돌릴 수 있어요.</p><button class="btn" onclick="startEditClaims()">편집 시작 (기본 자료 복사)</button>`;
+ }else{
+  h+=`<p class="small">자료 본문에는 <code>&lt;b&gt;강조&lt;/b&gt;</code> 같은 HTML을 쓸 수 있어요. 주장은 최대 ${MAX_CLAIMS}개, 주장당 자료 최대 ${MAX_SRC}개입니다.</p>`;
+  h+=DR.claims.map((c,ci)=>`<div class="claimcard"><b>주장 ${c.n}</b> <button class="btn small danger" style="float:right" onclick="delClaim(${ci})" ${DR.claims.length<=1?'disabled':''}>이 주장 삭제</button>
+   <div class="lbl">검증할 AI 답변 문장</div><textarea oninput="DR.claims[${ci}].t=this.value;mark()">${esc(c.t)}</textarea>
+   <div class="lbl">생각 열쇠(힌트)</div><textarea oninput="DR.claims[${ci}].hint=this.value;mark()">${esc(c.hint)}</textarea>
+   ${c.src.map((s,si)=>`<div class="srcbox"><b>자료 ${'ABCDE'[si]}</b> <button class="btn small danger" style="float:right" onclick="delSrc(${ci},${si})" ${c.src.length<=1?'disabled':''}>삭제</button>
+    <div class="lbl">종류 (예: 국제기구 보도자료 (2019))</div><input type="text" style="width:100%" value="${esc(s.type)}" oninput="DR.claims[${ci}].src[${si}].type=this.value;mark()">
+    <div class="lbl">제목</div><input type="text" style="width:100%" value="${esc(s.title)}" oninput="DR.claims[${ci}].src[${si}].title=this.value;mark()">
+    <div class="lbl">본문</div><textarea oninput="DR.claims[${ci}].src[${si}].body=this.value;mark()">${esc(s.body)}</textarea></div>`).join('')}
+   <button class="btn small ghost" onclick="addSrc(${ci})" ${c.src.length>=MAX_SRC?'disabled':''}>＋ 자료 추가</button></div>`).join('');
+  h+=`<button class="btn small ghost" onclick="addClaim()" ${DR.claims.length>=MAX_CLAIMS?'disabled':''}>＋ 주장 추가</button> <button class="btn small danger" onclick="resetClaims()">기본 자료로 되돌리기</button>`;
+ }
+ h+=`</div>`;
+
+ h+=`<div class="card"><h2>④ 학생 명단 · 입장 방식</h2>
+  <p class="small">한 줄에 <b>참여코드, 모둠</b>을 적어 붙여 넣으세요. (예: <code>2-3-07, 2</code> 또는 엑셀에서 복사한 두 칸) 명단에 있는 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠도 함께 바뀝니다. 개별 수정은 ‘현황’ 탭에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
+  <textarea id="rosterText" style="min-height:120px" placeholder="2-3-01, 1&#10;2-3-02, 1&#10;2-3-03, 2"></textarea>
+  <div style="margin:8px 0"><button class="btn small" onclick="saveRoster('merge')">추가·수정 (기존 명단 유지)</button> <button class="btn small danger" onclick="saveRoster('replace')">전체 교체</button></div>
+  <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 참여 코드만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label></div>`;
+
+ h+=`<div class="card" style="padding-bottom:0"><div class="savebar"><button class="btn" onclick="saveSettings()">💾 저장하고 학생 화면에 적용</button> <button class="btn ghost" onclick="cancelSettings()">변경 취소</button> <span class="small">단계·모둠·주장·입장 방식이 저장돼요. 명단 등록은 위 버튼으로 바로 적용됩니다.</span></div></div>`;
+ $('settings').innerHTML=h;
+}
+function moveStage(i,d){const j=i+d;if(j<0||j>=DR.stages.length||DR.stages[i].id===0||DR.stages[j].id===0)return;[DR.stages[i],DR.stages[j]]=[DR.stages[j],DR.stages[i]];mark();renderSettings();}
+function addGroup(){if(DR.groups.length>=MAX_GROUPS)return;DR.groups.push({n:DR.groups.length+1,size:4,claim:1});mark();renderSettings();}
+function delGroup(){if(DR.groups.length<=1)return;const g=DR.groups[DR.groups.length-1];
+ if(!confirm(`${g.n}모둠을 삭제할까요? 이미 ${g.n}모둠으로 접속한 학생은 모둠을 다시 골라야 해요.`))return;DR.groups.pop();mark();renderSettings();}
+function startEditClaims(){DR.claims=clone(CLAIMS);mark();renderSettings();}
+function resetClaims(){if(!confirm('편집한 주장·자료를 모두 지우고 기본 자료로 되돌릴까요? (저장 전까지는 학생 화면에 영향이 없어요)'))return;DR.claims=null;DR.groups.forEach(g=>{if(g.claim>CLAIMS.length)g.claim=1;});mark();renderSettings();}
+function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',src:[{type:'',title:'',body:''}]});mark();renderSettings();}
+function delClaim(ci){if(DR.claims.length<=1)return;if(!confirm(`주장 ${ci+1}을(를) 삭제할까요?`))return;
+ DR.claims.splice(ci,1);DR.claims.forEach((c,i)=>c.n=i+1);
+ DR.groups.forEach(g=>{if(g.claim===ci+1)g.claim=1;else if(g.claim>ci+1)g.claim--;});mark();renderSettings();}
+function addSrc(ci){const c=DR.claims[ci];if(c.src.length>=MAX_SRC)return;c.src.push({type:'',title:'',body:''});mark();renderSettings();}
+function delSrc(ci,si){const c=DR.claims[ci];if(c.src.length<=1)return;c.src.splice(si,1);mark();renderSettings();}
+async function saveSettings(){
+ const CL=claimsOf(DR);
+ for(const c of CL){if(!String(c.t).trim()){toast(`주장 ${c.n}의 AI 답변 문장이 비어 있어요`);return;}}
+ DR.stages.forEach(s=>{s.name=String(s.name).trim()||DEFAULT_LESSON.stages.find(d=>d.id===s.id).name;});
+ const r=await api('setLesson',{lesson:DR});
+ if(r.ok){dirty=false;toast('저장했어요. 학생 화면에 곧 반영돼요');await refresh(true);}else toast(r.error==='too large'?'내용이 너무 길어요. 자료를 줄여 주세요':'저장하지 못했어요');
+}
+function cancelSettings(){if(dirty&&!confirm('저장하지 않은 변경을 버릴까요?'))return;dirty=false;DR=clone(LS);renderSettings();}
+function parseRoster(text){const list=[],bad=[];
+ text.split(/\r?\n/).forEach(line=>{line=line.trim();if(!line)return;const p=line.split(/[\s,;\t]+/).filter(Boolean);
+  const g=parseInt(String(p[1]||'').replace(/[^\d]/g,''),10);if(p.length<2||!g||g<1||g>LS.groups.length)bad.push(line);else list.push({code:p[0],group:g});});
+ return{list,bad};}
+async function saveRoster(mode){
+ const {list,bad}=parseRoster($('rosterText').value);
+ if(bad.length){toast(`형식·모둠 번호가 맞지 않는 줄이 ${bad.length}개 있어요: ${bad[0]}`);return;}
+ if(!list.length&&mode!=='replace'){toast('등록할 명단을 붙여 넣어 주세요');return;}
+ if(mode==='replace'&&!confirm(list.length?`기존 명단을 지우고 ${list.length}명으로 교체할까요?`:'명단을 모두 비울까요?'))return;
+ const r=await api('setRoster',{list,mode});
+ if(r.ok){toast(`명단 ${r.count}명 등록됨`);$('rosterText').value='';refresh();}else toast('저장하지 못했어요');
+}
 
 /* ---- 내보내기 ---- */
 function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();}
@@ -178,7 +300,7 @@ function exportCSV(kind){
   download('학생응답.csv',csv([head,...rows]),'text/csv;charset=utf-8');
  }else{
   const K=[['g_verdict','판정'],['g_reason','근거 한 문장'],['g_rewrite','보고서용 문장'],['g_src','출처'],['g_acc','정확성'],['g_rel','신뢰성'],['g_speaker','발표자'],['g_recorder','기록자']];
-  const rows=[1,2,3,4,5].map(g=>[g+'모둠',CLAIMS[g-1].t,...K.map(([k])=>(DB.groups[g][k]||{}).v||'')]);
+  const rows=LS.groups.map(gr=>[gr.n+'모둠',(claimOfGroup(LS,gr.n)||{}).t||'',...K.map(([k])=>((DB.groups[gr.n]||{})[k]||{}).v||'')]);
   download('모둠기록지.csv',csv([['모둠','담당 주장',...K.map(k=>k[1])],...rows]),'text/csv;charset=utf-8');
  }
 }
