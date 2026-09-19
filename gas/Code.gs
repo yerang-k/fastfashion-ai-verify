@@ -92,6 +92,13 @@ function sheet_(name, head) {
   return sh;
 }
 
+// 첫 칸(코드)을 텍스트 서식으로 만든 뒤 행을 쓴다. row<0 이면 맨 아래에 추가.
+function putRow_(sh, row, arr) {
+  if (row < 0) row = sh.getLastRow() + 1;
+  sh.getRange(row, 1).setNumberFormat('@');
+  sh.getRange(row, 1, 1, arr.length).setValues([arr]);
+}
+
 function findRow_(sh, keyCol, key) {
   var last = sh.getLastRow();
   if (last < 2) return -1;
@@ -113,7 +120,7 @@ function rosterMap_() {
 function rosterUpsert_(code, group) {
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var row = findRow_(sh, 1, code);
-  if (row < 0) sh.appendRow([code, group]); else sh.getRange(row, 2).setValue(group);
+  if (row < 0) putRow_(sh, -1, [code, group]); else sh.getRange(row, 2).setValue(group);
 }
 function rosterDelete_(code) {
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
@@ -137,12 +144,10 @@ function saveStudent_(p) {
   var row = rowC > 0 ? rowC : rowD;
   var submittedAt = p.submitted ? now : '';
   if (row < 0) {
-    sh.appendRow([code, group, dev, now, submittedAt, '', json]);
+    putRow_(sh, -1, [code, group, dev, now, submittedAt, '', json]);
   } else {
     var cur = sh.getRange(row, 1, 1, HEAD_STUDENTS.length).getValues()[0];
-    sh.getRange(row, 1, 1, HEAD_STUDENTS.length).setValues([[
-      code, group, dev || cur[2], now, submittedAt || cur[4], cur[5], json
-    ]]);
+    putRow_(sh, row, [code, group, dev || cur[2], now, submittedAt || cur[4], cur[5], json]);
   }
   return { ok: true, group: group };
 }
@@ -230,13 +235,14 @@ function setRoster_(p) {
   order.forEach(function (c) { if (!(c in cur)) curOrder.push(c); cur[c] = map[c]; });
   var last = sh.getLastRow();
   if (last >= 2) sh.getRange(2, 1, last - 1, 2).clearContent();
+  if (curOrder.length) sh.getRange(2, 1, curOrder.length, 1).setNumberFormat('@');
   if (curOrder.length) sh.getRange(2, 1, curOrder.length, 2).setValues(curOrder.map(function (c) { return [c, cur[c]]; }));
   // 이미 접속한 학생의 모둠도 명단에 맞춤
   var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS), sl = ssh.getLastRow();
   if (sl >= 2) {
     var rng = ssh.getRange(2, 1, sl - 1, 2), vals = rng.getValues(), ch = false;
     vals.forEach(function (r) { var g = map[String(r[0])]; if (g && r[1] !== g) { r[1] = g; ch = true; } });
-    if (ch) rng.setValues(vals);
+    if (ch) { ssh.getRange(2, 1, sl - 1, 1).setNumberFormat('@'); rng.setValues(vals); }
   }
   return { ok: true, count: curOrder.length };
 }
@@ -252,7 +258,7 @@ function updateStudent_(p) {
   if (newCode !== code && (findRow_(ssh, 1, newCode) > 0 || roster[newCode])) return { ok: false, error: 'dup' };
   var curGroup = g || roster[code] || (row > 0 ? parseInt(ssh.getRange(row, 2).getValue(), 10) : 0);
   if (!curGroup) return { ok: false, error: 'group required' };
-  if (row > 0) ssh.getRange(row, 1, 1, 2).setValues([[newCode, curGroup]]);
+  if (row > 0) { ssh.getRange(row, 1).setNumberFormat('@'); ssh.getRange(row, 1, 1, 2).setValues([[newCode, curGroup]]); }
   if (newCode !== code) rosterDelete_(code);
   rosterUpsert_(newCode, curGroup); // 이후 학생 기기가 저장해도 이 모둠이 유지됨
   return { ok: true };
