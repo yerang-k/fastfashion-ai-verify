@@ -173,7 +173,7 @@ async function login(){
 }
 const typing=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
 async function refresh(force){
- const r=await api('teacherAll');if(!r.ok)return false;DB=r;LS=normLesson(r.lesson);
+ const r=await api('teacherAll');if(!r.ok)return false;DB=r;LS=normLesson(r.lesson);if(holdStage&&Date.now()<holdStage.until)LS.current=holdStage.id;else holdStage=null;
  $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
  if(force||!dirty){if(force||!typing(document.activeElement)||!$('settings').contains(document.activeElement)){DR=clone(LS);dirty=false;renderSettings();}}
  renderClasses();renderControl();renderStageView();
@@ -207,9 +207,11 @@ function renderControl(){
  $('stageTimerBtn').style.display=stageMinutes()?'':'none';$('stageTimerBtn').textContent='이 단계 타이머 '+stageMinutes()+'분';
  $('flowInfo').innerHTML=`<b>모둠 편성:</b> ${LS.groups.map(g=>`${g.n}모둠 ${g.size}명(주장 ${g.claim})`).join(' · ')}`;
 }
-async function setStage(id){const r=await api('setStage',{stage:id});
- if(r.ok){const s=LS.stages.find(x=>x.id===id);toast(id==null?'학생이 자유롭게 이동할 수 있어요':`학생 화면을 「${s?s.name:''}」 단계로 넘겼어요`);await refresh();}
- else toast('바꾸지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}
+let holdStage=null; // 방금 누른 단계를 서버 응답이 오기 전에도 화면에 유지
+async function setStage(id){const prev=LS.current;holdStage={id,until:Date.now()+10000};LS.current=id;renderControl();renderStageView();
+ const r=await api('setStage',{stage:id});
+ if(r.ok){const s=LS.stages.find(x=>x.id===id);toast(id==null?'학생이 자유롭게 이동할 수 있어요':`학생 화면을 「${s?s.name:''}」 단계로 넘겼어요`);refresh();}
+ else{holdStage=null;LS.current=prev;renderControl();renderStageView();toast('바꾸지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}}
 function stepStage(d){const vs=visStages(LS),pos=vs.findIndex(s=>s.id===LS.current),t=vs[pos+d];if(t)setStage(t.id);}
 function stageMinutes(){const s=LS.stages.find(x=>x.id===LS.current);const m=s&&String(s.time).match(/(\d+)\s*분/);return m?+m[1]:0;}
 function startStageTimer(){const m=stageMinutes();if(m)startTimer(m*60);}

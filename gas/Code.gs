@@ -34,6 +34,7 @@ function doPost(e) {
   return handle_(p);
 }
 
+var READ_ACTIONS_ = { getStudent: 1, getLesson: 1, getGroup: 1, getShare: 1, teacherAll: 1 };
 var CLASS_ = ''; // 이번 요청의 반(기본 반은 빈 문자열)
 function cleanClass_(c) { return String(c || '').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20); }
 function sn_(name) { return CLASS_ ? name + '_' + CLASS_ : name; } // 반별 시트 이름
@@ -41,9 +42,10 @@ function ck_(key) { return CLASS_ ? key + '__' + CLASS_ : key; } // 반별 설�
 
 function handle_(p) {
   CLASS_ = cleanClass_(p['class']);
-  var lock = LockService.getScriptLock();
+  var lock = null;
   try {
-    lock.waitLock(20000);
+    // 읽기만 하는 요청은 줄을 세우지 않고 바로 처리한다(학생 수만큼 쌓여 느려지는 것을 방지). 쓰기만 잠금.
+    if (!READ_ACTIONS_[p.action]) { lock = LockService.getScriptLock(); lock.waitLock(20000); }
     switch (p.action) {
       case 'saveStudent': return out_(saveStudent_(p));
       case 'getStudent': return out_(getStudent_(p));
@@ -65,7 +67,7 @@ function handle_(p) {
   } catch (err) {
     return out_({ ok: false, error: String(err) });
   } finally {
-    try { lock.releaseLock(); } catch (x) {}
+    if (lock) { try { lock.releaseLock(); } catch (x) {} }
   }
 }
 
@@ -79,14 +81,26 @@ function sheet_(name, head) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(name);
   if (!sh) {
-    // 코드 열을 먼저 텍스트로 고정해야 '2-3-07' 같은 코드가 날짜로 바뀌지 않는다
-    sh = ss.insertSheet(name);
-    if (/^(학생응답|명단)/.test(name)) sh.getRange('A:A').setNumberFormat('@');
-    sh.appendRow(head);
-    sh.setFrozenRows(1);
-    TEXT_FMT_DONE_[name] = true;
+    var lk = LockService.getScriptLock(), had = lk.hasLock();
+    if (!had) lk.waitLock(20000);
+    try {
+      sh = ss.getSheetByName(name);
+      if (!sh) {
+        // 코드 열을 먼저 텍스트로 고정해야 '2-3-07' 같은 코드가 날짜로 바뀌지 않는다
+        sh = ss.insertSheet(name);
+        if (/^(학생응답|명단)/.test(name)) sh.getRange('A:A').setNumberFormat('@');
+        sh.appendRow(head);
+        sh.setFrozenRows(1);
+        TEXT_FMT_DONE_[name] = true;
+      }
+    } finally { if (!had) { try { lk.releaseLock(); } catch (x) {} } }
   } else if (/^(학생응답|명단)/.test(name) && !TEXT_FMT_DONE_[name]) {
-    sh.getRange('A:A').setNumberFormat('@'); // 이미 있는 시트도 코드 열을 텍스트로(이후 입력분부터 적용)
+    // 이미 있는 시트도 코드 열을 텍스트로(이후 입력분부터 적용). 쓰기 작업이라 요청마다 하지 않고 몇 시간에 한 번만.
+    var fk = 'fmt:' + name, cch = CacheService.getScriptCache();
+    if (cch.get(fk) === null) {
+      sh.getRange('A:A').setNumberFormat('@');
+      try { cch.put(fk, '1', 21600); } catch (e) {}
+    }
     TEXT_FMT_DONE_[name] = true;
   }
   return sh;
@@ -112,20 +126,27 @@ function cleanGroup_(g) { g = parseInt(g, 10); return g >= 1 && g <= MAXG ? g : 
 
 /* ---------- 명단(교사가 등록한 코드→모둠) : 학생 모둠의 기준 ---------- */
 function rosterMap_() {
+  var cache = CacheService.getScriptCache(), key = 'roster:' + CLASS_;
+  var hit = cache.get(key);
+  if (hit !== null) { try { return JSON.parse(hit); } catch (e) {} }
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var last = sh.getLastRow(), m = {};
-  if (last >= 2) sh.getRange(2, 1, last - 1, 2).getValues().forEach(function (r) { m[String(r[0])] = parseInt(r[1], 10) || 0; });
+  if (last >= 2) sh.getRange(2, 1, last - 1, 2).getValues().forEach(function (r) { m[String(r[0] instanceof Date ? r[0].toISOString() : r[0])] = parseInt(r[1], 10) || 0; });
+  try { cache.put(key, JSON.stringify(m), 600); } catch (e) {}
   return m;
 }
+function rosterDirty_() { try { CacheService.getScriptCache().remove('roster:' + CLASS_); } catch (e) {} }
 function rosterUpsert_(code, group) {
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var row = findRow_(sh, 1, code);
   if (row < 0) putRow_(sh, -1, [code, group]); else sh.getRange(row, 2).setValue(group);
+  rosterDirty_();
 }
 function rosterDelete_(code) {
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var row = findRow_(sh, 1, code);
   if (row > 0) sh.deleteRow(row);
+  rosterDirty_();
 }
 
 /* ---------- 학생 ---------- */
@@ -166,14 +187,21 @@ function getStudent_(p) {
 
 /* ---------- 수업 설정(교사가 저장, 학생이 주기적으로 읽음) ---------- */
 function cfgGet_(key) {
+  var cache = CacheService.getScriptCache(), ckey = 'cfg:' + ck_(key);
+  var hit = cache.get(ckey);
+  if (hit !== null) { try { return JSON.parse(hit).v; } catch (e) {} }
   var sh = sheet_(SHEET_CONFIG, ['key', 'value']);
   var row = findRow_(sh, 1, ck_(key));
-  return row > 0 ? String(sh.getRange(row, 2).getValue()) : '';
+  var val = row > 0 ? String(sh.getRange(row, 2).getValue()) : '';
+  try { cache.put(ckey, JSON.stringify({ v: val }), 21600); } catch (e) {}
+  return val;
 }
 function cfgSet_(key, val) {
   var sh = sheet_(SHEET_CONFIG, ['key', 'value']);
   var row = findRow_(sh, 1, ck_(key));
   if (row < 0) sh.appendRow([ck_(key), val]); else sh.getRange(row, 2).setValue(val);
+  var cache = CacheService.getScriptCache(), ckey = 'cfg:' + ck_(key);
+  try { cache.put(ckey, JSON.stringify({ v: String(val) }), 21600); } catch (e) { try { cache.remove(ckey); } catch (x) {} } // 너무 크면 캐시를 비워 옛 값이 남지 않게
 }
 function lessonGet_() {
   var t = cfgGet_('lesson');
@@ -241,6 +269,7 @@ function setRoster_(p) {
   if (last >= 2) sh.getRange(2, 1, last - 1, 2).clearContent();
   if (curOrder.length) sh.getRange(2, 1, curOrder.length, 1).setNumberFormat('@');
   if (curOrder.length) sh.getRange(2, 1, curOrder.length, 2).setValues(curOrder.map(function (c) { return [c, cur[c]]; }));
+  rosterDirty_();
   // 이미 접속한 학생의 모둠도 명단에 맞춤
   var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS), sl = ssh.getLastRow();
   if (sl >= 2) {
