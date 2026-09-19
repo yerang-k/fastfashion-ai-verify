@@ -71,6 +71,13 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-ctl{position:absolute;right:2vw;bottom:2vh;display:flex;gap:8px;opacity:.35}
 #stageView .sv-ctl:hover{opacity:1}
 #stageView .sv-ctl button{background:#2a2a28;color:#f4f4f2;border:1px solid #444;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit;font-size:.9rem}
+.acc{background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin:0 0 12px}
+.acc>summary{padding:16px 22px;cursor:pointer;font-size:1.08rem;font-weight:700;color:var(--txt);list-style:none;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary::before{content:'▸';color:var(--accent-dk);transition:transform .15s;display:inline-block}
+.acc[open]>summary::before{transform:rotate(90deg)}
+.acc>summary .small{font-weight:400}
+.accbody{padding:0 22px 22px}
 body.present{font-size:20px}body.present header,body.present .tabs,body.present .nopresent{display:none}
 </style></head><body>
 <header>
@@ -114,17 +121,6 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
    </div>
   </section>
 
-  <section class="tab" id="tab5">
-   <div class="card">
-    <h2>공개수업 답 열쇠 (참관자용 · 기본 자료 기준)</h2>
-    <p>①근거 없이 확산된 주장 ②추정치 불일치 ③조건 생략된 부분적 진실 ④존재 확인 안 되는 출처 ⑤비교적 확인됨(출처 표시 필요)</p>
-    <h3>참관 포인트</h3>
-    <div class="box"><h4>1. 준비하기</h4><p class="small" style="margin:0">모둠 편성(4·4·4·4·3)과 기기 준비 상태, 익명 참여 코드 사용 여부를 확인합니다.</p></div>
-    <div class="box" style="margin-top:8px"><h4>2. 생각 열기</h4><p class="small" style="margin:0">‘수치·기관명이 있으면 믿을 만하다’는 통념이 드러나는지, 어떤 문장을 먼저 의심하는지 관찰합니다.</p></div>
-    <div class="box" style="margin-top:8px"><h4>4. 모둠 탐구</h4><p class="small" style="margin:0">자료의 <b>종류·이해관계</b>(브랜드 캠페인, SNS 게시글 vs 연구기관)를 구분하는지, 수치 불일치를 ‘틀림’이 아닌 ‘산정 기준 차이’로 읽어 내는지, 존재를 확인할 수 없는 출처를 ‘확인 불가’로 처리하는지, 고쳐 쓴 문장에 조건과 출처를 넣는지 관찰합니다.</p></div>
-    <div class="box" style="margin-top:8px"><h4>5. 모둠 공유</h4><p class="small" style="margin:0">교사는 판정이 다른 모둠(예: ②의 ‘부분적으로 맞음’ vs ‘사실 아님’)을 대비시켜 근거를 묻습니다. 학생들이 다섯 판정을 종합해 ‘AI 답변 전체’에 대한 판단으로 나아가는지 봅니다.</p></div>
-   </div>
-  </section>
  </div>
 </div>
 <div id="stageView"></div>
@@ -137,7 +133,8 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const PIN_KEY='aiverify_teacher_pin';
 const BASE=location.origin+location.pathname.replace(/[^/]*$/,'');
 let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[];
-const TABS=['현황','결과 정리','수업 설정','데이터','참관 자료'];
+const TABS=['📊 현황','📝 결과 정리','⚙️ 수업 설정','📁 데이터'];
+const OPEN={}; // 수업 설정에서 펼쳐 둔 섹션 기억
 const QS=new URLSearchParams(location.search);
 const VCLS={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'};
 const PRE=['그대로 인용해도 된다','일부는 확인이 필요하다','인용하면 안 된다'];
@@ -167,11 +164,11 @@ async function refresh(force){
  $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
  if(force||!dirty){if(force||!typing(document.activeElement)||!$('settings').contains(document.activeElement)){DR=clone(LS);dirty=false;renderSettings();}}
  renderClasses();renderControl();renderStageView();
- if(force||!$('live').contains(document.activeElement)||!typing(document.activeElement))renderLive();
+ renderLive();
  renderResults();return true;
 }
 async function toggleShare(){const r=await api('setShare',{open:!DB.shareOpen});if(r.ok){toast(r.shareOpen?'모둠 판정을 공개했어요':'비공개로 바꿨어요');refresh();}else toast('실패했어요');}
-async function clearHelp(i){await api('helpClear',{code:ROWS[i].code});refresh();}
+async function clearHelp(i){await api('helpClear',{code:HELP[i].code});refresh();}
 function buildTabs(){$('tabs').innerHTML=TABS.map((n,i)=>`<button onclick="showTab(${i})">${n}</button>`).join('');}
 function showTab(i){document.querySelectorAll('.tab').forEach((s,j)=>s.classList.toggle('show',i===j));document.querySelectorAll('#tabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
 
@@ -217,26 +214,30 @@ function renderStageView(){
   <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
 }
 
-/* ---- 현황 (학생별 코드·모둠 수정 포함) ---- */
+/* ---- 현황 ---- */
 const submitted=s=>s.submittedAt>0;
+let HELP=[];
+function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
+ const rows=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
+ (DB.roster||[]).forEach(r=>{if(!known[r.code])rows.push({code:r.code,group:r.group,live:false});});return rows;}
 function renderLive(){
- const S=DB.students,help=S.filter(s=>s.helpAt),known={};
- S.forEach(s=>known[s.code]=1);
- ROWS=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
- (DB.roster||[]).forEach(r=>{if(!known[r.code])ROWS.push({code:r.code,group:r.group,live:false});});
- let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${help.length?'warn':''}"><b>${help.length}</b>도움 요청</div></div>`;
- if(help.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+ROWS.map((r,i)=>r.helpAt?`<div>${esc(r.group)}모둠 · ${esc(r.code)} · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`:'').join('')+`</div>`;
+ const S=DB.students;HELP=S.filter(s=>s.helpAt);
+ let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
+ if(HELP.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+HELP.map((r,i)=>`<div>${esc(r.group)}모둠 · ${esc(r.code)} · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`).join('')+`</div>`;
  h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th><th>제출</th><th>모둠 판정</th><th>고쳐 쓴 문장</th></tr>`;
  LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g),m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
   h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td><td>${m.filter(submitted).length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td></tr>`;});
- h+=`</table></div><div class="card"><h2>학생별 현황 · 코드/모둠 수정</h2><p class="small">코드나 모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
-  <table><tr><th>코드</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`;
- h+=ROWS.map((r,i)=>`<tr><td><input type="text" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
+ h+=`</table><p class="small" style="margin-bottom:0">학생 코드·모둠을 고치려면 <a href="#" onclick="openStudentMgr();return false" style="color:var(--accent-dk);font-weight:700">⚙️ 수업 설정 › 학생 관리</a>로 가세요.</p></div>`;
+ $('live').innerHTML=h;renderStudentMgr();
+}
+function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.activeElement)&&el.contains(document.activeElement)))return;
+ ROWS=buildRows();
+ el.innerHTML=`<p class="small">코드나 모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
+  <table><tr><th>코드</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
   <td><select id="rg${i}">${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${LS.groups.some(g=>g.n===+r.group)?'':`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`}</select></td>
   <td>${r.live?(r.stage+1)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
-  <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('');
- $('live').innerHTML=h+`</table></div>`;
-}
+  <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
+function openStudentMgr(){showTab(2);const d=$('a5');if(d){d.open=true;OPEN.a5=true;d.scrollIntoView({behavior:'smooth'});}}
 async function saveRow(i){const r=ROWS[i],nc=$('rc'+i).value.trim(),ng=+$('rg'+i).value;if(!nc){toast('코드를 입력해 주세요');return;}
  const res=await api('updateStudent',{code:r.code,newCode:nc,group:ng});
  if(res.ok){toast('저장했어요');refresh(true);}else toast(res.error==='dup'?'이미 사용 중인 코드예요':'저장하지 못했어요');}
@@ -267,24 +268,25 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.body.class
 
 /* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
 const mark=()=>{dirty=true;};
+document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('acc'))OPEN[d.id]=d.open;},true);
 function renderSettings(){
  if(!DR)return;const CL=claimsOf(DR);
- let h=`<div class="card"><h2>① 단계 구성</h2><p class="small">이름·시간을 고치고, 순서를 바꾸고, 단계를 숨길 수 있어요. ‘준비’(코드·모둠 입력)와 ‘정리’(제출)는 숨길 수 없고, ‘준비’는 항상 맨 앞입니다.</p>
+ let h=`<details class="acc" id="a1" ${OPEN.a1?'open':''}><summary>① 단계 구성 <span class="small">${DR.stages.filter(s=>s.on).length}단계 사용</span></summary><div class="accbody"><p class="small">이름·시간을 고치고, 순서를 바꾸고, 단계를 숨길 수 있어요. ‘준비’(코드·모둠 입력)와 ‘정리’(제출)는 숨길 수 없고, ‘준비’는 항상 맨 앞입니다.</p>
   <table><tr><th style="width:90px">순서</th><th>단계 이름(학생 화면 버튼)</th><th style="width:110px">시간</th><th style="width:70px">표시</th></tr>`;
  h+=DR.stages.map((s,i)=>{const req=REQUIRED_STAGES.includes(s.id);const fixed=s.id===0;
   return `<tr><td><button class="btn small ghost" onclick="moveStage(${i},-1)" ${fixed||i===0||DR.stages[i-1].id===0?'disabled':''}>▲</button> <button class="btn small ghost" onclick="moveStage(${i},1)" ${fixed||i===DR.stages.length-1?'disabled':''}>▼</button></td>
    <td><input type="text" value="${esc(s.name)}" maxlength="20" oninput="DR.stages[${i}].name=this.value;mark()"></td>
    <td><input type="text" value="${esc(s.time)}" maxlength="10" oninput="DR.stages[${i}].time=this.value;mark()"></td>
    <td style="text-align:center"><input type="checkbox" ${s.on?'checked':''} ${req?'disabled':''} onchange="DR.stages[${i}].on=this.checked;mark()"></td></tr>`;}).join('');
- h+=`</table></div>`;
+ h+=`</table></div></details>`;
 
- h+=`<div class="card"><h2>② 모둠 구성</h2><p class="small">모둠 수(최대 ${MAX_GROUPS}), 모둠별 인원, 담당 주장을 정합니다. 모둠은 뒤에서부터만 줄일 수 있어요(번호가 바뀌면 학생 기록이 섞이기 때문).</p>
+ h+=`<details class="acc" id="a2" ${OPEN.a2?'open':''}><summary>② 모둠 구성 <span class="small">${DR.groups.length}모둠 · 총 ${DR.groups.reduce((a,g)=>a+g.size,0)}명</span></summary><div class="accbody"><p class="small">모둠 수(최대 ${MAX_GROUPS}), 모둠별 인원, 담당 주장을 정합니다. 모둠은 뒤에서부터만 줄일 수 있어요(번호가 바뀌면 학생 기록이 섞이기 때문).</p>
   <table><tr><th style="width:80px">모둠</th><th style="width:110px">인원</th><th>담당 주장</th></tr>`;
  h+=DR.groups.map((g,i)=>`<tr><td><b>${g.n}모둠</b></td><td><input type="number" min="1" max="12" value="${g.size}" oninput="DR.groups[${i}].size=+this.value||1;mark()"></td>
   <td><select onchange="DR.groups[${i}].claim=+this.value;mark()">${CL.map(c=>`<option value="${c.n}" ${g.claim===c.n?'selected':''}>${c.n}. ${esc(c.t.slice(0,34))}${c.t.length>34?'…':''}</option>`).join('')}</select></td></tr>`).join('');
- h+=`</table><div style="margin-top:8px"><button class="btn small ghost" onclick="addGroup()" ${DR.groups.length>=MAX_GROUPS?'disabled':''}>＋ 모둠 추가</button> <button class="btn small danger" onclick="delGroup()" ${DR.groups.length<=1?'disabled':''}>마지막 모둠 삭제</button></div></div>`;
+ h+=`</table><div style="margin-top:8px"><button class="btn small ghost" onclick="addGroup()" ${DR.groups.length>=MAX_GROUPS?'disabled':''}>＋ 모둠 추가</button> <button class="btn small danger" onclick="delGroup()" ${DR.groups.length<=1?'disabled':''}>마지막 모둠 삭제</button></div></div></details>`;
 
- h+=`<div class="card"><h2>③ 주장 · 자료 카드</h2>`;
+ h+=`<details class="acc" id="a3" ${OPEN.a3?'open':''}><summary>③ 주장 · 자료 카드 <span class="small">${DR.claims?'주장 '+DR.claims.length+'개 (직접 편집)':'기본 자료 사용'}</span></summary><div class="accbody">`;
  if(!DR.claims){
   h+=`<p class="small">지금은 <b>기본 자료</b>(패스트패션 주장 ${CLAIMS.length}개)를 쓰고 있어요. 수정하려면 기본 자료를 복사해서 편집을 시작하세요. 기본 자료 원본은 바뀌지 않고, 언제든 되돌릴 수 있어요.</p><button class="btn" onclick="startEditClaims()">편집 시작 (기본 자료 복사)</button>`;
  }else{
@@ -299,16 +301,18 @@ function renderSettings(){
    <button class="btn small ghost" onclick="addSrc(${ci})" ${c.src.length>=MAX_SRC?'disabled':''}>＋ 자료 추가</button></div>`).join('');
   h+=`<button class="btn small ghost" onclick="addClaim()" ${DR.claims.length>=MAX_CLAIMS?'disabled':''}>＋ 주장 추가</button> <button class="btn small danger" onclick="resetClaims()">기본 자료로 되돌리기</button>`;
  }
- h+=`</div>`;
+ h+=`</div></details>`;
 
- h+=`<div class="card"><h2>④ 학생 명단 · 입장 방식</h2>
-  <p class="small">한 줄에 <b>참여코드, 모둠</b>을 적어 붙여 넣으세요. (예: <code>2-3-07, 2</code> 또는 엑셀에서 복사한 두 칸) 명단에 있는 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠도 함께 바뀝니다. 개별 수정은 ‘현황’ 탭에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
+ h+=`<details class="acc" id="a4" ${OPEN.a4?'open':''}><summary>④ 학생 명단 · 입장 방식 <span class="small">등록 ${(DB.roster||[]).length}명${DR.rosterOnly?' · 명단만 입장':''}</span></summary><div class="accbody">
+  <p class="small">한 줄에 <b>참여코드, 모둠</b>을 적어 붙여 넣으세요. (예: <code>2-3-07, 2</code> 또는 엑셀에서 복사한 두 칸) 명단에 있는 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠도 함께 바뀝니다. 개별 수정은 아래 ‘⑤ 학생 관리’에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
   <textarea id="rosterText" style="min-height:120px" placeholder="2-3-01, 1&#10;2-3-02, 1&#10;2-3-03, 2"></textarea>
   <div style="margin:8px 0"><button class="btn small" onclick="saveRoster('merge')">추가·수정 (기존 명단 유지)</button> <button class="btn small danger" onclick="saveRoster('replace')">전체 교체</button></div>
-  <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 참여 코드만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label></div>`;
+  <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 참여 코드만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label></div></details>`;
+
+ h+=`<details class="acc" id="a5" ${OPEN.a5?'open':''}><summary>⑤ 학생 관리 <span class="small">접속 ${DB.students.length}명 · 코드/모둠 수정·삭제</span></summary><div class="accbody"><div id="studentMgr"></div></div></details>`;
 
  h+=`<div class="card" style="padding-bottom:0"><div class="savebar"><button class="btn" onclick="saveSettings()">💾 저장하고 학생 화면에 적용</button> <button class="btn ghost" onclick="cancelSettings()">변경 취소</button> <span class="small">단계·모둠·주장·입장 방식이 저장돼요. 명단 등록은 위 버튼으로 바로 적용됩니다.</span></div></div>`;
- $('settings').innerHTML=h;
+ $('settings').innerHTML=h;renderStudentMgr();
 }
 function moveStage(i,d){const j=i+d;if(j<0||j>=DR.stages.length||DR.stages[i].id===0||DR.stages[j].id===0)return;[DR.stages[i],DR.stages[j]]=[DR.stages[j],DR.stages[i]];mark();renderSettings();}
 function addGroup(){if(DR.groups.length>=MAX_GROUPS)return;DR.groups.push({n:DR.groups.length+1,size:4,claim:1});mark();renderSettings();}
