@@ -166,7 +166,8 @@ td select,td input{padding:6px;font-size:.9rem}
 <div class="toast" id="toast"></div>
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script><script>
 const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'');let data=JSON.parse(localStorage.getItem(KEY)||'{}');
-if(data.code&&(data.code.length>12||/\s/.test(data.code)))delete data.code; // 서버에서 잘못 내려온 코드(날짜 문자열 등)는 버림let cur=data._stage||0;
+if(data.code&&(data.code.length>12||/\s/.test(data.code)))delete data.code; // 서버에서 잘못 내려온 코드(날짜 문자열 등)는 버림
+let cur=data._stage||0;
 const $=id=>document.getElementById(id);
 /* ---- 수업 구조(단계·모둠·주장·진행 통제): 교사가 서버에 저장한 설정, 없으면 기본값 ---- */
 let LESSON=normLesson((()=>{try{return JSON.parse(localStorage.getItem(KEY+'_lesson')||'null');}catch(e){return null;}})());
