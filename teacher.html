@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>교사 화면 — AI 답변, 믿어도 될까?</title>
+<style>
+:root{--main:#5b3fd9;--bg:#f5f4fb;--txt:#1f2233;--sub:#5f6478;--ok:#1f9d55;--part:#e08a00;--unk:#6b7280;--bad:#d64545;--line:#e1e0ee}
+*{box-sizing:border-box}body{margin:0;font-family:"Noto Sans KR","Malgun Gothic",sans-serif;background:var(--bg);color:var(--txt);font-size:16px;line-height:1.6}
+header{background:linear-gradient(90deg,#3b2a99,#5b3fd9);color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+header h1{margin:0;font-size:1.15rem}.status{display:flex;gap:10px;align-items:center;font-size:.9rem;flex-wrap:wrap}
+.badge{background:rgba(255,255,255,.22);padding:4px 11px;border-radius:20px}
+.wrap{max-width:1100px;margin:0 auto;padding:20px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{flex:1;min-width:110px;border:none;background:#e6e3f5;color:var(--sub);padding:10px 6px;border-radius:8px;font-size:.95rem;cursor:pointer}
+.tabs button.active{background:var(--main);color:#fff;font-weight:700}
+.card{background:#fff;border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:18px}
+.card h2{margin:0 0 10px;font-size:1.25rem}h3{margin:18px 0 8px;font-size:1.05rem}
+input[type=password],input[type=text]{padding:11px;border:1.5px solid var(--line);border-radius:8px;font-size:1rem;font-family:inherit}
+.btn{background:var(--main);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:.95rem;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--main);border:1.5px solid var(--main)}.btn.small{padding:6px 11px;font-size:.85rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.box{border:1.5px solid var(--line);border-radius:10px;padding:14px;background:#fff}.box h4{margin:0 0 6px;font-size:1rem}
+.small{font-size:.9rem;color:var(--sub)}
+.timer{font-size:2.4rem;font-weight:700;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px solid var(--line);padding:7px 9px;vertical-align:top;text-align:left}th{background:#f3f0ff}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.chip{background:#efeaff;border-radius:12px;padding:10px 16px;font-weight:600}.chip b{font-size:1.4rem;margin-right:4px}
+.chip.warn{background:#fdeaea;color:var(--bad)}
+.v{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.85rem;font-weight:700;color:#fff;background:var(--unk)}
+.v.ok{background:var(--ok)}.v.part{background:var(--part)}.v.unk{background:var(--unk)}.v.bad{background:var(--bad)}.v.none{background:#c9c7d8}
+.bar{display:flex;align-items:center;gap:8px;margin:5px 0}.bar .l{width:210px;font-size:.9rem}.bar .t{flex:1;background:#eee9ff;border-radius:6px;height:20px;overflow:hidden}.bar .f{height:100%;background:var(--main)}.bar .n{width:70px;text-align:right;font-size:.9rem}
+.claim{border-left:5px solid var(--main);padding:4px 0 4px 14px;margin:14px 0}
+.quote{background:#fafaff;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:.95rem}
+.help{background:#fdeaea}
+details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--main)}
+.tab{display:none}.tab.show{display:block}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;pointer-events:none;z-index:9}.toast.on{opacity:1}
+body.present{font-size:20px}body.present header,body.present .tabs,body.present .nopresent{display:none}
+</style></head><body>
+<header>
+ <h1>👩‍🏫 교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#e9e3ff">주제탐구독서 · 고2 · 50분</span></h1>
+ <div class="status"><span class="badge" id="updBadge">-</span><a class="badge" href="index.html" style="color:#fff;text-decoration:none">학생 화면 ↗</a></div>
+</header>
+<div class="wrap">
+ <div class="card" id="login" style="max-width:420px;margin:40px auto">
+  <h2>교사 확인</h2>
+  <p class="small">교사 PIN을 입력하세요.</p>
+  <form onsubmit="login();return false"><input type="password" id="pin" placeholder="PIN" autocomplete="off" style="width:100%">
+  <div style="margin-top:12px;text-align:right"><button class="btn" type="submit">들어가기</button></div></form>
+  <p class="small" id="loginMsg"></p>
+ </div>
+
+ <div id="app" style="display:none">
+  <div class="tabs" id="tabs"></div>
+
+  <section class="tab" id="tab0">
+   <div class="card">
+    <h2>진행판</h2>
+    <div class="grid2">
+     <div><div class="timer" id="timer">00:00</div>
+      <button class="btn small" onclick="startTimer(120)">발표 2분</button> <button class="btn small" onclick="startTimer(300)">5분</button> <button class="btn small" onclick="startTimer(600)">10분</button> <button class="btn small" onclick="startTimer(1020)">17분</button> <button class="btn small ghost" onclick="stopTimer()">정지</button></div>
+     <div class="small"><b>흐름(50분):</b> 준비 3 · 생각 열기 5 · 목표 2 · 모둠 탐구 17 · 모둠 공유 13 · 정리 7 · 마무리 3<br>
+      <b>모둠 편성:</b> 1~4모둠 4명, 5모둠 3명 · 모둠 번호 = 담당 주장 번호</div>
+    </div>
+   </div>
+   <div class="card">
+    <h2>5단계 모둠 공유 · 판정 공개</h2>
+    <p class="small">공개하면 학생들의 5단계 표에 다른 모둠의 판정과 근거가 자동으로 채워집니다. 발표가 끝난 뒤 공개하세요.</p>
+    <button class="btn" id="shareBtn" onclick="toggleShare()">-</button>
+   </div>
+   <div class="card">
+    <h2>공개수업 답 열쇠 (참관자용)</h2>
+    <p>①근거 없이 확산된 주장 ②추정치 불일치 ③조건 생략된 부분적 진실 ④존재 확인 안 되는 출처 ⑤비교적 확인됨(출처 표시 필요)</p>
+    <h3>참관 포인트</h3>
+    <div class="box"><h4>1. 준비하기</h4><p class="small" style="margin:0">모둠 편성(4·4·4·4·3)과 기기 준비 상태, 익명 참여 코드 사용 여부를 확인합니다.</p></div>
+    <div class="box" style="margin-top:8px"><h4>2. 생각 열기</h4><p class="small" style="margin:0">‘수치·기관명이 있으면 믿을 만하다’는 통념이 드러나는지, 어떤 문장을 먼저 의심하는지 관찰합니다.</p></div>
+    <div class="box" style="margin-top:8px"><h4>4. 모둠 탐구</h4><p class="small" style="margin:0">자료의 <b>종류·이해관계</b>(브랜드 캠페인, SNS 게시글 vs 연구기관)를 구분하는지, 수치 불일치를 ‘틀림’이 아닌 ‘산정 기준 차이’로 읽어 내는지, 존재를 확인할 수 없는 출처를 ‘확인 불가’로 처리하는지, 고쳐 쓴 문장에 조건과 출처를 넣는지 관찰합니다.</p></div>
+    <div class="box" style="margin-top:8px"><h4>5. 모둠 공유</h4><p class="small" style="margin:0">교사는 판정이 다른 모둠(예: ②의 ‘부분적으로 맞음’ vs ‘사실 아님’)을 대비시켜 근거를 묻습니다. 학생들이 다섯 판정을 종합해 ‘AI 답변 전체’에 대한 판단으로 나아가는지 봅니다.</p></div>
+   </div>
+  </section>
+
+  <section class="tab" id="tab1"><div id="live"></div></section>
+  <section class="tab" id="tab2"><div id="results"></div></section>
+
+  <section class="tab" id="tab3">
+   <div class="card">
+    <h2>데이터 내보내기</h2>
+    <p class="small">엑셀에서 바로 열 수 있는 CSV와, 원본 그대로의 JSON을 받을 수 있어요. 스프레드시트(‘학생응답’·‘모둠기록지’ 시트)에도 같은 데이터가 쌓여 있습니다.</p>
+    <button class="btn" onclick="exportCSV('students')">학생 응답 CSV</button>
+    <button class="btn" onclick="exportCSV('groups')">모둠 기록지 CSV</button>
+    <button class="btn ghost" onclick="exportJSON()">전체 JSON</button>
+   </div>
+  </section>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="config.js"></script><script src="content.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PIN_KEY='aiverify_teacher_pin';
+let pin='',DB=null,poll=null;
+const TABS=['진행','현황','결과 정리','데이터'];
+const VCLS={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'};
+const PRE=['그대로 인용해도 된다','일부는 확인이 필요하다','인용하면 안 된다'];
+const POST=['그대로 인용해도 된다','수정·출처 표시 후 부분 인용','인용하지 않는다'];
+const SELF=['AI 답변에서 확인이 필요한 문장을 골라낼 수 있다.','여러 자료를 비교해 ‘확인됨·부분적으로 맞음·확인 불가·사실 아님’을 구분할 수 있다.','자료를 만든 주체와 이해관계를 고려해 신뢰성을 판단할 수 있다.','판정 결과에 맞게 출처와 조건을 넣어 문장을 고쳐 활용할 수 있다.','모둠 탐구와 공유에 적극적으로 참여했다.'];
+const vBadge=v=>`<span class="v ${VCLS[v]||'none'}">${esc(v||'미판정')}</span>`;
+const hms=t=>t?new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'-';
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
+
+async function api(action,payload){
+ const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,pin},payload||{}))});
+ return r.json();
+}
+async function login(){
+ if(!API_URL){$('loginMsg').textContent='config.js 의 API_URL 이 비어 있어요. 서버(Apps Script) 주소를 먼저 넣어 주세요.';return;}
+ pin=$('pin').value.trim();if(!pin)return;$('loginMsg').textContent='확인 중…';
+ try{if(!await refresh()){$('loginMsg').textContent='PIN이 맞지 않거나 잠시 잠겨 있어요.';return;}}
+ catch(e){$('loginMsg').textContent='서버에 연결하지 못했어요.';return;}
+ try{sessionStorage.setItem(PIN_KEY,pin);}catch(e){}
+ $('login').style.display='none';$('app').style.display='block';buildTabs();showTab(1);
+ poll=setInterval(()=>{if(!document.hidden)refresh().catch(()=>{});},10000);
+}
+async function refresh(){
+ const r=await api('teacherAll');if(!r.ok)return false;DB=r;
+ $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
+ renderLive();renderResults();return true;
+}
+async function toggleShare(){const r=await api('setShare',{open:!DB.shareOpen});if(r.ok){toast(r.shareOpen?'모둠 판정을 공개했어요':'비공개로 바꿨어요');refresh();}else toast('실패했어요');}
+async function clearHelp(code){await api('helpClear',{code});refresh();}
+function buildTabs(){$('tabs').innerHTML=TABS.map((n,i)=>`<button onclick="showTab(${i})">${n}</button>`).join('');}
+function showTab(i){document.querySelectorAll('.tab').forEach((s,j)=>s.classList.toggle('show',i===j));document.querySelectorAll('#tabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
+
+/* ---- 현황 ---- */
+const submitted=s=>s.submittedAt>0;
+function renderLive(){
+ const S=DB.students,help=S.filter(s=>s.helpAt);
+ let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${help.length?'warn':''}"><b>${help.length}</b>도움 요청</div></div>`;
+ if(help.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+help.map(s=>`<div>${esc(s.group)}모둠 · ${esc(s.code)} · ${hms(s.helpAt)} <button class="btn small ghost" onclick="clearHelp('${esc(s.code).replace(/'/g,'')}')">확인함</button></div>`).join('')+`</div>`;
+ h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여</th><th>제출</th><th>모둠 판정</th><th>고쳐 쓴 문장</th></tr>`;
+ for(let g=1;g<=5;g++){const m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
+  h+=`<tr><td><b>${g}모둠</b></td><td class="small">${esc(CLAIMS[g-1].t)}</td><td>${m.length}/${g<5?4:3}</td><td>${m.filter(submitted).length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td></tr>`;}
+ h+=`</table></div><div class="card"><h2>학생별 현황</h2><table><tr><th>코드</th><th>모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th></tr>`;
+ h+=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>`<tr><td>${esc(s.code)}</td><td>${esc(s.group)}</td><td>${(s.data._stage||0)+1}단계</td><td>${submitted(s)?'✅ 제출':'작성 중'}</td><td>${hms(s.updatedAt)}</td></tr>`).join('');
+ $('live').innerHTML=h+`</table></div>`;
+}
+
+/* ---- 결과 정리 (마무리 단계용) ---- */
+function bars(rows,total){return rows.map(([l,n])=>`<div class="bar"><div class="l">${esc(l)}</div><div class="t"><div class="f" style="width:${total?Math.round(n/total*100):0}%"></div></div><div class="n">${n}명 (${total?Math.round(n/total*100):0}%)</div></div>`).join('');}
+function renderResults(){
+ const S=DB.students,done=S.filter(submitted);
+ let h=`<div class="card nopresent"><button class="btn" onclick="document.body.classList.add('present');window.scrollTo(0,0)">🖥 발표 화면으로 보기</button> <span class="small">(Esc 로 돌아옵니다) · 아래 결과는 제출한 ${done.length}명 기준이며, 학생 코드는 표시하지 않아요.</span></div>`;
+ h+=`<div class="card"><h2>① 모둠별 검증 결과</h2>`;
+ for(let g=1;g<=5;g++){const c=CLAIMS[g-1],f=DB.groups[g]||{},v=k=>f[k]&&f[k].v||'';
+  h+=`<div class="claim"><div><b>${c.n}.</b> ${esc(c.t)}</div><div style="margin:4px 0">${g}모둠 판정: ${vBadge(v('g_verdict'))}</div>
+   <div class="quote"><b>근거:</b> ${esc(v('g_reason'))||'<span class="small">(작성 없음)</span>'}</div>
+   <div class="quote"><b>보고서용 문장:</b> ${esc(v('g_rewrite'))||'<span class="small">(작성 없음)</span>'}</div>
+   <details><summary>출처·정확성·신뢰성 기록 보기</summary><div class="quote"><b>출처:</b> ${esc(v('g_src'))}</div><div class="quote"><b>정확성:</b> ${esc(v('g_acc'))}</div><div class="quote"><b>신뢰성:</b> ${esc(v('g_rel'))}</div></details></div>`;}
+ h+=`</div>`;
+ h+=`<div class="card"><h2>② 처음 판단과 지금 판단</h2><div class="grid2"><div><h3>처음 (2단계)</h3>${bars(PRE.map(o=>[o,done.filter(s=>s.data.pre===o).length]),done.length)}</div><div><h3>지금 (6단계)</h3>${bars(POST.map(o=>[o,done.filter(s=>s.data.post===o).length]),done.length)}</div></div>
+  <h3>판단의 이동 (행: 처음 → 열: 지금)</h3><table><tr><th></th>${POST.map(o=>`<th>${esc(o)}</th>`).join('')}</tr>${PRE.map(p=>`<tr><th>${esc(p)}</th>${POST.map(q=>`<td>${done.filter(s=>s.data.pre===p&&s.data.post===q).length}명</td>`).join('')}</tr>`).join('')}</table></div>`;
+ h+=`<div class="card"><h2>③ 자기평가 (체크한 학생 수)</h2>${bars(SELF.map((l,i)=>[l,done.filter(s=>s.data['s'+(i+1)]).length]),done.length)}</div>`;
+ const list=(k)=>done.map(s=>s.data[k]).filter(Boolean).map(t=>`<div class="quote">${esc(t)}</div>`).join('')||'<p class="small">(없음)</p>';
+ h+=`<div class="card"><h2>④ 앞으로 내가 할 확인 절차</h2>${list('reflect')}</div>
+  <div class="card"><h2>⑤ 전체 토의 · 피드백</h2><details><summary>전체 토의 답변 보기</summary>${list('discuss')}</details><details><summary>친구 모둠에 대한 피드백 보기</summary>${list('feedback')}</details></div>`;
+ $('results').innerHTML=h;
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.body.classList.remove('present');});
+
+/* ---- 내보내기 ---- */
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();}
+const csvCell=v=>{v=String(v==null?'':v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';};
+const csv=rows=>'﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
+function exportCSV(kind){
+ if(kind==='students'){
+  const head=['코드','모둠','제출시각','처음 판단','처음 이유','지금 판단','다짐(확인 절차)','전체 토의','피드백',...SELF.map((_,i)=>'자기평가'+(i+1))];
+  const rows=DB.students.map(s=>{const d=s.data;return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':'')];});
+  download('학생응답.csv',csv([head,...rows]),'text/csv;charset=utf-8');
+ }else{
+  const K=[['g_verdict','판정'],['g_reason','근거 한 문장'],['g_rewrite','보고서용 문장'],['g_src','출처'],['g_acc','정확성'],['g_rel','신뢰성'],['g_speaker','발표자'],['g_recorder','기록자']];
+  const rows=[1,2,3,4,5].map(g=>[g+'모둠',CLAIMS[g-1].t,...K.map(([k])=>(DB.groups[g][k]||{}).v||'')]);
+  download('모둠기록지.csv',csv([['모둠','담당 주장',...K.map(k=>k[1])],...rows]),'text/csv;charset=utf-8');
+ }
+}
+function exportJSON(){download('ai-verify-전체.json',JSON.stringify(DB,null,2),'application/json');}
+
+/* ---- 타이머 ---- */
+let tm=null,left=0;function startTimer(s){left=s;clearInterval(tm);tick();tm=setInterval(tick,1000);}function stopTimer(){clearInterval(tm);}
+function tick(){const t=$('timer');t.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');t.style.color=left<=30?'#d64545':'#1f2233';if(left<=0){clearInterval(tm);toast('시간이 끝났어요 ⏰');}left--;}
+
+try{const p=sessionStorage.getItem(PIN_KEY);if(p&&API_URL){$('pin').value=p;login();}}catch(e){}
+</script></body></html>

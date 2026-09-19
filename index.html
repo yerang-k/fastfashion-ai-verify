@@ -31,9 +31,6 @@ textarea{min-height:90px;resize:vertical}
 .tag{display:inline-block;font-size:.78rem;padding:2px 9px;border-radius:12px;background:#eee9ff;color:#3f2f8a;margin-bottom:6px}
 .small{font-size:.9rem;color:var(--sub)}
 details{margin-top:14px}summary{cursor:pointer;font-weight:600;color:var(--main)}
-.teacher{display:none;background:#fff8e6;border:1.5px solid #f0d78c;border-radius:12px;padding:16px;margin-bottom:18px}
-body.teacher-mode .teacher{display:block}
-.timer{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums}
 .verdict label{display:block;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;margin:6px 0;cursor:pointer}
 .verdict input:checked+span{font-weight:700}
 .v-ok input:checked+span{color:var(--ok)}.v-part input:checked+span{color:var(--part)}.v-unk input:checked+span{color:var(--unk)}.v-bad input:checked+span{color:var(--bad)}
@@ -50,20 +47,9 @@ td select,td input{padding:6px;font-size:.9rem}
 </style></head><body>
 <header>
  <h1>🔍 AI 답변, 믿어도 될까? <span class="small" style="color:#e9e3ff">주제탐구독서 · 고2 · 50분</span></h1>
- <div class="status"><span class="badge" id="codeBadge">참여 코드: -</span><span class="badge" id="grpBadge">모둠: -</span><span class="badge" id="saveBadge">💾 저장 대기</span>
- <button class="btn small" style="background:#fff;color:var(--main)" onclick="document.body.classList.toggle('teacher-mode')">교사 모드</button></div>
+ <div class="status"><span class="badge" id="codeBadge">참여 코드: -</span><span class="badge" id="grpBadge">모둠: -</span><span class="badge" id="saveBadge">💾 저장 대기</span></div>
 </header>
 <div class="wrap">
- <div class="teacher"><strong>👩‍🏫 교사 진행판</strong>
-  <div class="grid2" style="margin-top:8px">
-   <div><div class="timer" id="timer">00:00</div>
-    <button class="btn small" onclick="startTimer(120)">발표 2분</button><button class="btn small" onclick="startTimer(300)">5분</button><button class="btn small" onclick="startTimer(600)">10분</button><button class="btn small" onclick="startTimer(1020)">17분</button><button class="btn small ghost" onclick="stopTimer()">정지</button></div>
-   <div class="small"><b>흐름(50분):</b> 준비 3 · 생각 열기 5 · 목표 2 · 모둠 탐구 17 · 모둠 공유 13 · 정리 7 · 마무리 3<br>
-    <b>모둠 편성:</b> 1~4모둠 4명, 5모둠 3명 · 모둠 번호 = 담당 주장 번호<br>
-    <b>이 기기 상태:</b> <span id="submitState">미제출</span><br>
-    <b>공개수업 답 열쇠(참관자용):</b> ①근거 없이 확산된 주장 ②추정치 불일치 ③조건 생략된 부분적 진실 ④존재 확인 안 되는 출처 ⑤비교적 확인됨(출처 표시 필요)<br>
-    <button class="btn small ghost" onclick="exportData()" style="margin-top:6px">응답 내보내기(JSON)</button> <button class="btn small ghost" onclick="resetAll()">초기화</button></div>
-  </div></div>
 
  <div class="steps" id="steps"></div>
 
@@ -73,9 +59,8 @@ td select,td input{padding:6px;font-size:.9rem}
   <input type="text" id="code" placeholder="참여 코드 (예: 2-3-07)" maxlength="12" data-save>
   <h3>내 모둠</h3>
   <div class="groups" id="groups"></div>
-  <p class="small">모둠 번호는 오늘 우리 모둠이 검증할 <b>AI 답변의 문장 번호</b>와 같아요. 모둠 기기 1대로 함께 기록해도 되고, 각자 기록해도 됩니다.</p>
+  <p class="small">모둠 번호는 오늘 우리 모둠이 검증할 <b>AI 답변의 문장 번호</b>와 같아요. 각자 내 기기로 접속하되, 4단계 모둠 기록지는 <b>같은 모둠 친구들과 자동으로 함께 쓰는 하나의 기록지</b>예요.</p>
   <div class="nav"><span></span><button class="btn" onclick="ready()">준비 완료 ✔</button></div>
-  <details><summary>참관 포인트</summary><p class="small">모둠 편성(4·4·4·4·3)과 기기 준비 상태, 익명 참여 코드 사용 여부를 확인합니다.</p></details>
  </section>
 
  <section class="stage card" data-i="1">
@@ -91,7 +76,6 @@ td select,td input{padding:6px;font-size:.9rem}
   </div>
   <textarea id="preWhy" placeholder="그렇게 판단한 이유는? 특히 의심스러운 문장이 있다면 번호를 적어 보세요." data-save></textarea>
   <div class="nav"><button class="btn ghost" onclick="go(0)">이전</button><button class="btn" onclick="go(2)">다음</button></div>
-  <details><summary>참관 포인트</summary><p class="small">‘수치·기관명이 있으면 믿을 만하다’는 통념이 드러나는지, 어떤 문장을 먼저 의심하는지 관찰합니다.</p></details>
  </section>
 
  <section class="stage card" data-i="2">
@@ -131,13 +115,12 @@ td select,td input{padding:6px;font-size:.9rem}
   <textarea id="g_rewrite" data-save style="min-height:110px" placeholder="예: … 로 추정된다(○○ 기관, 2019). 단, 산정 기준에 따라 …까지 차이가 있다."></textarea>
   <div class="role"><input type="text" data-save id="g_speaker" placeholder="발표자 코드"><input type="text" data-save id="g_recorder" placeholder="기록자 코드"></div>
   <div class="nav"><button class="btn ghost" onclick="go(2)">이전</button><button class="btn" onclick="go(4)">다음</button></div>
-  <details><summary>참관 포인트</summary><p class="small">자료의 <b>종류·이해관계</b>(브랜드 캠페인, SNS 게시글 vs 연구기관)를 구분하는지, 수치 불일치를 ‘틀림’이 아닌 ‘산정 기준 차이’로 읽어 내는지, 존재를 확인할 수 없는 출처를 ‘확인 불가’로 처리하는지, 고쳐 쓴 문장에 조건과 출처를 넣는지 관찰합니다.</p></details>
  </section>
 
  <section class="stage card" data-i="4">
   <h2>5. 모둠 공유: 다섯 조각 맞추기 <span class="time">13분</span></h2>
   <div class="todo">지금 할 일: 각 모둠이 2분씩 발표합니다. 다른 모둠의 판정과 근거를 기록하고, 다섯 문장을 모아 ‘검증된 답변’을 완성해요.</div>
-  <p class="small">우리 모둠 줄은 자동으로 채워져요. 발표를 들으며 나머지 줄을 기록하세요.</p>
+  <p class="small">우리 모둠 줄은 자동으로 채워져요. 발표를 들으며 나머지 줄을 기록하세요.<span id="shareNote"></span></p>
   <table><thead><tr><th style="width:36px">#</th><th>AI 답변 문장</th><th style="width:150px">판정</th><th>근거 · 고쳐 쓴 문장 핵심</th></tr></thead><tbody id="shareTable"></tbody></table>
   <h3>🤔 전체 토의</h3>
   <p><b>다섯 문장을 모두 검증한 결과, 처음 AI 답변은 어느 정도 믿을 만했나요? 가장 놀라웠던 판정은 무엇이고 왜 그런가요?</b></p>
@@ -145,7 +128,6 @@ td select,td input{padding:6px;font-size:.9rem}
   <p><b>친구 모둠의 발표에 대한 피드백</b> — “○모둠의 판정에서 설득력 있었던 점은 ___, 더 확인하면 좋을 점은 ___”</p>
   <textarea id="feedback" data-save></textarea>
   <div class="nav"><button class="btn ghost" onclick="go(3)">이전</button><button class="btn" onclick="go(5)">다음</button></div>
-  <details><summary>참관 포인트</summary><p class="small">교사는 판정이 다른 모둠(예: ②의 ‘부분적으로 맞음’ vs ‘사실 아님’)을 대비시켜 근거를 묻습니다. 학생들이 다섯 판정을 종합해 ‘AI 답변 전체’에 대한 판단으로 나아가는지 봅니다.</p></details>
  </section>
 
  <section class="stage card" data-i="5">
@@ -177,10 +159,10 @@ td select,td input{padding:6px;font-size:.9rem}
   <div class="nav"><button class="btn ghost" onclick="go(5)">이전</button><span></span></div>
  </section>
 </div>
-<button class="help" onclick="toast('선생님께 도움 요청을 보냈어요 (프로토타입: 표시만)')">🙋 도움이 필요해요</button>
+<p class="small" style="text-align:center"><a href="#" onclick="resetAll();return false" style="color:var(--sub)">이 기기의 내 응답 초기화</a></p>
+<button class="help" onclick="askHelp()">🙋 도움이 필요해요</button>
 <div class="toast" id="toast"></div>
-<script>
-const CLAIMS=[{"n": 1, "t": "패션 산업은 석유 산업 다음으로 세계에서 두 번째로 환경을 많이 오염시키는 산업이다.", "hint": "이 주장의 '최초 출처'를 자료에서 찾을 수 있나요? 많이 인용된다는 것과 근거가 있다는 것은 같은가요?", "src": [{"type": "환경 전문 매체 팩트체크 기사", "title": "‘패션은 2위 오염 산업’ 주장, 근거를 추적해 보니", "body": "이 표현은 2010년대 다큐멘터리와 캠페인에서 반복 인용되었으나, 취재 결과 <b>원 데이터나 연구를 제시한 곳이 없었다</b>. 여러 환경 단체도 이 순위 표현 사용을 중단했다."}, {"type": "패션 브랜드 캠페인 페이지", "title": "지구를 위한 선택, 우리 브랜드의 약속", "body": "“패션은 세계 2위 오염 산업입니다. 그래서 우리는 친환경 소재를 사용합니다.” (근거 자료 링크 없음)"}, {"type": "국제기구 보고서 요약 (2019)", "title": "섬유·의류 산업의 환경 영향", "body": "섬유 산업은 물 사용, 화학물질, 온실가스 배출 등 <b>여러 영역에서 상당한 영향</b>을 준다. 단, 산업별 ‘오염 순위’를 매기는 통일된 국제 기준은 없다."}]}, {"n": 2, "t": "패션 산업은 전 세계 탄소 배출량의 10%를 차지한다.", "hint": "기관마다 숫자가 다르다면 어느 쪽이 맞을까요? ‘틀렸다’와 ‘추정치가 다르다’는 같은 말인가요?", "src": [{"type": "국제기구 보도자료 (2019)", "title": "패션 산업의 기후 영향", "body": "패션 산업은 전 세계 탄소 배출의 <b>약 8~10%</b>를 차지하는 것으로 추정된다. (산정 범위: 원료 생산부터 폐기까지)"}, {"type": "환경 연구소 분석 (2021)", "title": "의류 산업 배출량 재산정", "body": "의류 산업의 배출량은 전 세계의 <b>약 2%</b> 수준으로 분석된다. 10%라는 수치는 신발·섬유 전체를 포함하고 일부 항목이 중복 계산된 결과로 보인다."}, {"type": "학술 논문 요약 (2020)", "title": "패션 환경 영향 수치의 신뢰성 검토", "body": "언론에 인용되는 패션 산업 통계 다수가 <b>출처를 추적할 수 없거나 추정 범위가 매우 넓다</b>. 수치를 쓸 때는 산정 기준과 연도를 함께 제시해야 한다."}]}, {"n": 3, "t": "면 티셔츠 한 장을 만드는 데 물 2,700리터가 들어가며, 이는 한 사람이 3년 동안 마시는 물의 양이다.", "hint": "이 숫자는 ‘어떤 조건’에서 계산된 걸까요? 조건을 빼고 말하면 어떤 오해가 생기나요?", "src": [{"type": "국제 환경단체 자료 (2013)", "title": "면 재배와 물 발자국", "body": "면 티셔츠 한 장의 <b>물 발자국은 약 2,700L</b>로 추정된다. 이 수치는 <b>빗물·관개용수·오염 희석용 물을 모두 합한</b> 것이며, 재배 지역에 따라 크게 달라진다."}, {"type": "농업 연구기관 보고서", "title": "지역별 면화 물 사용량 비교", "body": "건조 지역 관개 재배 면화와 강우 의존 재배 면화의 물 사용량은 <b>수 배 이상 차이</b>가 난다. 단일 평균값은 특정 지역 상황을 대표하지 못한다."}, {"type": "SNS 인포그래픽 게시글", "title": "당신의 티셔츠가 마신 물 🌊", "body": "“티셔츠 한 장 = 당신이 3년간 마시는 물!” (출처 표기 없음, 좋아요 12만)"}]}, {"n": 4, "t": "2024년 환경부 보고서에 따르면 우리나라에서 버려지는 옷의 85%가 그대로 매립·소각된다.", "hint": "‘2024년 환경부 보고서’를 자료에서 확인할 수 있나요? 비슷한 숫자가 다른 나라 자료에 있다면 어떻게 봐야 할까요?", "src": [{"type": "국내 언론 기사 (2023)", "title": "의류 폐기물, 얼마나 버려지고 어디로 가나", "body": "국내 의류 폐기물 통계는 <b>생활폐기물에 섞여 배출되는 양이 정확히 집계되지 않아</b> 전문가마다 추정치가 다르다. 헌옷 수거함 의류의 상당 부분은 해외로 수출된다."}, {"type": "해외 환경청 통계 (미국, 2018)", "title": "섬유 폐기물 처리 현황", "body": "미국에서 버려진 섬유류 중 <b>약 85%가 매립 또는 소각</b>되었다. (미국 통계이며 다른 나라 상황과 다를 수 있음)"}, {"type": "환경부 누리집 자료 목록 검색 결과", "title": "‘의류 폐기물 85%’ 관련 보고서 검색", "body": "해당 문구를 담은 <b>2024년 보고서를 찾을 수 없음</b>. 유사 주제의 자료는 ‘생활폐기물 발생 및 처리 현황’ 통계이며, 의류만 따로 집계한 비율은 제시되지 않음."}]}, {"n": 5, "t": "2000년에서 2014년 사이 세계 의류 생산량은 2배로 늘었지만, 옷 한 벌을 입는 횟수는 36% 줄었다.", "hint": "이 주장은 어디서 나왔고 어떻게 계산되었을까요? 잘 확인되는 주장이라도 그대로 옮겨 쓰면 될까요?", "src": [{"type": "글로벌 컨설팅사 보고서 (2016)", "title": "스타일과 지속가능성: 패션 산업의 현황", "body": "2000~2014년 의류 생산량은 <b>약 2배</b> 증가했고, 소비자가 옷을 보유하는 기간은 짧아져 <b>착용 횟수가 평균 36% 감소</b>한 것으로 분석된다. (전 세계 평균, 자체 소비자 조사 기반)"}, {"type": "국제 환경단체 보고서 (2017)", "title": "새로운 섬유 경제", "body": "위 컨설팅사 자료를 인용해 의류 사용 기간 단축 문제를 지적하며, 순환 경제로의 전환을 제안한다."}, {"type": "경제 주간지 기사 (2022)", "title": "패스트패션 20년, 숫자로 보기", "body": "의류 생산량 증가 추세는 여러 통계에서 일관되게 나타난다. 단, ‘착용 횟수 36% 감소’는 <b>한 기관의 설문 기반 추정</b>이므로 인용 시 출처 표시가 필요하다."}]}];
+<script src="config.js"></script><script src="content.js"></script><script>
 const STAGES=['준비','생각 열기','목표','모둠 탐구','모둠 공유','정리','마무리'];
 const KEY='aiverify_fashion_v1';let data=JSON.parse(localStorage.getItem(KEY)||'{}');let cur=data._stage||0;
 const $=id=>document.getElementById(id);
@@ -207,24 +189,69 @@ function renderGroup(){
 }
 function go(i){cur=i;document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('show',+s.dataset.i===i));
  document.querySelectorAll('#steps button').forEach((b,j)=>{b.classList.toggle('active',j===i);b.classList.toggle('done',j<i);});
- $('mirrorPre').textContent=data.pre||'-';renderGroup();data._stage=i;save();window.scrollTo({top:0,behavior:'smooth'});}
-function ready(){collect();if(!data.code){toast('참여 코드를 입력해 주세요');return;}if(!data.group){toast('모둠을 선택해 주세요');return;}
+ $('mirrorPre').textContent=data.pre||'-';renderGroup();data._stage=i;save();if(i===4)pollShare();window.scrollTo({top:0,behavior:'smooth'});}
+async function ready(){collect();if(!data.code){toast('참여 코드를 입력해 주세요');return;}if(!data.group){toast('모둠을 선택해 주세요');return;}
+ if(ONLINE){try{const r=await api('getStudent',{code:data.code});
+  if(r.found&&r.dev!==DEV&&!confirm('이미 이 참여 코드로 저장된 응답이 있어요.\n내 코드가 맞다면 [확인], 다른 친구가 쓰는 코드라면 [취소] 후 다른 코드를 입력하세요.'))return;
+ }catch(e){toast('서버에 연결하지 못했어요. 일단 이 기기에 저장돼요.');}}
  $('codeBadge').textContent='참여 코드: '+data.code;toast('준비 완료!');go(1);}
 function collect(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!k)return;
  if(el.type==='radio'){if(el.checked)data[k]=el.value;}else if(el.type==='checkbox')data[k]=el.checked;else data[k]=el.value;});}
-function save(){collect();localStorage.setItem(KEY,JSON.stringify(data));
- $('saveBadge').textContent=data._submitted?'📤 제출 완료':'💾 이 기기에 저장됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});}
+const hhmm=()=>new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+function setBadge(s){$('saveBadge').textContent=data._submitted?'📤 제출 완료':s==='err'?'⚠️ 서버 저장 실패 · 다시 시도 중':s==='ok'?'☁️ 서버에 저장됨 '+hhmm():ONLINE?'☁️ 저장 중…':'💾 이 기기에 저장됨 '+hhmm();}
+function save(){collect();localStorage.setItem(KEY,JSON.stringify(data));setBadge();if(ONLINE)queueSync();}
+/* ---- 서버 연동 ---- */
+const GROUP_FIELDS=['g_src','g_acc','g_rel','g_verdict','g_reason','g_rewrite','g_speaker','g_recorder'];
+const ONLINE=!!API_URL;
+const DEV=(()=>{try{let d=localStorage.getItem(KEY+'_dev');if(!d){d=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem(KEY+'_dev',d);}return d;}catch(e){return 'x';}})();
+async function api(action,payload,post){const body=Object.assign({action},payload||{});
+ const r=post?await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}):await fetch(API_URL+'?'+new URLSearchParams(body));
+ const j=await r.json();if(!j.ok)throw new Error(j.error||'api');return j;}
+let sTimer=null,gTimer=null,gdirty={};
+function queueSync(){clearTimeout(sTimer);sTimer=setTimeout(pushStudent,1500);}
+async function pushStudent(){if(!ONLINE||!data.code||!data.group)return true;
+ try{await api('saveStudent',{code:data.code,group:+data.group,dev:DEV,data:data,submitted:!!data._submitted},true);setBadge('ok');return true;}
+ catch(e){setBadge('err');queueSync();return false;}}
+function markGroup(k){data._gt=data._gt||{};const t=Date.now();data._gt[k]=t;gdirty[k]={v:data[k]==null?'':data[k],t};clearTimeout(gTimer);gTimer=setTimeout(pushGroup,1000);}
+async function pushGroup(){clearTimeout(gTimer);if(!ONLINE||!data.group||!Object.keys(gdirty).length)return true;
+ const f=gdirty;gdirty={};
+ try{const r=await api('saveGroup',{group:+data.group,fields:f},true);applyGroup(r.fields);return true;}
+ catch(e){for(const k in f)if(!gdirty[k])gdirty[k]=f[k];gTimer=setTimeout(pushGroup,5000);return false;}}
+function applyGroup(fields){data._gt=data._gt||{};let ch=false;
+ GROUP_FIELDS.forEach(k=>{const n=fields&&fields[k];if(!n||gdirty[k]||n.t<=(data._gt[k]||0))return;
+  const els=document.querySelectorAll(`[id="${k}"],[name="${k}"]`);
+  if(els[0]&&els[0].type==='radio')els.forEach(e=>e.checked=(e.value===n.v));
+  else if(els[0]){if(els[0]===document.activeElement)return;els[0].value=n.v;}
+  data[k]=n.v;data._gt[k]=n.t;ch=true;});
+ if(ch){localStorage.setItem(KEY,JSON.stringify(data));renderGroup();}}
+async function pollGroup(){if(!ONLINE||!data.group||document.hidden)return;
+ try{applyGroup((await api('getGroup',{group:+data.group})).fields);}catch(e){}}
+async function pollShare(){if(!ONLINE||cur!==4||document.hidden)return;
+ try{const r=await api('getShare');$('shareNote').textContent=r.open?'':' (선생님이 공개하면 다른 모둠 판정이 자동으로 채워져요.)';
+  if(!r.open)return;data._shA=data._shA||{};let ch=false;
+  for(const n in r.groups){if(+n===+data.group)continue;const g=r.groups[n],row=$('row'+n);if(!row)continue;
+   const key=g.g_verdict+'|'+g.g_reason;if(data._shA[n]===key)continue;
+   row.querySelector('select').value=g.g_verdict;row.querySelector('input').value=g.g_reason.slice(0,80);data._shA[n]=key;ch=true;}
+  if(ch)save();}catch(e){}}
+function onGroupChange(){collect();
+ if(data._grpApplied&&data._grpApplied!==data.group){GROUP_FIELDS.forEach(k=>{document.querySelectorAll(`[id="${k}"],[name="${k}"]`).forEach(e=>{if(e.type==='radio')e.checked=false;else e.value='';});delete data[k];});data._gt={};gdirty={};}
+ data._grpApplied=data.group;pollGroup();}
+async function askHelp(){if(!ONLINE){toast('선생님께 손을 들어 알려 주세요');return;}
+ if(!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
+ try{await pushStudent();await api('help',{code:data.code},true);toast('선생님께 도움 요청을 보냈어요 🙋');}catch(e){toast('요청을 보내지 못했어요. 손을 들어 알려 주세요');}}
 function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!(k in data))return;
  if(el.type==='radio')el.checked=(el.value===data[k]);else if(el.type==='checkbox')el.checked=!!data[k];else el.value=data[k];});
- if(data.code)$('codeBadge').textContent='참여 코드: '+data.code;if(data._submitted)$('submitState').textContent='제출 완료 ('+data._submitted+')';}
-function submitAll(){collect();const miss=[];if(!data.g_verdict)miss.push('모둠 판정');if(!data.g_rewrite)miss.push('고쳐 쓴 문장');if(!data.post)miss.push('지금의 판단');if(!data.reflect)miss.push('정리');
+ if(data.code)$('codeBadge').textContent='참여 코드: '+data.code;}
+async function submitAll(){collect();const miss=[];if(!data.g_verdict)miss.push('모둠 판정');if(!data.g_rewrite)miss.push('고쳐 쓴 문장');if(!data.post)miss.push('지금의 판단');if(!data.reflect)miss.push('정리');
  if(miss.length){toast('아직 비어 있어요: '+miss.join(', '));return;}
- data._submitted=new Date().toLocaleTimeString('ko-KR');save();$('submitState').textContent='제출 완료 ('+data._submitted+')';go(6);}
-let tm=null,left=0;function startTimer(s){left=s;clearInterval(tm);tick();tm=setInterval(tick,1000);}function stopTimer(){clearInterval(tm);}
-function tick(){const t=$('timer');t.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');t.style.color=left<=30?'#d64545':'#1f2233';if(left<=0){clearInterval(tm);toast('시간이 끝났어요 ⏰');}left--;}
-function exportData(){collect();const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`g${data.group||0}_${data.code||'student'}.json`;a.click();}
-function resetAll(){if(confirm('이 기기의 응답을 모두 지울까요?')){localStorage.removeItem(KEY);location.reload();}}
+ const prev=data._submitted;data._submitted=new Date().toLocaleTimeString('ko-KR');
+ if(ONLINE){toast('제출 중…');await pushGroup();
+  if(!await pushStudent()){data._submitted=prev;localStorage.setItem(KEY,JSON.stringify(data));setBadge('err');toast('서버에 저장하지 못했어요. 네트워크를 확인하고 다시 눌러 주세요');return;}}
+ save();go(6);}
+function resetAll(){if(confirm('이 기기의 응답을 모두 지울까요?\n(서버에 이미 저장된 응답은 그대로 남아요)')){localStorage.removeItem(KEY);location.reload();}}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
 buildStatic();restore();go(cur);
-document.addEventListener('input',()=>{save();renderGroup();});document.addEventListener('change',()=>{save();renderGroup();});
+function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();save();if(ONLINE&&GROUP_FIELDS.includes(k))markGroup(k);renderGroup();}
+document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
+if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}setInterval(()=>{pollGroup();pollShare();},4000);}
 </script></body></html>
