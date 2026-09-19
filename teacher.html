@@ -3,50 +3,79 @@
 <meta name="robots" content="noindex,nofollow">
 <title>교사 화면 — AI 답변, 믿어도 될까?</title>
 <style>
-:root{--main:#5b3fd9;--bg:#f5f4fb;--txt:#1f2233;--sub:#5f6478;--ok:#1f9d55;--part:#e08a00;--unk:#6b7280;--bad:#d64545;--line:#e1e0ee}
+:root{--main:#1c1c1c;--accent:#c9b18b;--accent-soft:#f1eadd;--accent-dk:#6b5535;--bg:#f4f4f2;--soft:#eeede9;--txt:#1a1a1a;--sub:#6b6b68;--ok:#1a1a1a;--part:#a8875a;--unk:#8a8a86;--bad:#4d4d4d;--line:#dcdcd8}
 *{box-sizing:border-box}body{margin:0;font-family:"Noto Sans KR","Malgun Gothic",sans-serif;background:var(--bg);color:var(--txt);font-size:16px;line-height:1.6}
-header{background:linear-gradient(90deg,#3b2a99,#5b3fd9);color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+header{background:var(--main);color:#fff;border-bottom:3px solid var(--accent);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 header h1{margin:0;font-size:1.15rem}.status{display:flex;gap:10px;align-items:center;font-size:.9rem;flex-wrap:wrap}
-.badge{background:rgba(255,255,255,.22);padding:4px 11px;border-radius:20px}
+.badge{background:rgba(255,255,255,.14);padding:4px 11px;border-radius:20px}
 .wrap{max-width:1100px;margin:0 auto;padding:20px}
 .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.tabs button{flex:1;min-width:100px;border:none;background:#e6e3f5;color:var(--sub);padding:10px 6px;border-radius:8px;font-size:.95rem;cursor:pointer}
+.tabs button{flex:1;min-width:100px;border:none;background:#eceae5;color:var(--sub);padding:10px 6px;border-radius:8px;font-size:.95rem;cursor:pointer}
 .tabs button.active{background:var(--main);color:#fff;font-weight:700}
 .card{background:#fff;border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:18px}
 .card h2{margin:0 0 10px;font-size:1.25rem}h3{margin:18px 0 8px;font-size:1.05rem}
 input[type=password],input[type=text],input[type=number],select,textarea{padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:.95rem;font-family:inherit;max-width:100%}
 textarea{width:100%;min-height:70px;resize:vertical}
 .btn{background:var(--main);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:.95rem;cursor:pointer}
-.btn.ghost{background:#fff;color:var(--main);border:1.5px solid var(--main)}.btn.small{padding:5px 10px;font-size:.85rem}.btn.danger{background:#fff;color:var(--bad);border:1.5px solid var(--bad)}
+.btn.ghost{background:#fff;color:var(--main);border:1.5px solid var(--main)}.btn.small{padding:5px 10px;font-size:.85rem}.btn.danger{background:#fff;color:var(--txt);border:1.5px dashed var(--txt)}
 .btn:disabled{opacity:.4;cursor:default}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:760px){.grid2{grid-template-columns:1fr}}
 .box{border:1.5px solid var(--line);border-radius:10px;padding:14px;background:#fff}.box h4{margin:0 0 6px;font-size:1rem}
 .small{font-size:.9rem;color:var(--sub)}
 .timer{font-size:2.4rem;font-weight:700;font-variant-numeric:tabular-nums}
-table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}th{background:#f3f0ff}
+table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}th{background:var(--soft)}
 td input[type=text],td input[type=number],td select{width:100%}
-.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.chip{background:#efeaff;border-radius:12px;padding:10px 16px;font-weight:600}.chip b{font-size:1.4rem;margin-right:4px}
-.chip.warn{background:#fdeaea;color:var(--bad)}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.chip{background:var(--accent-soft);border-radius:12px;padding:10px 16px;font-weight:600}.chip b{font-size:1.4rem;margin-right:4px}
+.chip.warn{background:var(--accent-soft);color:var(--accent-dk);box-shadow:inset 0 0 0 1.5px var(--accent)}
 .v{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.85rem;font-weight:700;color:#fff;background:var(--unk)}
-.v.ok{background:var(--ok)}.v.part{background:var(--part)}.v.unk{background:var(--unk)}.v.bad{background:var(--bad)}.v.none{background:#c9c7d8}
-.bar{display:flex;align-items:center;gap:8px;margin:5px 0}.bar .l{width:210px;font-size:.9rem}.bar .t{flex:1;background:#eee9ff;border-radius:6px;height:20px;overflow:hidden}.bar .f{height:100%;background:var(--main)}.bar .n{width:70px;text-align:right;font-size:.9rem}
-.claim{border-left:5px solid var(--main);padding:4px 0 4px 14px;margin:14px 0}
-.quote{background:#fafaff;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:.95rem}
-.help{background:#fdeaea}
+.v.ok{background:var(--ok)}.v.part{background:var(--part)}.v.unk{background:var(--unk)}.v.bad{background:#fff;color:var(--txt);box-shadow:inset 0 0 0 1.5px var(--txt)}.v.none{background:#cfcfca}
+.bar{display:flex;align-items:center;gap:8px;margin:5px 0}.bar .l{width:210px;font-size:.9rem}.bar .t{flex:1;background:var(--accent-soft);border-radius:6px;height:20px;overflow:hidden}.bar .f{height:100%;background:var(--main)}.bar .n{width:70px;text-align:right;font-size:.9rem}
+.claim{border-left:5px solid var(--accent);padding:4px 0 4px 14px;margin:14px 0}
+.quote{background:#faf9f6;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:.95rem}
+.help{background:var(--accent-soft)}
 .stagebtns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .savebar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--main);padding:10px 16px;margin:0 -22px -22px;border-radius:0 0 14px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#fcfbff}
-.srcbox{border:1px dashed #b9b3e0;border-radius:8px;padding:8px;margin:8px 0}
+.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#faf9f6}
+.srcbox{border:1px dashed var(--accent);border-radius:8px;padding:8px;margin:8px 0}
 .lbl{font-size:.85rem;color:var(--sub);margin:6px 0 2px}
 details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--main)}
 .tab{display:none}.tab.show{display:block}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;pointer-events:none;z-index:9}.toast.on{opacity:1}
+header select{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 8px;border-radius:20px}header select option{color:#111}
+.badge.btnlike{cursor:pointer;border:none;color:#fff;font:inherit}
+.phase{background:#fff;border-radius:14px;padding:18px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:18px}
+.phase h2{margin:0 0 10px;font-size:1.05rem}
+.pchips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pchip{border:1.5px solid var(--line);background:#fff;color:var(--txt);padding:9px 14px;border-radius:22px;font-size:.95rem;cursor:pointer;font-family:inherit}
+.pchip.on{background:var(--main);color:#fff;border-color:var(--main);font-weight:700;box-shadow:0 0 0 3px var(--accent-soft),0 0 0 4px var(--accent)}
+.pchip.free{border-style:dashed}
+.phrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.stagemode{display:none}
+body.stagemode-on{background:#111;color:#f4f4f2;font-size:22px}
+body.stagemode-on header,body.stagemode-on .wrap{display:none!important}
+body.stagemode-on #stageView{display:flex}
+#stageView{display:none;flex-direction:column;min-height:100vh;padding:4vh 5vw;gap:3vh;position:relative}
+#stageView .sv-top{display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-size:1.1rem;letter-spacing:.06em}
+#stageView .sv-now{flex:1;display:flex;flex-direction:column;justify-content:center}
+#stageView .sv-no{color:var(--accent);font-size:1.6rem;font-weight:700}
+#stageView .sv-name{font-size:clamp(3rem,9vw,7rem);font-weight:800;line-height:1.1;margin:.1em 0}
+#stageView .sv-time{font-size:1.4rem;color:#a8a8a4}
+#stageView .sv-timer{font-size:clamp(4rem,12vw,10rem);font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent)}
+#stageView .sv-steps{display:flex;gap:8px;flex-wrap:wrap}
+#stageView .sv-steps span{padding:8px 16px;border:1.5px solid #3a3a38;border-radius:22px;color:#8a8a86;font-size:1rem}
+#stageView .sv-steps span.on{background:var(--accent);border-color:var(--accent);color:#111;font-weight:800}
+#stageView .sv-steps span.past{color:#d8d8d4;border-color:#5a5a58}
+#stageView .sv-stat{display:flex;gap:4vw;font-size:1.3rem;color:#d8d8d4;flex-wrap:wrap}
+#stageView .sv-stat b{font-size:2.6rem;color:#fff;margin-right:.2em}
+#stageView .sv-ctl{position:absolute;right:2vw;bottom:2vh;display:flex;gap:8px;opacity:.35}
+#stageView .sv-ctl:hover{opacity:1}
+#stageView .sv-ctl button{background:#2a2a28;color:#f4f4f2;border:1px solid #444;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit;font-size:.9rem}
 body.present{font-size:20px}body.present header,body.present .tabs,body.present .nopresent{display:none}
 </style></head><body>
 <header>
- <h1>👩‍🏫 교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#e9e3ff">주제탐구독서 · 고2 · 50분</span></h1>
- <div class="status"><span class="badge" id="updBadge">-</span><a class="badge" href="index.html" style="color:#fff;text-decoration:none">학생 화면 ↗</a></div>
+ <h1>교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서 · 고2 · 50분</span></h1>
+ <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
 </header>
 <div class="wrap">
  <div class="card" id="login" style="max-width:420px;margin:40px auto">
@@ -58,37 +87,18 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
  </div>
 
  <div id="app" style="display:none">
+  <div class="phase">
+   <h2>지금 학생에게 보여 줄 단계 <span class="small" id="phaseInfo"></span></h2>
+   <div class="pchips" id="pchips"></div>
+   <div class="phrow">
+    <button class="btn small ghost" id="prevBtn" onclick="stepStage(-1)">◀ 이전 단계</button><button class="btn small" id="nextBtn" onclick="stepStage(1)">다음 단계 ▶</button>
+    <span class="timer" id="timer" style="font-size:1.8rem">00:00</span>
+    <button class="btn small ghost" id="stageTimerBtn" onclick="startStageTimer()">이 단계 타이머</button> <button class="btn small ghost" onclick="startTimer(120)">2분</button><button class="btn small ghost" onclick="startTimer(300)">5분</button><button class="btn small ghost" onclick="startTimer(600)">10분</button> <button class="btn small ghost" onclick="stopTimer()">정지</button>
+   </div>
+   <div class="phrow"><span class="small" id="flowInfo"></span></div>
+   <div class="phrow"><button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
+  </div>
   <div class="tabs" id="tabs"></div>
-
-  <section class="tab" id="tab0">
-   <div class="card">
-    <h2>진행판</h2>
-    <div class="grid2">
-     <div><div class="timer" id="timer">00:00</div>
-      <button class="btn small" onclick="startTimer(120)">발표 2분</button> <button class="btn small" onclick="startTimer(300)">5분</button> <button class="btn small" onclick="startTimer(600)">10분</button> <button class="btn small" onclick="startTimer(1020)">17분</button> <button class="btn small ghost" onclick="stopTimer()">정지</button></div>
-     <div class="small" id="flowInfo"></div>
-    </div>
-   </div>
-   <div class="card">
-    <h2>학생 진행 통제</h2>
-    <p class="small">단계를 열어 주면 학생은 그 단계까지만 이동할 수 있어요. 눌러도 학생 화면에는 몇 초 안에 반영됩니다.</p>
-    <div id="ctl"></div>
-   </div>
-   <div class="card">
-    <h2>5단계 모둠 공유 · 판정 공개</h2>
-    <p class="small">공개하면 학생들의 5단계 표에 다른 모둠의 판정과 근거가 자동으로 채워집니다. 발표가 끝난 뒤 공개하세요.</p>
-    <button class="btn" id="shareBtn" onclick="toggleShare()">-</button>
-   </div>
-   <div class="card">
-    <h2>공개수업 답 열쇠 (참관자용 · 기본 자료 기준)</h2>
-    <p>①근거 없이 확산된 주장 ②추정치 불일치 ③조건 생략된 부분적 진실 ④존재 확인 안 되는 출처 ⑤비교적 확인됨(출처 표시 필요)</p>
-    <h3>참관 포인트</h3>
-    <div class="box"><h4>1. 준비하기</h4><p class="small" style="margin:0">모둠 편성(4·4·4·4·3)과 기기 준비 상태, 익명 참여 코드 사용 여부를 확인합니다.</p></div>
-    <div class="box" style="margin-top:8px"><h4>2. 생각 열기</h4><p class="small" style="margin:0">‘수치·기관명이 있으면 믿을 만하다’는 통념이 드러나는지, 어떤 문장을 먼저 의심하는지 관찰합니다.</p></div>
-    <div class="box" style="margin-top:8px"><h4>4. 모둠 탐구</h4><p class="small" style="margin:0">자료의 <b>종류·이해관계</b>(브랜드 캠페인, SNS 게시글 vs 연구기관)를 구분하는지, 수치 불일치를 ‘틀림’이 아닌 ‘산정 기준 차이’로 읽어 내는지, 존재를 확인할 수 없는 출처를 ‘확인 불가’로 처리하는지, 고쳐 쓴 문장에 조건과 출처를 넣는지 관찰합니다.</p></div>
-    <div class="box" style="margin-top:8px"><h4>5. 모둠 공유</h4><p class="small" style="margin:0">교사는 판정이 다른 모둠(예: ②의 ‘부분적으로 맞음’ vs ‘사실 아님’)을 대비시켜 근거를 묻습니다. 학생들이 다섯 판정을 종합해 ‘AI 답변 전체’에 대한 판단으로 나아가는지 봅니다.</p></div>
-   </div>
-  </section>
 
   <section class="tab" id="tab1"><div id="live"></div></section>
   <section class="tab" id="tab2"><div id="results"></div></section>
@@ -103,8 +113,21 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
     <button class="btn ghost" onclick="exportJSON()">전체 JSON</button>
    </div>
   </section>
+
+  <section class="tab" id="tab5">
+   <div class="card">
+    <h2>공개수업 답 열쇠 (참관자용 · 기본 자료 기준)</h2>
+    <p>①근거 없이 확산된 주장 ②추정치 불일치 ③조건 생략된 부분적 진실 ④존재 확인 안 되는 출처 ⑤비교적 확인됨(출처 표시 필요)</p>
+    <h3>참관 포인트</h3>
+    <div class="box"><h4>1. 준비하기</h4><p class="small" style="margin:0">모둠 편성(4·4·4·4·3)과 기기 준비 상태, 익명 참여 코드 사용 여부를 확인합니다.</p></div>
+    <div class="box" style="margin-top:8px"><h4>2. 생각 열기</h4><p class="small" style="margin:0">‘수치·기관명이 있으면 믿을 만하다’는 통념이 드러나는지, 어떤 문장을 먼저 의심하는지 관찰합니다.</p></div>
+    <div class="box" style="margin-top:8px"><h4>4. 모둠 탐구</h4><p class="small" style="margin:0">자료의 <b>종류·이해관계</b>(브랜드 캠페인, SNS 게시글 vs 연구기관)를 구분하는지, 수치 불일치를 ‘틀림’이 아닌 ‘산정 기준 차이’로 읽어 내는지, 존재를 확인할 수 없는 출처를 ‘확인 불가’로 처리하는지, 고쳐 쓴 문장에 조건과 출처를 넣는지 관찰합니다.</p></div>
+    <div class="box" style="margin-top:8px"><h4>5. 모둠 공유</h4><p class="small" style="margin:0">교사는 판정이 다른 모둠(예: ②의 ‘부분적으로 맞음’ vs ‘사실 아님’)을 대비시켜 근거를 묻습니다. 학생들이 다섯 판정을 종합해 ‘AI 답변 전체’에 대한 판단으로 나아가는지 봅니다.</p></div>
+   </div>
+  </section>
  </div>
 </div>
+<div id="stageView"></div>
 <div class="toast" id="toast"></div>
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script>
 <script>
@@ -112,8 +135,10 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const PIN_KEY='aiverify_teacher_pin';
+const BASE=location.origin+location.pathname.replace(/[^/]*$/,'');
 let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[];
-const TABS=['진행','현황','결과 정리','수업 설정','데이터'];
+const TABS=['현황','결과 정리','수업 설정','데이터','참관 자료'];
+const QS=new URLSearchParams(location.search);
 const VCLS={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'};
 const PRE=['그대로 인용해도 된다','일부는 확인이 필요하다','인용하면 안 된다'];
 const POST=['그대로 인용해도 된다','수정·출처 표시 후 부분 인용','인용하지 않는다'];
@@ -124,7 +149,7 @@ const CLN=()=>claimsOf(LS);
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
 
 async function api(action,payload){
- const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,pin},payload||{}))});
+ const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,pin,class:CLASS_ID},payload||{}))});
  return r.json();
 }
 async function login(){
@@ -133,15 +158,15 @@ async function login(){
  try{if(!await refresh(true)){$('loginMsg').textContent='PIN이 맞지 않거나 잠시 잠겨 있어요.';return;}}
  catch(e){$('loginMsg').textContent='서버에 연결하지 못했어요.';return;}
  try{sessionStorage.setItem(PIN_KEY,pin);}catch(e){}
- $('login').style.display='none';$('app').style.display='block';buildTabs();showTab(1);
- poll=setInterval(()=>{if(!document.hidden)refresh().catch(()=>{});},10000);
+ $('login').style.display='none';$('app').style.display='block';buildTabs();showTab(0);if(QS.get('view')==='stage')stageMode(true);
+ poll=setInterval(()=>{if(!document.hidden)refresh().catch(()=>{});},6000);
 }
 const typing=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
 async function refresh(force){
  const r=await api('teacherAll');if(!r.ok)return false;DB=r;LS=normLesson(r.lesson);
  $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
  if(force||!dirty){if(force||!typing(document.activeElement)||!$('settings').contains(document.activeElement)){DR=clone(LS);dirty=false;renderSettings();}}
- renderControl();
+ renderClasses();renderControl();renderStageView();
  if(force||!$('live').contains(document.activeElement)||!typing(document.activeElement))renderLive();
  renderResults();return true;
 }
@@ -150,23 +175,47 @@ async function clearHelp(i){await api('helpClear',{code:ROWS[i].code});refresh()
 function buildTabs(){$('tabs').innerHTML=TABS.map((n,i)=>`<button onclick="showTab(${i})">${n}</button>`).join('');}
 function showTab(i){document.querySelectorAll('.tab').forEach((s,j)=>s.classList.toggle('show',i===j));document.querySelectorAll('#tabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
 
-/* ---- 진행 통제 ---- */
-function renderControl(){
- const vs=visStages(LS),op=LS.openTo;
- $('flowInfo').innerHTML=`<b>흐름:</b> ${vs.map(s=>esc(s.name)+' '+esc(s.time)).join(' · ')}<br><b>모둠 편성:</b> ${LS.groups.map(g=>`${g.n}모둠 ${g.size}명(주장 ${g.claim})`).join(' · ')}`;
- let h=`<p><b>${op==null?'제한 없음 — 학생이 자유롭게 이동':`${op+1}. ${esc(vs[op].name)} 단계까지 열림`}</b></p><div class="stagebtns">`;
- h+=`<button class="btn small ghost" onclick="setOpen(${op==null?0:Math.max(0,op-1)})" ${op==null||op===0?'disabled':''}>◀ 한 단계 닫기</button>`;
- h+=`<button class="btn small" onclick="setOpen(${op==null?0:Math.min(vs.length-1,op+1)})" ${op!=null&&op>=vs.length-1?'disabled':''}>다음 단계 열기 ▶</button>`;
- h+=`<button class="btn small ghost" onclick="setOpen(null)" ${op==null?'disabled':''}>제한 없음</button></div><div class="stagebtns">`;
- h+=vs.map((s,p)=>`<button class="btn small ${op===p?'':'ghost'}" onclick="setOpen(${p})">${p+1}. ${esc(s.name)}</button>`).join('')+`</div>`;
- h+=`<h3>📣 모든 학생을 이 단계로 이동</h3><p class="small">누르면 접속 중인 모든 학생 화면이 그 단계로 넘어가요(잠긴 단계면 그 단계까지 함께 열려요). 아직 ‘준비’를 마치지 않은 학생은 옮기지 않습니다.${LS.force?` · 마지막 명령: ${esc((LS.stages.find(s=>s.id===LS.force.stage)||{}).name||'')} (${LS.force.seq}회째)`:''}</p><div class="stagebtns">`;
- h+=vs.map((s,p)=>`<button class="btn small" onclick="pushStage(${p})">${p+1}. ${esc(s.name)}(으)로 이동</button>`).join('')+`</div>`;
- $('ctl').innerHTML=h;
+/* ---- 반 전환 · 학생 링크 ---- */
+const clsLabel=c=>c||'기본 반';
+const studentLink=()=>BASE+'index.html'+(CLASS_ID?'?class='+encodeURIComponent(CLASS_ID):'');
+function renderClasses(){
+ const list=Array.from(new Set([''].concat(DB.classes||[],[CLASS_ID])));
+ $('classSel').innerHTML=list.map(c=>`<option value="${esc(c)}" ${c===CLASS_ID?'selected':''}>${esc(clsLabel(c))}</option>`).join('');
 }
-async function pushStage(p){const s=visStages(LS)[p];if(!s||!confirm(`접속 중인 모든 학생을 「${s.name}」 단계로 이동시킬까요?`))return;
- const r=await api('forceStage',{stage:s.id,openTo:p});
- if(r.ok){toast(`「${s.name}」 단계로 이동 명령을 보냈어요`);refresh();}else toast('보내지 못했어요');}
-async function setOpen(p){const r=await api('setOpenTo',{openTo:p});if(r.ok){toast(p==null?'제한을 풀었어요':'학생 이동 범위를 바꿨어요');refresh();}else toast('실패했어요');}
+function goClass(c){const u=new URL(location.href);if(c)u.searchParams.set('class',c);else u.searchParams.delete('class');location.href=u.toString();}
+function switchClass(c){if(dirty&&!confirm('저장하지 않은 설정 변경이 있어요. 반을 바꿀까요?')){renderClasses();return;}goClass(c);}
+function newClass(){const c=(prompt('새 반 이름을 입력하세요 (예: 1-3, 2반). 영문·숫자·한글·-_ 만 쓸 수 있어요.')||'').replace(/[^A-Za-z0-9가-힣_-]/g,'').slice(0,20);if(c)switchClass(c);}
+async function copyLink(){const u=studentLink();try{await navigator.clipboard.writeText(u);toast(clsLabel(CLASS_ID)+' 학생 링크를 복사했어요');}catch(e){prompt('이 주소를 복사해 학생에게 알려 주세요',u);}}
+
+/* ---- 진행 통제: 교사가 '현재 단계'를 지정하면 학생은 그 단계 화면만 본다 ---- */
+function renderControl(){
+ const vs=visStages(LS),cur=LS.current,pos=vs.findIndex(s=>s.id===cur);
+ $('phaseInfo').textContent=cur==null?'· 제한 없음(학생이 자유롭게 이동)':'· '+clsLabel(CLASS_ID)+' 학생 화면이 이 단계로 고정돼 있어요';
+ $('pchips').innerHTML=vs.map((s,p)=>`<button class="pchip ${cur===s.id?'on':''}" onclick="setStage(${s.id})">${p+1}. ${esc(s.name)} <span class="small" style="color:inherit;opacity:.7">${esc(s.time)}</span></button>`).join('')
+  +`<button class="pchip free ${cur==null?'on':''}" onclick="setStage(null)">자유 이동</button>`;
+ $('prevBtn').disabled=cur==null||pos<=0;$('nextBtn').disabled=cur==null||pos>=vs.length-1;
+ $('stageTimerBtn').style.display=stageMinutes()?'':'none';$('stageTimerBtn').textContent='이 단계 타이머 '+stageMinutes()+'분';
+ $('flowInfo').innerHTML=`<b>모둠 편성:</b> ${LS.groups.map(g=>`${g.n}모둠 ${g.size}명(주장 ${g.claim})`).join(' · ')}`;
+}
+async function setStage(id){const r=await api('setStage',{stage:id});
+ if(r.ok){const s=LS.stages.find(x=>x.id===id);toast(id==null?'학생이 자유롭게 이동할 수 있어요':`학생 화면을 「${s?s.name:''}」 단계로 넘겼어요`);await refresh();}
+ else toast('바꾸지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}
+function stepStage(d){const vs=visStages(LS),pos=vs.findIndex(s=>s.id===LS.current),t=vs[pos+d];if(t)setStage(t.id);}
+function stageMinutes(){const s=LS.stages.find(x=>x.id===LS.current);const m=s&&String(s.time).match(/(\d+)\s*분/);return m?+m[1]:0;}
+function startStageTimer(){const m=stageMinutes();if(m)startTimer(m*60);}
+
+/* ---- 무대 화면(프로젝터용): 큰 글씨로 현재 단계·타이머·참여 현황 ---- */
+function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}catch(e){}}
+ else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
+function renderStageView(){
+ if(!DB)return;const vs=visStages(LS),cur=LS.current,pos=vs.findIndex(s=>s.id===cur),st=vs[pos],S=DB.students,help=S.filter(x=>x.helpAt).length;
+ $('stageView').innerHTML=`<div class="sv-top"><span>AI 답변, 믿어도 될까? · ${esc(clsLabel(CLASS_ID))}</span><span>${esc(location.host)}</span></div>
+  <div class="sv-now">${st?`<div class="sv-no">${pos+1} / ${vs.length}</div><div class="sv-name">${esc(st.name)}</div><div class="sv-time">${esc(st.time)}</div>`:`<div class="sv-name">자유 진행</div><div class="sv-time">학생이 자유롭게 이동할 수 있어요</div>`}
+   <div class="sv-timer" id="stageTimer">${$('timer').textContent}</div></div>
+  <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
+  <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div>${help?`<div><b>${help}</b>도움 요청</div>`:''}</div>
+  <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
+}
 
 /* ---- 현황 (학생별 코드·모둠 수정 포함) ---- */
 const submitted=s=>s.submittedAt>0;
@@ -214,7 +263,7 @@ function renderResults(){
   <div class="card"><h2>⑤ 전체 토의 · 피드백</h2><details><summary>전체 토의 답변 보기</summary>${list('discuss')}</details><details><summary>친구 모둠에 대한 피드백 보기</summary>${list('feedback')}</details></div>`;
  $('results').innerHTML=h;
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.body.classList.remove('present');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.body.classList.remove('present');document.body.classList.remove('stagemode-on');}});
 
 /* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
 const mark=()=>{dirty=true;};
@@ -313,7 +362,7 @@ function exportJSON(){download('ai-verify-전체.json',JSON.stringify(DB,null,2)
 
 /* ---- 타이머 ---- */
 let tm=null,left=0;function startTimer(s){left=s;clearInterval(tm);tick();tm=setInterval(tick,1000);}function stopTimer(){clearInterval(tm);}
-function tick(){const t=$('timer');t.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');t.style.color=left<=30?'#d64545':'#1f2233';if(left<=0){clearInterval(tm);toast('시간이 끝났어요 ⏰');}left--;}
+function tick(){const t=$('timer');t.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');const txt=t.textContent,sv=$('stageTimer');if(sv)sv.textContent=txt;t.style.fontWeight=left<=30?'900':'';t.style.color=left<=30?'#a8875a':'';if(left<=0){clearInterval(tm);toast('시간이 끝났어요 ⏰');}left--;}
 
 try{const p=sessionStorage.getItem(PIN_KEY);if(p&&API_URL){$('pin').value=p;login();}}catch(e){}
 </script></body></html>

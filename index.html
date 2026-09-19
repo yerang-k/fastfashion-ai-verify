@@ -2,33 +2,34 @@
 <html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI 답변, 믿어도 될까? — 주제탐구독서</title>
 <style>
-:root{--main:#5b3fd9;--bg:#f5f4fb;--txt:#1f2233;--sub:#5f6478;--ok:#1f9d55;--part:#e08a00;--unk:#6b7280;--bad:#d64545;--line:#e1e0ee}
+:root{--main:#1c1c1c;--accent:#c9b18b;--accent-soft:#f1eadd;--accent-dk:#6b5535;--bg:#f4f4f2;--soft:#eeede9;--txt:#1a1a1a;--sub:#6b6b68;--ok:#1a1a1a;--part:#a8875a;--unk:#8a8a86;--bad:#4d4d4d;--line:#dcdcd8}
 *{box-sizing:border-box}body{margin:0;font-family:"Noto Sans KR","Malgun Gothic",sans-serif;background:var(--bg);color:var(--txt);font-size:17px;line-height:1.65}
-header{background:linear-gradient(90deg,#5b3fd9,#8a5cf5);color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+header{background:var(--main);color:#fff;border-bottom:3px solid var(--accent);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 header h1{margin:0;font-size:1.2rem}.status{display:flex;gap:10px;align-items:center;font-size:.9rem;flex-wrap:wrap}
-.badge{background:rgba(255,255,255,.22);padding:4px 11px;border-radius:20px}
+.badge{background:rgba(255,255,255,.14);padding:4px 11px;border-radius:20px}
 .wrap{max-width:1040px;margin:0 auto;padding:20px}
 .steps{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
-.steps button{flex:1;min-width:105px;border:none;background:#e6e3f5;color:var(--sub);padding:10px 6px;border-radius:8px;font-size:.9rem;cursor:pointer}
-.steps button.active{background:var(--main);color:#fff;font-weight:700}.steps button.done{background:#d5ecdd;color:#1f6b40}.steps button.locked{opacity:.5}
+.steps button{flex:1;min-width:105px;border:none;background:#eceae5;color:var(--sub);padding:10px 6px;border-radius:8px;font-size:.9rem;cursor:pointer}
+.steps button.active{background:var(--main);color:#fff;font-weight:700}.steps button.done{background:var(--accent-soft);color:var(--accent-dk)}.steps button.locked{opacity:.45}
 .card{background:#fff;border-radius:14px;padding:26px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:18px}
 .card h2{margin:0 0 6px;font-size:1.35rem}h3{margin:18px 0 8px;font-size:1.1rem}
-.todo{background:#efeaff;border-left:5px solid var(--main);padding:12px 16px;border-radius:8px;margin:14px 0;font-weight:600}
+.todo{background:var(--accent-soft);border-left:5px solid var(--accent);padding:12px 16px;border-radius:8px;margin:14px 0;font-weight:600}
 .time{float:right;font-weight:400;color:var(--sub);font-size:.9rem}
 textarea,input[type=text],select{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:8px;font-size:1rem;font-family:inherit}
 textarea{min-height:90px;resize:vertical}
 .btn{background:var(--main);color:#fff;border:none;padding:11px 20px;border-radius:8px;font-size:1rem;cursor:pointer}
 .btn.ghost{background:#fff;color:var(--main);border:1.5px solid var(--main)}.btn.small{padding:7px 12px;font-size:.88rem}
 .nav{display:flex;justify-content:space-between;margin-top:14px}
-.stage{display:none}.stage.show{display:block}
-.ai-box{background:#fafaff;border:1.5px dashed #b9b3e0;border-radius:12px;padding:18px 18px 10px;position:relative;margin-top:10px}
+.stagebar{display:none;background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:.95rem}.stagebar.show{display:block}
+.steps button:disabled{cursor:default}.stage{display:none}.stage.show{display:block}
+.ai-box{background:#faf9f6;border:1.5px dashed var(--accent);border-radius:12px;padding:18px 18px 10px;position:relative;margin-top:10px}
 .ai-box::before{content:"🤖 AI 답변";position:absolute;top:-12px;left:14px;background:#fff;padding:0 8px;font-size:.85rem;color:var(--sub)}
-.ai-box mark{background:#fff3b0;padding:0 3px;border-radius:3px}
+.ai-box mark{background:#eadfc8;padding:0 3px;border-radius:3px}
 .ai-box .num{display:inline-block;background:var(--main);color:#fff;font-size:.75rem;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;margin-right:3px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
 @media(max-width:720px){.grid2{grid-template-columns:1fr}}
 .box{border:1.5px solid var(--line);border-radius:10px;padding:14px;background:#fff}.box h4{margin:0 0 6px;font-size:1rem}
-.tag{display:inline-block;font-size:.78rem;padding:2px 9px;border-radius:12px;background:#eee9ff;color:#3f2f8a;margin-bottom:6px}
+.tag{display:inline-block;font-size:.78rem;padding:2px 9px;border-radius:12px;background:var(--accent-soft);color:var(--accent-dk);margin-bottom:6px}
 .small{font-size:.9rem;color:var(--sub)}
 details{margin-top:14px}summary{cursor:pointer;font-weight:600;color:var(--main)}
 .verdict label{display:block;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;margin:6px 0;cursor:pointer}
@@ -36,21 +37,22 @@ details{margin-top:14px}summary{cursor:pointer;font-weight:600;color:var(--main)
 .v-ok input:checked+span{color:var(--ok)}.v-part input:checked+span{color:var(--part)}.v-unk input:checked+span{color:var(--unk)}.v-bad input:checked+span{color:var(--bad)}
 .groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;margin:10px 0}
 .groups label{border:2px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer}
-.groups input{display:none}.groups input:checked+div{color:var(--main);font-weight:700}.groups label.on{border-color:var(--main);background:#f3f0ff}
-table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px solid var(--line);padding:8px;vertical-align:top}th{background:#f3f0ff}
+.groups input{display:none}.groups input:checked+div{color:var(--main);font-weight:700}.groups label.on{border-color:var(--main);background:var(--soft)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px solid var(--line);padding:8px;vertical-align:top}th{background:var(--soft)}
 td select,td input{padding:6px;font-size:.9rem}
-.checklist label{display:block;padding:8px 10px;border-radius:8px;cursor:pointer}.checklist label:hover{background:#f3f0ff}
+.checklist label{display:block;padding:8px 10px;border-radius:8px;cursor:pointer}.checklist label:hover{background:var(--soft)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;pointer-events:none;z-index:9}.toast.on{opacity:1}
 .help{position:fixed;right:18px;bottom:18px;background:#fff;color:var(--main);border:2px solid var(--main);border-radius:30px;padding:10px 16px;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .mine{outline:3px solid var(--main);outline-offset:2px}
 .role{display:flex;gap:8px;flex-wrap:wrap}.role input{width:auto;flex:1;min-width:120px}
 </style></head><body>
 <header>
- <h1>🔍 AI 답변, 믿어도 될까? <span class="small" style="color:#e9e3ff">주제탐구독서 · 고2 · 50분</span></h1>
+ <h1>AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서 · 고2 · 50분</span></h1>
  <div class="status"><span class="badge" id="codeBadge">참여 코드: -</span><span class="badge" id="grpBadge">모둠: -</span><span class="badge" id="saveBadge">💾 저장 대기</span></div>
 </header>
 <div class="wrap">
 
+ <div class="stagebar" id="stageBar"></div>
  <div class="steps" id="steps"></div>
 
  <section class="stage card" data-i="0">
@@ -163,19 +165,19 @@ td select,td input{padding:6px;font-size:.9rem}
 <button class="help" onclick="askHelp()">🙋 도움이 필요해요</button>
 <div class="toast" id="toast"></div>
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script><script>
-const KEY='aiverify_fashion_v1';let data=JSON.parse(localStorage.getItem(KEY)||'{}');let cur=data._stage||0;
+const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'');let data=JSON.parse(localStorage.getItem(KEY)||'{}');let cur=data._stage||0;
 const $=id=>document.getElementById(id);
 /* ---- 수업 구조(단계·모둠·주장·진행 통제): 교사가 서버에 저장한 설정, 없으면 기본값 ---- */
 let LESSON=normLesson((()=>{try{return JSON.parse(localStorage.getItem(KEY+'_lesson')||'null');}catch(e){return null;}})());
 let built=false;
 const order=()=>visStages(LESSON).map(s=>s.id);
-const openLimit=()=>LESSON.openTo==null?order().length-1:LESSON.openTo;
+const locked=()=>LESSON.current!=null; // true면 교사가 정한 현재 단계만 볼 수 있음
 function buildStatic(){
  const o=order();
- $('steps').innerHTML=visStages(LESSON).map((s,p)=>`<button onclick="tryGo(${s.id})">${p+1}. ${s.name}</button>`).join('');
+ $('steps').innerHTML=visStages(LESSON).map((s,p)=>`<button onclick="tryGo(${s.id})" ${locked()?'disabled':''}>${p+1}. ${s.name}</button>`).join('');
  document.querySelectorAll('.stage').forEach(sec=>{const sid=+sec.dataset.i,p=o.indexOf(sid),h=sec.querySelector('h2');
   if(p>=0&&h){h.firstChild.nodeValue=h.firstChild.nodeValue.replace(/^\d+\./,(p+1)+'.');const t=h.querySelector('.time');if(t)t.textContent=LESSON.stages.find(s=>s.id===sid).time;}
-  sec.querySelectorAll('.nav button[onclick^="go("]').forEach(b=>{const k=+b.getAttribute('onclick').match(/\d+/)[0];b.setAttribute('onclick',`step(${k<sid?-1:1})`);});}); // 이전/다음은 보이는 단계 순서를 따름
+  sec.querySelectorAll('.nav button[onclick^="go("],.nav button[onclick^="step("]').forEach(b=>{const k=+(b.getAttribute('onclick').match(/\d+/)||[0])[0];if(b.dataset.dir==null)b.dataset.dir=k<sid?-1:1;b.setAttribute('onclick',`step(${b.dataset.dir})`);b.style.display=locked()?'none':'';});}); // 이전/다음은 보이는 단계 순서를 따르고, 교사가 단계를 지정한 동안은 숨김
  $('groups').innerHTML=LESSON.groups.map(g=>`<label><input type="radio" name="group" value="${g.n}" data-save><div>${g.n}모둠<br><span class="small">${g.size}명</span></div></label>`).join('');
  const CL=claimsOf(LESSON);
  $('aiText').innerHTML=`<p><b>지현:</b> 패스트패션이 환경에 미치는 영향을 근거 자료와 함께 알려줘.</p><p><b>AI:</b> 패스트패션의 환경 영향은 매우 심각합니다. `+CL.map(c=>`<span class="num">${c.n}</span><mark>${c.t}</mark>`).join(' ')+` 따라서 옷을 적게 사고 오래 입는 것이 중요합니다.</p>`;
@@ -189,7 +191,7 @@ function applyLesson(raw){
  if(built)collect();
  LESSON=n;try{localStorage.setItem(KEY+'_lesson',JSON.stringify(raw||null));}catch(e){}
  if(data.group&&!LESSON.groups.some(g=>g.n===+data.group)){delete data.group;}
- buildStatic();restore();show(cur);}
+ buildStatic();restore();show(cur);syncStage();}
 function renderGroup(){
  const g=+data.group||0;const c=claimOfGroup(LESSON,g);
  $('grpBadge').textContent='모둠: '+(g?g+'모둠':'-');
@@ -206,13 +208,19 @@ function renderGroup(){
 /* 단계 이동: 화면 표시(show) / 이동(go) / 진행 통제를 지키는 이동(tryGo·step) */
 function show(i){const o=order();if(!o.includes(i))i=o[0];cur=i;
  document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('show',+s.dataset.i===i));
- const p=o.indexOf(i),lim=openLimit();
- document.querySelectorAll('#steps button').forEach((b,j)=>{b.classList.toggle('active',j===p);b.classList.toggle('done',j<p);b.classList.toggle('locked',j>lim);});
+ const p=o.indexOf(i),lp=locked()?o.indexOf(LESSON.current):o.length-1;
+ document.querySelectorAll('#steps button').forEach((b,j)=>{b.classList.toggle('active',j===p);b.classList.toggle('done',j<p);b.classList.toggle('locked',locked()&&j>lp);});
+ const bar=$('stageBar');bar.classList.toggle('show',locked());
+ if(locked()){const st=LESSON.stages.find(x=>x.id===cur);bar.innerHTML=`선생님이 진행 중이에요 · 지금은 <b>${p+1}. ${st?st.name:''}</b> 단계 <span class="small">— 선생님이 다음으로 넘기면 화면이 자동으로 바뀌어요.</span>`;}
  $('mirrorPre').textContent=data.pre||'-';renderGroup();}
 function go(i){show(i);data._stage=cur;save();if(cur===4)pollShare();window.scrollTo({top:0,behavior:'smooth'});}
-function tryGo(id){const p=order().indexOf(id);if(p<0)return;if(p>openLimit()){toast('🔒 선생님이 아직 열지 않은 단계예요');return;}go(id);}
-function step(d){const o=order(),p=o.indexOf(cur),t=(p<0?0:p)+d;if(t<0||t>=o.length)return false;
- if(t>openLimit()){toast('🔒 선생님이 다음 단계를 열어 줄 때까지 기다려 주세요');return false;}go(o[t]);return true;}
+function tryGo(id){if(locked())return;const p=order().indexOf(id);if(p<0)return;go(id);}
+function step(d){if(locked())return false;const o=order(),p=o.indexOf(cur),t=(p<0?0:p)+d;if(t<0||t>=o.length)return false;go(o[t]);return true;}
+/* 교사가 지정한 현재 단계를 따라감. 준비(코드·모둠 입력)를 마치지 않은 학생은 준비 단계에 머문다. */
+function syncStage(){const c=LESSON.current;if(c==null)return;
+ const target=(data._ready||c===0)?c:0;
+ if(target===cur)return;
+ const st=LESSON.stages.find(x=>x.id===target);go(target);if(st&&data._ready)toast('선생님이 「'+st.name+'」 단계로 넘겼어요');}
 function setGroupRadio(g){document.querySelectorAll('input[name="group"]').forEach(e=>e.checked=(+e.value===+g));}
 async function ready(){collect();if(!data.code){toast('참여 코드를 입력해 주세요');return;}if(!data.group){toast('모둠을 선택해 주세요');return;}
  if(ONLINE){try{const r=await api('getStudent',{code:data.code});
@@ -220,8 +228,9 @@ async function ready(){collect();if(!data.code){toast('참여 코드를 입력�
   if(r.rosterFound&&r.rosterGroup&&+r.rosterGroup!==+data.group){setGroupRadio(r.rosterGroup);onGroupChange();toast(r.rosterGroup+'모둠으로 배정되어 있어요');}
   if(r.found&&r.dev!==DEV&&!confirm('이미 이 참여 코드로 저장된 응답이 있어요.\n내 코드가 맞다면 [확인], 다른 친구가 쓰는 코드라면 [취소] 후 다른 코드를 입력하세요.'))return;
  }catch(e){toast('서버에 연결하지 못했어요. 일단 이 기기에 저장돼요.');}}
- data._ready=true;$('codeBadge').textContent='참여 코드: '+data.code;toast('준비 완료!');
- if(!step(1)){save();}}
+ data._ready=true;$('codeBadge').textContent='참여 코드: '+data.code;
+ if(locked()){save();toast(LESSON.current===0?'준비 완료! 선생님이 시작할 때까지 기다려 주세요':'준비 완료!');syncStage();}
+ else{toast('준비 완료!');if(!step(1))save();}}
 function collect(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!k)return;
  if(el.type==='radio'){if(el.checked)data[k]=el.value;}else if(el.type==='checkbox')data[k]=el.checked;else data[k]=el.value;});}
 const hhmm=()=>new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
@@ -231,7 +240,7 @@ function save(){collect();localStorage.setItem(KEY,JSON.stringify(data));setBadg
 const GROUP_FIELDS=['g_src','g_acc','g_rel','g_verdict','g_reason','g_rewrite','g_speaker','g_recorder'];
 const ONLINE=!!API_URL;
 const DEV=(()=>{try{let d=localStorage.getItem(KEY+'_dev');if(!d){d=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem(KEY+'_dev',d);}return d;}catch(e){return 'x';}})();
-async function api(action,payload,post){const body=Object.assign({action},payload||{});
+async function api(action,payload,post){const body=Object.assign({action,class:CLASS_ID},payload||{});
  const r=post?await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}):await fetch(API_URL+'?'+new URLSearchParams(body));
  const j=await r.json();if(!j.ok)throw new Error(j.error||'api');return j;}
 let sTimer=null,gTimer=null,gdirty={};
@@ -276,23 +285,17 @@ async function submitAll(){collect();const miss=[];
  const prev=data._submitted;data._submitted=new Date().toLocaleTimeString('ko-KR');
  if(ONLINE){toast('제출 중…');await pushGroup();
   if(!await pushStudent()){data._submitted=prev;localStorage.setItem(KEY,JSON.stringify(data));setBadge('err');toast('서버에 저장하지 못했어요. 네트워크를 확인하고 다시 눌러 주세요');return;}}
- save();if(!step(1))toast('제출 완료! 수고했어요 👏');}
+ save();if(locked()||!step(1))toast('제출 완료! 수고했어요 👏');}
 function resetAll(){if(confirm('이 기기의 응답을 모두 지울까요?\n(서버에 이미 저장된 응답은 그대로 남아요)')){localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_dev');location.reload();}}
 /* 교사가 바꾼 수업 설정·내 코드/모둠을 주기적으로 받아 반영 */
 function applyMe(me){if(!me||!data._ready)return;let ch=false;
  if(me.code&&me.code!==data.code){data.code=me.code;$('code').value=me.code;$('codeBadge').textContent='참여 코드: '+me.code;ch=true;}
  if(me.group&&+me.group!==+data.group&&LESSON.groups.some(g=>g.n===+me.group)){setGroupRadio(me.group);onGroupChange();ch=true;}
  if(ch){toast('선생님이 참여 코드/모둠을 바꿨어요');save();renderGroup();}}
-/* 교사의 '모두 이 단계로 이동' 명령: 명령마다(seq) 한 번만 따름. 아직 준비 전인 학생은 이동시키지 않고 '본 것'으로만 표시 */
-function applyForce(){const f=LESSON.force;if(!f||f.seq<=(data._forceSeen||0))return;
- data._forceSeen=f.seq;
- if(!data._ready){save();return;}
- const s=LESSON.stages.find(x=>x.id===f.stage);
- if(s&&s.on&&f.stage!==cur){go(f.stage);toast('선생님이 「'+s.name+'」 단계로 이동시켰어요');}else save();}
 async function pollLesson(){if(!ONLINE||document.hidden)return;
- try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);applyForce();}catch(e){}}
+ try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);}catch(e){}}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
-buildStatic();restore();go(cur);
+buildStatic();restore();go(cur);syncStage();
 function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();save();if(ONLINE&&GROUP_FIELDS.includes(k))markGroup(k);renderGroup();}
 document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollLesson();pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
