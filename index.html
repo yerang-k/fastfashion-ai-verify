@@ -76,7 +76,7 @@ body.preview .help,body.preview .status{display:none}
 body.preview button,body.preview input,body.preview textarea,body.preview select,body.preview label,body.preview a,body.preview summary{pointer-events:none}
 </style></head><body>
 <header>
- <h1>AI 답변, 믿어도 될까?</h1>
+ <h1>AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서 · <b id="clsTag"></b></span></h1>
  <div class="status"><span class="badge" id="codeBadge">참여 코드: -</span><span class="badge" id="grpBadge">모둠: -</span><span class="badge" id="saveBadge">💾 저장 대기</span></div>
 </header>
 <div class="wrap">
@@ -229,6 +229,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
 /* 미리보기 모드(?preview=1&pg=모둠번호): 교사 화면에 끼워 넣는 읽기 전용 학생 화면. 진짜 학생 기록과 섞이지 않게 저장소를 따로 쓰고,
    서버에는 아무것도 저장하지 않으며(api에서 쓰기 요청 차단), 교사가 정한 단계를 그대로 따라간다. */
 const QP=new URLSearchParams(location.search),PREVIEW=QP.get('preview')==='1',PG=parseInt(QP.get('pg'),10)||1;
+(function(){const c=(typeof CLASS_ID!=='undefined'&&CLASS_ID)||'';const t=document.getElementById('clsTag');if(t)t.textContent=c?(/반$/.test(c)?c:c+'반'):'기본 반';})();
 const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'')+(PREVIEW?'_preview':'');let data=JSON.parse(localStorage.getItem(KEY)||'{}');
 if(PREVIEW){document.body.classList.add('preview');data.code='미리보기';data.group=PG;data._ready=true;delete data._submitted;}
 if(data.code&&(data.code.length>12||/\s/.test(data.code)))delete data.code; // 서버에서 잘못 내려온 코드(날짜 문자열 등)는 버림
