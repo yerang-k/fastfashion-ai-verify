@@ -70,20 +70,22 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-bar i{display:block;height:100%;background:var(--accent);width:0;transition:width 1s linear}
 #stageView .sv-body{flex:1 1 0;min-height:0;overflow:hidden;container-type:size}
 #stageView .sv-inner{display:flex;flex-direction:column;gap:calc(2.2cqh*var(--k))}
-#stageView .sv-todo{font-size:calc(clamp(1rem,4.4cqh,2.4rem)*var(--k));line-height:1.4;font-weight:600;color:#f4f4f2;border-left:6px solid var(--accent);padding-left:1.2vw}
-#stageView .sv-points{display:flex;gap:calc(1.6cqh*var(--k)) 1vw;flex-wrap:wrap;counter-reset:pt}
-#stageView .sv-points div{flex:1;min-width:12vw;background:#1e1e1c;border:1.5px solid #3a3a38;border-radius:14px;padding:calc(1.6cqh*var(--k)) 1vw;font-size:calc(clamp(.9rem,3.4cqh,1.6rem)*var(--k));line-height:1.35;counter-increment:pt}
+#stageView .sv-todo{font-size:var(--tf,1.6rem);letter-spacing:var(--ts,0);line-height:1.4;font-weight:600;color:#f4f4f2;border-left:6px solid var(--accent);padding-left:1.2vw;white-space:nowrap;overflow:hidden}
+#stageView .sv-points{display:flex;gap:1.2vh 1vw;flex-wrap:wrap;counter-reset:pt}
+#stageView .sv-points div{flex:1;min-width:12vw;display:flex;align-items:center;gap:.7em;background:#1e1e1c;border:1.5px solid #3a3a38;border-radius:14px;padding:1.4vh 1vw;font-size:calc(clamp(1.1rem,min(1.9vw,3.8cqh),1.9rem)*min(var(--k),1));line-height:1.4;counter-increment:pt}
+#stageView .sv-points div::before{content:counter(pt);flex:0 0 auto;display:inline-flex;width:1.7em;height:1.7em;align-items:center;justify-content:center;background:var(--accent);color:#111;font-weight:800;border-radius:50%;font-size:.9em}
+#stageView .sv-points span{min-width:0;word-break:keep-all;overflow-wrap:break-word;text-wrap:balance}
 #stageView .sv-inner.nopanel{height:100%}
-#stageView .sv-inner.nopanel .sv-points{flex:1 1 auto;max-height:46cqh;align-items:stretch}
-#stageView .sv-inner.nopanel .sv-points div{display:flex;align-items:center}
-#stageView .sv-points div::before{content:counter(pt);display:inline-flex;width:1.7em;height:1.7em;align-items:center;justify-content:center;background:var(--accent);color:#111;font-weight:800;border-radius:50%;margin-right:.6em;font-size:.9em}
+#stageView .sv-inner.nopanel .sv-points{margin:auto 0}
 #stageView .sv-panel{background:#181816;border:1.5px solid #3a3a38;border-radius:16px;padding:calc(1.8cqh*var(--k)) 1.4vw}
 #stageView .sv-panel h3{margin:0 0 calc(1.2cqh*var(--k));font-size:calc(clamp(.85rem,2.6cqh,1.2rem)*var(--k));color:var(--accent);letter-spacing:.04em}
 #stageView .sv-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(13vw,1fr));gap:calc(.8vw*var(--k))}
 #stageView .sv-g{border:1.5px solid #3a3a38;border-radius:12px;padding:calc(1.2cqh*var(--k)) calc(.8vw*var(--k));background:#1e1e1c;min-width:0}
 #stageView .sv-g b{font-size:calc(clamp(.95rem,3cqh,1.35rem)*var(--k))}
-#stageView .sv-g p{margin:.3em 0;font-size:calc(clamp(.75rem,2.4cqh,1.05rem)*var(--k));color:#c8c8c4;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#stageView[data-tight] .sv-g p{-webkit-line-clamp:1}
+#stageView .sv-g p{margin:.3em 0;font-size:calc(clamp(.75rem,2.4cqh,1.05rem)*var(--k));color:#c8c8c4;line-height:1.35;word-break:keep-all;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#stageView[data-clamp="0"] .sv-g p{display:block;-webkit-line-clamp:unset;overflow:visible}
+#stageView[data-clamp="2"] .sv-g p{-webkit-line-clamp:2}
+#stageView[data-clamp="1"] .sv-g p{-webkit-line-clamp:1}
 #stageView .sv-g .m{font-size:calc(clamp(.75rem,2.3cqh,1rem)*var(--k));color:#8a8a86}
 #stageView .sv-v{display:inline-block;padding:1px 10px;border-radius:14px;font-size:calc(clamp(.75rem,2.3cqh,1rem)*var(--k));font-weight:700;border:1.5px solid #5a5a58;color:#a8a8a4}
 #stageView .sv-v.ok{background:#f4f4f2;border-color:#f4f4f2;color:#111}#stageView .sv-v.part{background:var(--accent);border-color:var(--accent);color:#111}
@@ -153,6 +155,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
+const wj=s=>String(s==null?'':s).split(/(\s+)/).map(t=>/\s/.test(t)||t.length>16?t:[...t].join('\u2060')).join(''); // 어절 안에서 줄이 바뀌지 않게(무대 화면 카드용)
 const PIN_KEY='aiverify_teacher_pin';
 const BASE=location.origin+location.pathname.replace(/[^/]*$/,'');
 let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[];
@@ -232,12 +235,12 @@ function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){
 function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
  const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${esc(v||'미판정')}</span>`;
  const card=(gr,extra)=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},m=S.filter(s=>+s.group===gr.n).length;
-  return `<div class="sv-g"><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(c.n+'. '+c.t):''}</p>${extra(f,gr)}</div>`;};
+  return `<div class="sv-g"><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(wj(c.n+'. '+c.t)):''}</p>${extra(f,gr)}</div>`;};
  if(id===3)return `<div class="sv-panel"><h3>모둠별 담당 문장 · 개인 검증 진행</h3><div class="sv-groups">${G.map(gr=>card(gr,(f,g)=>{const m=S.filter(s=>+s.group===g.n);return `<span class="m">개인 판정 ${m.filter(s=>s.data.i_verdict).length}/${m.length}명</span>`;})).join('')}</div></div>`;
  if(id===7)return `<div class="sv-panel"><h3>모둠 정리 · 발표할 내용</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>`<span class="m">${f._rec?'✍️ 기록자 정함':'✍️ 기록자 미정'}</span> `+vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
- if(id===4)return `<div class="sv-panel"><h3>모둠 발표 · 판정 ${DB.shareOpen?'공개 중':'(공개 전 — 발표가 끝나면 공개하세요)'}</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p>${esc((f.g_reason&&f.g_reason.v)||'')}</p>`:'<span class="m">발표 대기</span>')).join('')}</div></div>`;
+ if(id===4)return `<div class="sv-panel"><h3>모둠 발표 · 판정 ${DB.shareOpen?'공개 중':'(공개 전 — 발표가 끝나면 공개하세요)'}</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`:'<span class="m">발표 대기</span>')).join('')}</div></div>`;
  if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
- if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>신뢰할 수 있는 자료와 일치</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>맞지만 조건·범위 설명이 빠짐</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>출처를 찾을 수 없음</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>신뢰할 수 있는 자료와 어긋남</p></div></div></div>`;
+ if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>${wj('신뢰할 수 있는 자료와 일치')}</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>${wj('맞지만 조건·범위 설명이 빠짐')}</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>${wj('출처를 찾을 수 없음')}</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>${wj('신뢰할 수 있는 자료와 어긋남')}</p></div></div></div>`;
  return '';
 }
 function renderStageView(){
@@ -248,7 +251,7 @@ function renderStageView(){
   <div class="sv-bar"><i id="stageBar" style="width:${clockPct()}%"></i></div>
   <div class="sv-body"><div class="sv-inner${st&&svPanel(st.id)?'':' nopanel'}">
    ${g?`<div class="sv-todo">${esc(g.todo)}</div>`:(st?'':'<div class="sv-todo">학생이 자유롭게 이동할 수 있어요</div>')}
-   ${g?`<div class="sv-points">${g.points.map(p=>`<div>${esc(p)}</div>`).join('')}</div>`:''}
+   ${g?`<div class="sv-points">${g.points.map(p=>`<div><span>${esc(wj(p))}</span></div>`).join('')}</div>`:''}
    ${st?svPanel(st.id):''}
   </div></div>
   <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
@@ -257,13 +260,22 @@ function renderStageView(){
  fitStage();
 }
 /* 맨 위 단계 이름·시계는 고정 크기. 그 아래 내용은 남은 공간에 맞춰 --k(0.5~2.2배)로 자동 조절: 짧은 단계는 키우고, 긴 단계는 줄이고, 그래도 넘치면 카드 문장을 1줄로 */
+/* '지금 할 일' 문장을 한 줄에 맞춤: 먼저 자간을 조금씩 좁히고(최대 -0.05em), 그래도 넘치면 글자 크기를 줄임 */
+function fitTodo(v){const t=v.querySelector('.sv-todo');if(!t)return;
+ const base=Math.max(19,Math.min(innerWidth*.026,innerHeight*.046,42));
+ t.style.setProperty('--tf',base+'px');t.style.setProperty('--ts','0em');
+ const over=()=>t.scrollWidth>t.clientWidth+1;
+ let ls=0;while(over()&&ls>-0.05){ls=Math.round((ls-.01)*100)/100;t.style.setProperty('--ts',ls+'em');}
+ let f=base;while(over()&&f>12){f-=1;t.style.setProperty('--tf',f+'px');}}
 function fitStage(){const v=$('stageView');if(!v||getComputedStyle(v).display==='none')return;
+ fitTodo(v);
  const body=v.querySelector('.sv-body'),inner=v.querySelector('.sv-inner');if(!body||!inner)return;
  const fits=()=>inner.scrollHeight<=body.clientHeight+1&&v.scrollHeight<=v.clientHeight+1;
  const tryK=from=>{for(let k=from;k>=.5;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(fits())return true;}return false;};
- v.removeAttribute('data-tight');
- if(tryK(2.2))return;
- v.setAttribute('data-tight','1');tryK(1);}
+ /* 카드 문장은 가능하면 전부 보이게(글자는 너무 작아지지 않는 범위에서), 안 되면 3줄 → 2줄 → 1줄로 줄임 */
+ for(const [c,min] of [['0',1],['3',.85],['2',.7]]){v.setAttribute('data-clamp',c);
+  for(let k=2.2;k>=min;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(fits())return;}}
+ v.setAttribute('data-clamp','1');tryK(1);}
 window.addEventListener('resize',fitStage);
 
 /* ---- 현황 ---- */
