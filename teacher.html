@@ -36,7 +36,7 @@ td input[type=text],td input[type=number],td select{width:100%}
 .help{background:var(--accent-soft)}
 .stagebtns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .savebar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--main);padding:10px 16px;margin:0 -22px -22px;border-radius:0 0 14px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#faf9f6}.claimcard>summary{cursor:pointer;font-weight:600;line-height:1.5}.claimcard[open]>summary{margin-bottom:8px}
+.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#faf9f6}
 .srcbox{border:1px dashed var(--accent);border-radius:8px;padding:8px;margin:8px 0}.pdfrow{margin:2px 0 4px}
 .lbl{font-size:.85rem;color:var(--sub);margin:6px 0 2px}
 details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--main)}
@@ -369,7 +369,7 @@ document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement
 
 /* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
 const mark=()=>{dirty=true;};
-document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&(d.classList.contains('acc')||d.classList.contains('claimcard')))OPEN[d.id]=d.open;},true);
+document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('acc'))OPEN[d.id]=d.open;},true);
 function renderSettings(){
  if(!DR)return;const CL=claimsOf(DR);
  let h=`<details class="acc" id="a1" ${OPEN.a1?'open':''}><summary>① 단계 구성 <span class="small">${DR.stages.filter(s=>s.on).length}단계 사용</span></summary><div class="accbody"><p class="small">이름·시간을 고치고, 순서를 바꾸고, 단계를 숨길 수 있어요. ‘준비’(코드·모둠 입력)와 ‘정리’(제출)는 숨길 수 없고, ‘준비’는 항상 맨 앞입니다.</p>
@@ -392,8 +392,7 @@ function renderSettings(){
   h+=`<p class="small">지금은 <b>기본 자료</b>(패스트패션 주장 ${CLAIMS.length}개)를 쓰고 있어요. 수정하려면 기본 자료를 복사해서 편집을 시작하세요. 기본 자료 원본은 바뀌지 않고, 언제든 되돌릴 수 있어요.</p><button class="btn" onclick="startEditClaims()">편집 시작 (기본 자료 복사)</button>`;
  }else{
   h+=`<p class="small">자료 본문에는 <code>&lt;b&gt;강조&lt;/b&gt;</code> 같은 HTML을 쓸 수 있어요. 주장은 최대 ${MAX_CLAIMS}개, 주장당 자료 최대 ${MAX_SRC}개입니다.</p>`;
-  h+=`<div style="margin:6px 0"><button class="btn small ghost" onclick="toggleAllClaims(true)">모두 펼치기</button> <button class="btn small ghost" onclick="toggleAllClaims(false)">모두 접기</button></div>`;
-  h+=DR.claims.map((c,ci)=>`<details class="claimcard" id="cl${ci}" ${OPEN['cl'+ci]?'open':''}><summary>주장 ${c.n} · ${esc((c.t||'(아직 비어 있어요)').slice(0,30))}${(c.t||'').length>30?'…':''} <span class="small">자료 ${c.src.length}개</span></summary><button class="btn small danger" style="float:right" onclick="delClaim(${ci})" ${DR.claims.length<=1?'disabled':''}>이 주장 삭제</button>
+  h+=DR.claims.map((c,ci)=>`<div class="claimcard"><b>주장 ${c.n}</b> <button class="btn small danger" style="float:right" onclick="delClaim(${ci})" ${DR.claims.length<=1?'disabled':''}>이 주장 삭제</button>
    <div class="lbl">검증할 AI 답변 문장</div><textarea oninput="DR.claims[${ci}].t=this.value;mark()">${esc(c.t)}</textarea>
    <div class="lbl">생각 열쇠(힌트)</div><textarea oninput="DR.claims[${ci}].hint=this.value;mark()">${esc(c.hint)}</textarea>
    ${c.src.map((s,si)=>`<div class="srcbox"><b>자료 ${SRC_LETTERS[si]}</b> <button class="btn small danger" style="float:right" onclick="delSrc(${ci},${si})" ${c.src.length<=1?'disabled':''}>삭제</button>
@@ -402,7 +401,7 @@ function renderSettings(){
     <div class="lbl">본문</div><textarea oninput="DR.claims[${ci}].src[${si}].body=this.value;mark()">${esc(s.body)}</textarea>
     <div class="lbl">🔗 링크 (선택) — 원문 기사·사이트 주소를 붙여 넣으세요</div><input type="text" style="width:100%" placeholder="https://" value="${esc(s.url||'')}" onchange="setSrcUrl(${ci},${si},this)">
     <div class="lbl">📄 PDF (선택)</div>${pdfRow(ci,si,s)}</div>`).join('')}
-   <button class="btn small ghost" onclick="addSrc(${ci})" ${c.src.length>=MAX_SRC?'disabled':''}>＋ 자료 추가</button></details>`).join('');
+   <button class="btn small ghost" onclick="addSrc(${ci})" ${c.src.length>=MAX_SRC?'disabled':''}>＋ 자료 추가</button></div>`).join('');
   h+=`<button class="btn small ghost" onclick="addClaim()" ${DR.claims.length>=MAX_CLAIMS?'disabled':''}>＋ 주장 추가</button> <button class="btn small danger" onclick="resetClaims()">기본 자료로 되돌리기</button>`;
  }
  h+=`</div></details>`;
@@ -424,9 +423,9 @@ function delGroup(){if(DR.groups.length<=1)return;const g=DR.groups[DR.groups.le
  if(!confirm(`${g.n}모둠을 삭제할까요? 이미 ${g.n}모둠으로 접속한 학생은 모둠을 다시 골라야 해요.`))return;DR.groups.pop();mark();renderSettings();}
 function startEditClaims(){DR.claims=clone(CLAIMS);mark();renderSettings();}
 function resetClaims(){if(!confirm('편집한 주장·자료를 모두 지우고 기본 자료로 되돌릴까요? (저장 전까지는 학생 화면에 영향이 없어요)'))return;DR.claims=null;DR.groups.forEach(g=>{if(g.claim>CLAIMS.length)g.claim=1;});mark();renderSettings();}
-function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;OPEN['cl'+DR.claims.length]=true;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',src:[{type:'',title:'',body:'',url:'',pdf:''}]});mark();renderSettings();}
+function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',src:[{type:'',title:'',body:'',url:'',pdf:''}]});mark();renderSettings();}
 function delClaim(ci){if(DR.claims.length<=1)return;if(!confirm(`주장 ${ci+1}을(를) 삭제할까요?`))return;
- DR.claims.splice(ci,1);DR.claims.forEach((c,i)=>c.n=i+1);Object.keys(OPEN).forEach(k=>{if(/^cl\d+$/.test(k))delete OPEN[k];});
+ DR.claims.splice(ci,1);DR.claims.forEach((c,i)=>c.n=i+1);
  DR.groups.forEach(g=>{if(g.claim===ci+1)g.claim=1;else if(g.claim>ci+1)g.claim--;});mark();renderSettings();}
 /* 자료 링크·PDF: 화면 전체를 다시 그리지 않고 그 줄만 갱신한다(다시 그리면 바로 다음 「저장」 클릭이 씹힘) */
 function pdfRow(ci,si,s){const id=`pdfrow_${ci}_${si}`;
@@ -452,7 +451,6 @@ async function uploadSrcPdf(ci,si,inp){const f=inp.files[0];if(!f)return;
   DR.claims[ci].src[si].pdf=res.url;mark();refreshPdfRow(ci,si);toast('PDF를 올리고 연결했어요.');
  }catch(err){refreshPdfRow(ci,si);alert('PDF를 올리지 못했어요. 인터넷 연결을 확인하고 다시 해 보세요.');}
 }
-function toggleAllClaims(open){DR.claims.forEach((c,i)=>OPEN['cl'+i]=open);document.querySelectorAll('#a3 details.claimcard').forEach(d=>d.open=open);}
 function addSrc(ci){const c=DR.claims[ci];if(c.src.length>=MAX_SRC)return;c.src.push({type:'',title:'',body:'',url:'',pdf:''});mark();renderSettings();}
 function delSrc(ci,si){const c=DR.claims[ci];if(c.src.length<=1)return;c.src.splice(si,1);mark();renderSettings();}
 async function saveSettings(){
