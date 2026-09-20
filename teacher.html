@@ -36,7 +36,7 @@ td input[type=text],td input[type=number],td select{width:100%}
 .help{background:var(--accent-soft)}
 .stagebtns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .savebar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--main);padding:10px 16px;margin:0 -22px -22px;border-radius:0 0 14px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#faf9f6}
+.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#faf9f6}.ctabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.ctab{border:1.5px solid var(--main);background:#fff;color:var(--main);border-radius:20px;padding:6px 14px;font-size:.92rem;cursor:pointer;font-family:inherit}.ctab.on{background:var(--main);color:#fff;font-weight:700}.ctab.add{border-style:dashed}.ctab:disabled{opacity:.4;cursor:default}
 .srcbox{border:1px dashed var(--accent);border-radius:8px;padding:8px;margin:8px 0}.pdfrow{margin:2px 0 4px}
 .lbl{font-size:.85rem;color:var(--sub);margin:6px 0 2px}
 details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--main)}
@@ -177,6 +177,7 @@ const PIN_KEY='aiverify_teacher_pin';
 const BASE=location.origin+location.pathname.replace(/[^/]*$/,'');
 let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[];
 const TABS=['📊 현황','📝 결과 정리','⚙️ 수업 설정','📁 데이터'];
+let CT=0; // 수업 설정 ③에서 지금 보고 있는 주장 탭
 const OPEN={}; // 수업 설정에서 펼쳐 둔 섹션 기억
 const QS=new URLSearchParams(location.search);
 const VCLS={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'};
@@ -392,7 +393,9 @@ function renderSettings(){
   h+=`<p class="small">지금은 <b>기본 자료</b>(패스트패션 주장 ${CLAIMS.length}개)를 쓰고 있어요. 수정하려면 기본 자료를 복사해서 편집을 시작하세요. 기본 자료 원본은 바뀌지 않고, 언제든 되돌릴 수 있어요.</p><button class="btn" onclick="startEditClaims()">편집 시작 (기본 자료 복사)</button>`;
  }else{
   h+=`<p class="small">자료 본문에는 <code>&lt;b&gt;강조&lt;/b&gt;</code> 같은 HTML을 쓸 수 있어요. 주장은 최대 ${MAX_CLAIMS}개, 주장당 자료 최대 ${MAX_SRC}개입니다.</p>`;
-  h+=DR.claims.map((c,ci)=>`<div class="claimcard"><b>주장 ${c.n}</b> <button class="btn small danger" style="float:right" onclick="delClaim(${ci})" ${DR.claims.length<=1?'disabled':''}>이 주장 삭제</button>
+  if(CT>=DR.claims.length)CT=DR.claims.length-1;
+  h+=`<div class="ctabs">${DR.claims.map((c,ci)=>`<button type="button" class="ctab${ci===CT?' on':''}" title="${esc((c.t||'').slice(0,60))}" onclick="setClaimTab(${ci})">주장 ${c.n}</button>`).join('')}<button type="button" class="ctab add" onclick="addClaim()" ${DR.claims.length>=MAX_CLAIMS?'disabled':''}>＋ 주장 추가</button></div>`;
+  h+=DR.claims.map((c,ci)=>ci!==CT?'':`<div class="claimcard"><b>주장 ${c.n}</b> <button class="btn small danger" style="float:right" onclick="delClaim(${ci})" ${DR.claims.length<=1?'disabled':''}>이 주장 삭제</button>
    <div class="lbl">검증할 AI 답변 문장</div><textarea oninput="DR.claims[${ci}].t=this.value;mark()">${esc(c.t)}</textarea>
    <div class="lbl">생각 열쇠(힌트)</div><textarea oninput="DR.claims[${ci}].hint=this.value;mark()">${esc(c.hint)}</textarea>
    ${c.src.map((s,si)=>`<div class="srcbox"><b>자료 ${SRC_LETTERS[si]}</b> <button class="btn small danger" style="float:right" onclick="delSrc(${ci},${si})" ${c.src.length<=1?'disabled':''}>삭제</button>
@@ -402,7 +405,7 @@ function renderSettings(){
     <div class="lbl">🔗 링크 (선택) — 원문 기사·사이트 주소를 붙여 넣으세요</div><input type="text" style="width:100%" placeholder="https://" value="${esc(s.url||'')}" onchange="setSrcUrl(${ci},${si},this)">
     <div class="lbl">📄 PDF (선택)</div>${pdfRow(ci,si,s)}</div>`).join('')}
    <button class="btn small ghost" onclick="addSrc(${ci})" ${c.src.length>=MAX_SRC?'disabled':''}>＋ 자료 추가</button></div>`).join('');
-  h+=`<button class="btn small ghost" onclick="addClaim()" ${DR.claims.length>=MAX_CLAIMS?'disabled':''}>＋ 주장 추가</button> <button class="btn small danger" onclick="resetClaims()">기본 자료로 되돌리기</button>`;
+  h+=`<button class="btn small danger" onclick="resetClaims()">기본 자료로 되돌리기</button>`;
  }
  h+=`</div></details>`;
 
@@ -421,11 +424,12 @@ function moveStage(i,d){const j=i+d;if(j<0||j>=DR.stages.length||DR.stages[i].id
 function addGroup(){if(DR.groups.length>=MAX_GROUPS)return;DR.groups.push({n:DR.groups.length+1,size:4,claim:1});mark();renderSettings();}
 function delGroup(){if(DR.groups.length<=1)return;const g=DR.groups[DR.groups.length-1];
  if(!confirm(`${g.n}모둠을 삭제할까요? 이미 ${g.n}모둠으로 접속한 학생은 모둠을 다시 골라야 해요.`))return;DR.groups.pop();mark();renderSettings();}
-function startEditClaims(){DR.claims=clone(CLAIMS);mark();renderSettings();}
-function resetClaims(){if(!confirm('편집한 주장·자료를 모두 지우고 기본 자료로 되돌릴까요? (저장 전까지는 학생 화면에 영향이 없어요)'))return;DR.claims=null;DR.groups.forEach(g=>{if(g.claim>CLAIMS.length)g.claim=1;});mark();renderSettings();}
-function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',src:[{type:'',title:'',body:'',url:'',pdf:''}]});mark();renderSettings();}
+function startEditClaims(){CT=0;DR.claims=clone(CLAIMS);mark();renderSettings();}
+function resetClaims(){CT=0;if(!confirm('편집한 주장·자료를 모두 지우고 기본 자료로 되돌릴까요? (저장 전까지는 학생 화면에 영향이 없어요)'))return;DR.claims=null;DR.groups.forEach(g=>{if(g.claim>CLAIMS.length)g.claim=1;});mark();renderSettings();}
+function setClaimTab(i){CT=i;renderSettings();}
+function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;CT=DR.claims.length;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',src:[{type:'',title:'',body:'',url:'',pdf:''}]});mark();renderSettings();}
 function delClaim(ci){if(DR.claims.length<=1)return;if(!confirm(`주장 ${ci+1}을(를) 삭제할까요?`))return;
- DR.claims.splice(ci,1);DR.claims.forEach((c,i)=>c.n=i+1);
+ DR.claims.splice(ci,1);DR.claims.forEach((c,i)=>c.n=i+1);CT=Math.max(0,ci-1);
  DR.groups.forEach(g=>{if(g.claim===ci+1)g.claim=1;else if(g.claim>ci+1)g.claim--;});mark();renderSettings();}
 /* 자료 링크·PDF: 화면 전체를 다시 그리지 않고 그 줄만 갱신한다(다시 그리면 바로 다음 「저장」 클릭이 씹힘) */
 function pdfRow(ci,si,s){const id=`pdfrow_${ci}_${si}`;
