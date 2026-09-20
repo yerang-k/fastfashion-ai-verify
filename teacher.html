@@ -250,6 +250,7 @@ function stepStage(d){const vs=visStages(LS),pos=vs.findIndex(s=>s.id===LS.curre
 function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
  else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
 let SPOT=null; // 모둠 공유 단계에서 크게 보고 있는 모둠 번호(없으면 null). 카드를 누르면 켜지고, 같은 곳을 다시 누르면 꺼짐
+function stepClick(id){if(id===LS.current&&SPOT){spot(null);return;}setStage(id);} // 지금 보고 있는 모둠 공유 단계 버튼을 다시 누르면 강조를 풀고 모든 모둠 카드로 돌아감
 function spotClick(e){const f=e.currentTarget.querySelector('.sv-focus');if(f&&e.target===f&&e.offsetX>f.clientWidth)return;spot(null);} // 스크롤바를 누른 경우는 작아지지 않게
 function spot(n){SPOT=(n==null||SPOT===n)?null:n;renderStageView();}
 function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
@@ -262,7 +263,7 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
   const sp=SPOT&&G.find(x=>x.n===SPOT);
   if(sp){const c=claimOfGroup(LS,sp.n),f=DB.groups[sp.n]||{},val=k=>(f[k]&&f[k].v)||'',none='<span class="m">(아직 정리하지 않았어요)</span>';
    return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><h3>${sp.n}모둠 발표</h3><div class="sv-focus"><div class="sv-fc">${c?esc(wj(c.n+'. '+c.t)):''}</div><div class="sv-fv">${vb(f.g_verdict&&f.g_verdict.v)}</div><div class="sv-fb"><b>판정 근거 한 문장</b><p>${val('g_reason')?esc(wj(val('g_reason'))):none}</p></div><div class="sv-fb"><b>보고서용으로 고쳐 쓴 문장</b><p>${val('g_rewrite')?esc(wj(val('g_rewrite'))):none}</p></div></div><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spot(${x.n})">${x.n}모둠</span>`).join('')}</div></div>`;}
-  return `<div class="sv-panel"><h3>모둠 발표 · 판정 ${DB.shareOpen?'공개 중':'(공개 전 — 발표가 끝나면 공개하세요)'} <span class="m">· 모둠 카드를 누르면 발표 내용이 크게 보여요</span></h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`:'<span class="m">발표 대기</span>',true)).join('')}</div></div>`;}
+  return `<div class="sv-panel"><h3>모둠 발표 · 판정</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`:'<span class="m">발표 대기</span>',true)).join('')}</div></div>`;}
  if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
  if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>${wj('신뢰할 수 있는 자료와 일치')}</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>${wj('맞지만 조건·범위 설명이 빠짐')}</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>${wj('출처를 찾을 수 없음')}</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>${wj('신뢰할 수 있는 자료와 어긋남')}</p></div></div></div>`;
  return '';
@@ -279,7 +280,7 @@ function renderStageView(){
    ${g&&!(st&&st.id===4&&SPOT)?`<div class="sv-points">${g.points.map(p=>`<div><span>${esc(wj(p))}</span></div>`).join('')}</div>`:''}
    ${st?svPanel(st.id):''}
   </div></div>
-  <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}" onclick="setStage(${s.id})" title="이 단계로 이동">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
+  <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}" onclick="stepClick(${s.id})" title="이 단계로 이동">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
   <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div>${help?`<div><b>${help}</b>도움 요청</div>`:''}</div>
   <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="toggleClock()">${CLOCK?'시계 초기화':'▶ 수업 시작'}</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
  fitStage();
