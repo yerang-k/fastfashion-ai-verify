@@ -177,7 +177,6 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
    <div class="phrow" style="align-items:stretch"><div class="notebox" id="noteBox"></div></div>
    <div class="phrow"><button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
   </div>
-  <div class="card prog" id="progList" style="margin-top:14px"></div>
   </div></div>
   <div class="tabs" id="tabs"></div>
 
@@ -266,9 +265,6 @@ function renderBoard(){
  const src=BASE+'index.html?preview=1&pg='+PVG+(CLASS_ID?'&class='+encodeURIComponent(CLASS_ID):'');
  if(src!==PVSRC){PVSRC=src;$('pvFrame').src=src;}
  fitPreview();
- const S=DB.students,st=LS.current;
- $('progList').innerHTML='<h2 style="margin-top:0">모둠별 진행</h2>'+(HELP.length?`<div class="small" style="color:#b23">🙋 도움 요청 ${HELP.length}건: ${HELP.map(r=>esc(r.group)+'모둠').join(', ')}</div>`:'')+LS.groups.map(gr=>{const g=gr.n,m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
-  return `<div class="row"><b>${g}모둠</b><span>참여 ${m.length}/${gr.size}</span><span>제출 ${m.filter(submitted).length}</span><span>개인 판정 ${m.filter(s=>s.data.i_verdict).length}/${m.length}</span><span>모둠 ${vBadge(f.g_verdict&&f.g_verdict.v)}</span><span>고쳐 쓴 문장 ${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</span><span>기록자 ${f._rec?`<span class="cd">${esc(f._rec.v)}</span> <button class="btn small ghost" onclick="clearRec(${g})">해제</button>`:'미정'}</span></div>`;}).join('');
 }
 window.addEventListener('resize',()=>{if(window.fitPreview)fitPreview();});
 async function toggleShare(){const r=await api('setShare',{open:!DB.shareOpen});if(r.ok){toast(r.shareOpen?'모둠 판정을 공개했어요':'비공개로 바꿨어요');refresh();}else toast('실패했어요');}
