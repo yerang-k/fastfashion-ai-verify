@@ -43,8 +43,8 @@ function ck_(key) { return CLASS_ ? key + '__' + CLASS_ : key; } // 반별 설�
 
 function handle_(p) {
   CLASS_ = cleanClass_(p['class']);
-  // 학생 쪽 요청은 교사가 만든 반에만 허용(주소에 아무 반 이름이나 붙여 시트가 계속 생기는 것을 막음). 반은 교사 화면(PIN)에서만 만들어짐
-  if (CLASS_ && STUDENT_ACTIONS_[p.action] && !SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sn_(SHEET_STUDENTS))) return out_({ ok: false, error: 'no class' });
+  // 반 시트는 createClass(교사 PIN)로만 만들어짐. 그 밖의 모든 요청(교사 화면 포함)은 없는 반이면 거절 — 안 그러면 삭제한 반을 열어 둔 다른 화면이 시트를 되살림
+  if (CLASS_ && p.action !== 'createClass' && !SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sn_(SHEET_STUDENTS))) return out_({ ok: false, error: 'no class' });
   var lock = null;
   try {
     // 읽기만 하는 요청은 줄을 세우지 않고 바로 처리한다(학생 수만큼 쌓여 느려지는 것을 방지). 쓰기만 잠금.
@@ -67,6 +67,7 @@ function handle_(p) {
       case 'teacherAll': return out_(teacherAll_(p));
       case 'setShare': return out_(setShare_(p));
       case 'setClock': return out_(setClock_(p));
+      case 'createClass': return out_(createClass_(p));
       case 'deleteClass': return out_(deleteClass_(p));
       case 'setNotes': return out_(setNotes_(p));
       case 'helpClear': return out_(helpClear_(p));
@@ -471,6 +472,13 @@ function teacherAll_(p) {
   return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_, notes: notesGet_(), clock: parseInt(cfgGet_('clock') || '0', 10) || 0, now: Date.now() };
 }
 
+// 반 만들기: 시트 3개를 만든다(교사 PIN 필요)
+function createClass_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  if (!CLASS_) return { ok: false, error: 'default' };
+  sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS); sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER); sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
+  return { ok: true };
+}
 // 반 삭제: 그 반의 시트 3개(학생응답·모둠기록지·명단)와 설정 줄을 지운다. 기본 반은 지울 수 없음(설정·시트의 기준이라)
 function deleteClass_(p) {
   if (!pinOk_(p)) return { ok: false, error: 'pin' };

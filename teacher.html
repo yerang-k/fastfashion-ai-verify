@@ -248,7 +248,7 @@ async function login(){
 }
 const typing=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
 async function refresh(force){
- const r=await api('teacherAll');if(!r.ok)return false;DB=r;if(NOTE_EDIT==null&&r.notes)NOTES=r.notes;LASTRAW=(r.lesson&&r.lesson.current!==undefined)?r.lesson.current:0;LS=normLesson(r.lesson);CLOCK=r.clock||0;OFFSET=r.now?r.now-Date.now():0;if(holdStage&&Date.now()<holdStage.until)LS.current=holdStage.id;else holdStage=null;
+ const r=await api('teacherAll');if(!r.ok){if(r.error==='no class'&&CLASS_ID){alert('「'+CLASS_ID+'」 반이 없어요(삭제됐을 수 있어요). 기본 반으로 이동해요.');goClass('');}return false;}DB=r;if(NOTE_EDIT==null&&r.notes)NOTES=r.notes;LASTRAW=(r.lesson&&r.lesson.current!==undefined)?r.lesson.current:0;LS=normLesson(r.lesson);CLOCK=r.clock||0;OFFSET=r.now?r.now-Date.now():0;if(holdStage&&Date.now()<holdStage.until)LS.current=holdStage.id;else holdStage=null;
  $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
  if(force||!dirty){if(force||!typing(document.activeElement)||!$('settings').contains(document.activeElement)){DR=clone(LS);dirty=false;renderSettings();}}
  renderClasses();renderControl();renderStageView();
@@ -282,7 +282,8 @@ function renderClasses(){
 }
 function goClass(c){const u=new URL(location.href);if(c)u.searchParams.set('class',c);else u.searchParams.delete('class');location.href=u.toString();}
 function switchClass(c){if(dirty&&!confirm('저장하지 않은 설정 변경이 있어요. 반을 바꿀까요?')){renderClasses();return;}goClass(c);}
-function newClass(){const c=(prompt('새 반 이름을 입력하세요 (예: 1-3, 2반). 영문·숫자·한글·-_ 만 쓸 수 있어요.')||'').replace(/[^A-Za-z0-9가-힣_-]/g,'').slice(0,20);if(c)switchClass(c);}
+function newClass(){const c=(prompt('새 반 이름을 입력하세요 (예: 1-3, 2반). 영문·숫자·한글·-_ 만 쓸 수 있어요.')||'').replace(/[^A-Za-z0-9가-힣_-]/g,'').slice(0,20);if(c)createThenGo(c);}
+async function createThenGo(c){if(dirty&&!confirm('저장하지 않은 설정 변경이 있어요. 반을 바꿀까요?'))return;let r;try{r=await api('createClass',{class:c});}catch(e){r={};}if(r.ok)goClass(c);else toast(r.error==='pin'?'PIN이 맞지 않아요':'반을 만들지 못했어요(서버를 새로 배포했는지 확인하세요)');}
 async function delClass(){
  if(!CLASS_ID){alert('기본 반은 지울 수 없어요. 지우려는 반을 위 목록에서 고른 뒤 눌러 주세요.');return;}
  const t=prompt('「'+CLASS_ID+'」 반의 학생 응답·모둠 기록·명단·수업 설정이 모두 사라지고 되돌릴 수 없어요.\n정말 지우려면 반 이름을 그대로 입력하세요.');
