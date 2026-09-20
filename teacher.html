@@ -52,45 +52,47 @@ header select{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(
 .pchip.free{border-style:dashed}
 .phrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .stagemode{display:none}
-body.stagemode-on{background:#111;color:#f4f4f2;font-size:22px}
+/* 무대 화면: 어떤 단계든 스크롤 없이 화면에 딱 맞게. 글자·간격을 화면 높이(vh)·너비(vw)에 비례시키고, 남는 세로 공간은 가운데 내용 위아래로 나눔 */
+body.stagemode-on{background:#111;color:#f4f4f2;font-size:22px;overflow:hidden}
 body.stagemode-on header,body.stagemode-on .wrap{display:none!important}
 body.stagemode-on #stageView{display:flex}
-#stageView{display:none;flex-direction:column;min-height:100vh;padding:3.5vh 4.5vw;gap:2.6vh;position:relative}
-#stageView .sv-top{display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-size:1.05rem;letter-spacing:.06em}
-#stageView .sv-main{display:grid;grid-template-columns:1.5fr 1fr;gap:4vw;align-items:center}
+#stageView{--k:1;display:none;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;padding:2.4vh 3.6vw;gap:1.6vh;position:relative}
+#stageView .sv-top{display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-size:clamp(.75rem,1.7vh,1.05rem);letter-spacing:.06em;flex:0 0 auto}
+#stageView .sv-main{display:grid;grid-template-columns:1.5fr 1fr;gap:3vw;align-items:center;margin-top:auto;flex:0 0 auto}
 @media(max-width:900px){#stageView .sv-main{grid-template-columns:1fr}}
-#stageView .sv-no{color:var(--accent);font-size:1.5rem;font-weight:700;letter-spacing:.04em}
-#stageView .sv-name{font-size:clamp(3rem,8vw,6.5rem);font-weight:800;line-height:1.1;margin:.08em 0 .15em}
-#stageView .sv-todo{font-size:clamp(1.5rem,2.6vw,2.4rem);line-height:1.45;font-weight:600;color:#f4f4f2;border-left:6px solid var(--accent);padding-left:1.2vw}
+#stageView .sv-no{color:var(--accent);font-size:clamp(.95rem,2.5vh,1.5rem);font-weight:700;letter-spacing:.04em}
+#stageView .sv-name{font-size:clamp(2.2rem,min(6.5vw,10.5vh),6rem);font-weight:800;line-height:1.1;margin:.06em 0 .12em}
+#stageView .sv-todo{font-size:clamp(1.05rem,min(2.1vw,3.4vh),2.2rem);line-height:1.4;font-weight:600;color:#f4f4f2;border-left:6px solid var(--accent);padding-left:1.2vw}
 #stageView .sv-clock{text-align:right}
-#stageView .sv-timer{font-size:clamp(4rem,11vw,9rem);font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent);line-height:1}
-#stageView .sv-time{font-size:1.2rem;color:#a8a8a4;margin:.3em 0 .6em}
-#stageView .sv-bar{height:12px;background:#2a2a28;border-radius:6px;overflow:hidden}
+#stageView .sv-timer{font-size:clamp(2rem,min(5.5vw,7.5vh),4.5rem);font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent);line-height:1}
+#stageView .sv-time{font-size:clamp(.8rem,1.9vh,1.1rem);color:#a8a8a4;margin:.3em 0 .5em}
+#stageView .sv-bar{height:10px;background:#2a2a28;border-radius:5px;overflow:hidden}
 #stageView .sv-bar i{display:block;height:100%;background:var(--accent);width:0;transition:width 1s linear}
-#stageView .sv-points{display:flex;gap:1.2vw;flex-wrap:wrap;counter-reset:pt}
-#stageView .sv-points div{flex:1;min-width:14vw;background:#1e1e1c;border:1.5px solid #3a3a38;border-radius:14px;padding:1.4vh 1.2vw;font-size:clamp(1.1rem,1.7vw,1.6rem);line-height:1.4;counter-increment:pt}
+#stageView .sv-points{display:flex;gap:1vw;flex-wrap:wrap;counter-reset:pt;margin-bottom:auto;flex:0 0 auto}
+#stageView .sv-points div{flex:1;min-width:12vw;background:#1e1e1c;border:1.5px solid #3a3a38;border-radius:14px;padding:1vh 1vw;font-size:clamp(.9rem,min(1.5vw,2.6vh),1.4rem);line-height:1.35;counter-increment:pt}
 #stageView .sv-points div::before{content:counter(pt);display:inline-flex;width:1.7em;height:1.7em;align-items:center;justify-content:center;background:var(--accent);color:#111;font-weight:800;border-radius:50%;margin-right:.6em;font-size:.9em}
-#stageView .sv-panel{background:#181816;border:1.5px solid #3a3a38;border-radius:16px;padding:2vh 1.6vw}
-#stageView .sv-panel h3{margin:0 0 1.2vh;font-size:1.15rem;color:var(--accent);letter-spacing:.04em}
-#stageView .sv-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(15vw,1fr));gap:1vw}
-#stageView .sv-g{border:1.5px solid #3a3a38;border-radius:12px;padding:1.2vh 1vw;background:#1e1e1c}
-#stageView .sv-g b{font-size:1.3rem}
-#stageView .sv-g p{margin:.4em 0;font-size:1rem;color:#c8c8c4;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-#stageView .sv-g .m{font-size:.95rem;color:#8a8a86}
-#stageView .sv-v{display:inline-block;padding:2px 12px;border-radius:14px;font-size:.95rem;font-weight:700;border:1.5px solid #5a5a58;color:#a8a8a4}
+#stageView .sv-panel{background:#181816;border:1.5px solid #3a3a38;border-radius:16px;padding:1.4vh 1.4vw;flex:0 1 auto;min-height:0;overflow:hidden}
+#stageView .sv-panel h3{margin:0 0 calc(.8vh*var(--k));font-size:calc(clamp(.85rem,2vh,1.15rem)*var(--k));color:var(--accent);letter-spacing:.04em}
+#stageView .sv-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(13vw,1fr));gap:calc(.8vw*var(--k))}
+#stageView .sv-g{border:1.5px solid #3a3a38;border-radius:12px;padding:calc(.8vh*var(--k)) calc(.8vw*var(--k));background:#1e1e1c;min-width:0}
+#stageView .sv-g b{font-size:calc(clamp(.95rem,2.4vh,1.3rem)*var(--k))}
+#stageView .sv-g p{margin:.3em 0;font-size:calc(clamp(.75rem,1.8vh,1rem)*var(--k));color:#c8c8c4;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#stageView[data-tight] .sv-g p{-webkit-line-clamp:1}
+#stageView .sv-g .m{font-size:calc(clamp(.75rem,1.8vh,.95rem)*var(--k));color:#8a8a86}
+#stageView .sv-v{display:inline-block;padding:1px 10px;border-radius:14px;font-size:calc(clamp(.75rem,1.8vh,.95rem)*var(--k));font-weight:700;border:1.5px solid #5a5a58;color:#a8a8a4}
 #stageView .sv-v.ok{background:#f4f4f2;border-color:#f4f4f2;color:#111}#stageView .sv-v.part{background:var(--accent);border-color:var(--accent);color:#111}
 #stageView .sv-v.unk{border-style:dashed;color:#e8e8e4}#stageView .sv-v.bad{border-color:#f4f4f2;color:#f4f4f2}
-#stageView .sv-prog{height:22px;background:#2a2a28;border-radius:11px;overflow:hidden;margin:1vh 0}
+#stageView .sv-prog{height:clamp(12px,2.4vh,22px);background:#2a2a28;border-radius:11px;overflow:hidden;margin:.8vh 0}
 #stageView .sv-prog i{display:block;height:100%;background:var(--accent)}
-#stageView .sv-steps{display:flex;gap:8px;flex-wrap:wrap}
-#stageView .sv-steps span{padding:8px 16px;border:1.5px solid #3a3a38;border-radius:22px;color:#8a8a86;font-size:1rem}
+#stageView .sv-steps{display:flex;gap:6px;flex-wrap:wrap;flex:0 0 auto}
+#stageView .sv-steps span{padding:.5vh 1vw;border:1.5px solid #3a3a38;border-radius:22px;color:#8a8a86;font-size:clamp(.75rem,1.8vh,1rem)}
 #stageView .sv-steps span.on{background:var(--accent);border-color:var(--accent);color:#111;font-weight:800}
 #stageView .sv-steps span.past{color:#d8d8d4;border-color:#5a5a58}
-#stageView .sv-stat{display:flex;gap:4vw;font-size:1.25rem;color:#d8d8d4;flex-wrap:wrap}
-#stageView .sv-stat b{font-size:2.4rem;color:#fff;margin-right:.2em}
+#stageView .sv-stat{display:flex;gap:3vw;font-size:clamp(.85rem,2vh,1.2rem);color:#d8d8d4;flex-wrap:wrap;flex:0 0 auto}
+#stageView .sv-stat b{font-size:clamp(1.2rem,3.4vh,2.2rem);color:#fff;margin-right:.2em}
 #stageView .sv-ctl{position:absolute;right:2vw;bottom:2vh;display:flex;gap:8px;opacity:.35}
 #stageView .sv-ctl:hover{opacity:1}
-#stageView .sv-ctl button{background:#2a2a28;color:#f4f4f2;border:1px solid #444;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit;font-size:.9rem}
+#stageView .sv-ctl button{background:#2a2a28;color:#f4f4f2;border:1px solid #444;padding:.6vh .9vw;border-radius:8px;cursor:pointer;font:inherit;font-size:clamp(.75rem,1.7vh,.9rem)}
 /* 학생 코드(학년-반-번호)는 기본으로 흐리게 — 프로젝터에 비쳐도 읽히지 않고, 마우스를 올리거나 클릭하면 보임 */
 body.hide-codes .cd{filter:blur(7px);transition:filter .15s}body.hide-codes .cd:hover,body.hide-codes .cd:focus{filter:none}
 body.present{font-size:20px}body.present header,body.present .tabs,body.present .nopresent{display:none}
@@ -242,7 +244,16 @@ function renderStageView(){
   <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
   <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div>${help?`<div><b>${help}</b>도움 요청</div>`:''}</div>
   <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="toggleClock()">${CLOCK?'시계 초기화':'▶ 수업 시작'}</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
+ fitStage();
 }
+/* 무대 화면이 화면보다 길어지면(모둠이 많거나 문장이 길 때) 카드 문장을 줄이고, 그래도 넘치면 글자·간격을 조금씩 줄여 스크롤 없이 딱 맞춤 */
+function fitStage(){const v=$('stageView');if(!v||getComputedStyle(v).display==='none')return;
+ v.removeAttribute('data-tight');v.style.setProperty('--k','1');
+ const p=v.querySelector('.sv-panel');if(!p)return;
+ const clip=()=>p.scrollHeight-p.clientHeight>1||v.scrollHeight-v.clientHeight>1;
+ if(!clip())return;v.setAttribute('data-tight','1');
+ for(let k=1;clip()&&k>.5;){k=Math.round((k-.05)*100)/100;v.style.setProperty('--k',k);}}
+window.addEventListener('resize',fitStage);
 
 /* ---- 현황 ---- */
 const submitted=s=>s.submittedAt>0;
