@@ -150,7 +150,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 </style></head><body class="hide-codes">
 <header>
  <h1>교사 화면 · AI 답변, 믿어도 될까?</h1>
- <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
+ <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" id="delClsBtn" onclick="delClass()">🗑 반 삭제</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
 </header>
 <div class="wrap">
  <div class="card" id="login" style="max-width:420px;margin:40px auto">
@@ -278,11 +278,17 @@ const clsLabel=c=>c||'기본 반';
 const studentLink=()=>BASE+'index.html'+(CLASS_ID?'?class='+encodeURIComponent(CLASS_ID):'');
 function renderClasses(){
  const list=Array.from(new Set([''].concat(DB.classes||[],[CLASS_ID])));
- $('classSel').innerHTML=list.map(c=>`<option value="${esc(c)}" ${c===CLASS_ID?'selected':''}>${esc(clsLabel(c))}</option>`).join('');
+ $('delClsBtn').style.display=CLASS_ID?'':'none';$('classSel').innerHTML=list.map(c=>`<option value="${esc(c)}" ${c===CLASS_ID?'selected':''}>${esc(clsLabel(c))}</option>`).join('');
 }
 function goClass(c){const u=new URL(location.href);if(c)u.searchParams.set('class',c);else u.searchParams.delete('class');location.href=u.toString();}
 function switchClass(c){if(dirty&&!confirm('저장하지 않은 설정 변경이 있어요. 반을 바꿀까요?')){renderClasses();return;}goClass(c);}
 function newClass(){const c=(prompt('새 반 이름을 입력하세요 (예: 1-3, 2반). 영문·숫자·한글·-_ 만 쓸 수 있어요.')||'').replace(/[^A-Za-z0-9가-힣_-]/g,'').slice(0,20);if(c)switchClass(c);}
+async function delClass(){
+ if(!CLASS_ID){alert('기본 반은 지울 수 없어요. 지우려는 반을 위 목록에서 고른 뒤 눌러 주세요.');return;}
+ const t=prompt('「'+CLASS_ID+'」 반의 학생 응답·모둠 기록·명단·수업 설정이 모두 사라지고 되돌릴 수 없어요.\n정말 지우려면 반 이름을 그대로 입력하세요.');
+ if(t===null)return;if(t.trim()!==CLASS_ID){toast('반 이름이 달라서 지우지 않았어요');return;}
+ const r=await api('deleteClass');if(r.ok){alert('「'+CLASS_ID+'」 반을 지웠어요. 기본 반으로 이동해요.');goClass('');}else toast(r.error==='pin'?'PIN이 맞지 않아요':'지우지 못했어요(서버를 새로 배포했는지 확인하세요)');
+}
 async function copyLink(){const u=studentLink();try{await navigator.clipboard.writeText(u);toast(clsLabel(CLASS_ID)+' 학생 링크를 복사했어요');}catch(e){prompt('이 주소를 복사해 학생에게 알려 주세요',u);}}
 
 /* ---- 진행 통제: 교사가 '현재 단계'를 지정하면 학생은 그 단계 화면만 본다 ---- */
