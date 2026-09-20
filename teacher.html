@@ -395,7 +395,10 @@ function renderLive(){
  const S=DB.students;HELP=S.filter(s=>s.helpAt);
  let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
  if(HELP.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+HELP.map((r,i)=>`<div>${esc(r.group)}모둠 · <span class="cd">${esc(r.code)}</span> · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`).join('')+`</div>`;
- h+=`<p class="small">모둠별 진행은 위쪽 오른쪽 보드에서 볼 수 있어요. 학생 코드·모둠을 고치려면 <a href="#" onclick="openStudentMgr();return false" style="color:var(--accent-dk);font-weight:700">⚙️ 수업 설정 › 학생 관리</a>로 가세요.</p>`;
+ h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th><th>제출</th><th>개인 판정</th><th>모둠 판정</th><th>고쳐 쓴 문장</th><th>기록자</th></tr>`;
+ LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g),m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
+  h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td><td>${m.filter(submitted).length}</td><td>${m.filter(s=>s.data.i_verdict).length}/${m.length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td><td>${f._rec?`<span class="cd">${esc(f._rec.v)}</span> <button class="btn small ghost" onclick="clearRec(${g})">해제</button>`:'<span class="small">미정</span>'}</td></tr>`;});
+ h+=`</table><p class="small" style="margin-bottom:0">학생 코드·모둠을 고치려면 <a href="#" onclick="openStudentMgr();return false" style="color:var(--accent-dk);font-weight:700">⚙️ 수업 설정 › 학생 관리</a>로 가세요.</p></div>`;
  $('live').innerHTML=h;renderStudentMgr();
 }
 function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.activeElement)&&el.contains(document.activeElement)))return;
