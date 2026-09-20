@@ -50,6 +50,11 @@ header select{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(
 .pchip{border:1.5px solid var(--line);background:#fff;color:var(--txt);padding:9px 14px;border-radius:22px;font-size:.95rem;cursor:pointer;font-family:inherit}
 .pchip.on{background:var(--main);color:#fff;border-color:var(--main);font-weight:700;box-shadow:0 0 0 3px var(--accent-soft),0 0 0 4px var(--accent)}
 .pchip.free{border-style:dashed}
+.notebox{flex:1;min-width:260px;background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:8px;padding:10px 14px}
+.notebox .nh{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.notebox .nh b{font-size:.95rem}
+.notebox .ntext{white-space:pre-wrap;margin:6px 0 4px;line-height:1.6}
+.notebox .nnext{font-size:.88rem;color:var(--accent-dk);margin-top:2px}
+.notebox textarea{width:100%;min-height:96px;margin:6px 0}
 .phrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .stagemode{display:none}
 /* 무대 화면: 맨 위 '단계 이름'과 '시계'는 같은 크기로 고정(단계를 넘겨도 위치·크기가 변하지 않음). 그 아래 내용은 남은 공간에 맞춰 크기가 자동 조절(cqh=내용 영역 높이 기준, --k=fitStage가 맞춘 배율) */
@@ -154,6 +159,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
     <span class="small" id="clockInfo"></span> <button class="btn small ghost" id="clockBtn" onclick="toggleClock()">▶ 수업 시작</button>
    </div>
    <div class="phrow"><span class="small" id="flowInfo"></span></div>
+   <div class="phrow" style="align-items:stretch"><div class="notebox" id="noteBox"></div></div>
    <div class="phrow"><button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
   </div>
   <div class="tabs" id="tabs"></div>
@@ -226,7 +232,7 @@ async function login(){
 }
 const typing=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
 async function refresh(force){
- const r=await api('teacherAll');if(!r.ok)return false;DB=r;LASTRAW=(r.lesson&&r.lesson.current!==undefined)?r.lesson.current:0;LS=normLesson(r.lesson);CLOCK=r.clock||0;OFFSET=r.now?r.now-Date.now():0;if(holdStage&&Date.now()<holdStage.until)LS.current=holdStage.id;else holdStage=null;
+ const r=await api('teacherAll');if(!r.ok)return false;DB=r;if(NOTE_EDIT==null&&r.notes)NOTES=r.notes;LASTRAW=(r.lesson&&r.lesson.current!==undefined)?r.lesson.current:0;LS=normLesson(r.lesson);CLOCK=r.clock||0;OFFSET=r.now?r.now-Date.now():0;if(holdStage&&Date.now()<holdStage.until)LS.current=holdStage.id;else holdStage=null;
  $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
  if(force||!dirty){if(force||!typing(document.activeElement)||!$('settings').contains(document.activeElement)){DR=clone(LS);dirty=false;renderSettings();}}
  renderClasses();renderControl();renderStageView();
@@ -258,9 +264,25 @@ function renderControl(){
  $('pchips').innerHTML=vs.map((s,p)=>`<button class="pchip ${cur===s.id?'on':''}" onclick="setStage(${s.id})">${p+1}. ${esc(s.name)} <span class="small" style="color:inherit;opacity:.7">${esc(s.time)}</span></button>`).join('')
   +`<button class="pchip free ${cur==null?'on':''}" onclick="setStage(null)">자유 이동</button>`;
  $('prevBtn').disabled=cur==null||pos<=0;$('nextBtn').disabled=cur==null||pos>=vs.length-1;
+ if(NOTE_EDIT==null||NOTE_EDIT!==cur)NOTE_EDIT=null,renderNote();
  $('flowInfo').innerHTML=`<b>모둠 편성:</b> ${LS.groups.map(g=>`${g.n}모둠 ${g.size}명(주장 ${g.claim})`).join(' · ')}`;
 }
 /* 다른 기기에서 단계를 바꿨을 때(예: 노트북에서 조작, 교실 컴퓨터는 무대 화면) 빨리 따라오기: 가벼운 getStage로 확인하고, 바뀌었을 때만 전체를 새로 받는다 */
+/* 발표자 노트: 단계별 메모(교사 화면에만 보임, 서버에는 교사 PIN으로만 저장·조회). 적어 둔 게 없으면 기본 안내(DEFAULT_NOTES)를 보여 줌 */
+let NOTES={},NOTE_EDIT=null;
+const noteOf=id=>NOTES[id]!==undefined?String(NOTES[id]):(DEFAULT_NOTES[id]||'');
+function renderNote(){const box=$('noteBox');if(!box)return;const vs=visStages(LS),cur=LS.current;
+ if(cur==null){box.innerHTML='<div class="nh"><b>📝 발표자 노트</b></div><div class="ntext small">자유 이동 상태예요. 위의 단계 버튼을 누르면 그 단계의 노트가 보여요.</div>';return;}
+ const pos=vs.findIndex(s=>s.id===cur),st=vs[pos],nx=vs[pos+1];if(!st){box.innerHTML='';return;}
+ if(NOTE_EDIT===cur){box.innerHTML=`<div class="nh"><b>📝 「${esc(st.name)}」 노트 수정</b></div><textarea id="noteText" maxlength="1500" placeholder="이 단계에서 할 말·확인할 것·예상 질문을 적어 두세요(선생님 화면에만 보여요)">${esc(noteOf(cur))}</textarea><div class="nh"><button class="btn small" onclick="saveNote()">저장</button><button class="btn small ghost" onclick="NOTE_EDIT=null;renderNote()">취소</button><span class="small">학생 화면과 프로젝터에는 보이지 않아요</span></div>`;return;}
+ const t=noteOf(cur);
+ box.innerHTML=`<div class="nh"><b>📝 발표자 노트 · 「${esc(st.name)}」</b><button class="btn small ghost" onclick="editNote()">수정</button></div><div class="ntext">${t?esc(t):'<span class="small">(노트 없음 — 수정을 눌러 적어 두세요)</span>'}</div>${nx?`<div class="nnext">다음 ▶ ${esc(nx.name)} (${esc(nx.time)})</div>`:'<div class="nnext">마지막 단계예요</div>'}`;}
+function editNote(){NOTE_EDIT=LS.current;renderNote();const t=$('noteText');if(t)t.focus();}
+async function saveNote(){const id=NOTE_EDIT,txt=$('noteText').value;if(id==null)return;
+ const next=Object.assign({},NOTES,{[id]:txt});
+ const r=await api('setNotes',{notes:next});
+ if(r.ok){NOTES=next;NOTE_EDIT=null;renderNote();toast('노트를 저장했어요');}
+ else toast(r.error==='too large'?'노트가 너무 길어요':'저장하지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}
 let LASTRAW=0,LVT=null,stBusy=false; // LASTRAW=서버가 마지막으로 알려 준 단계(원본), LVT=수업 설정 버전
 const rcT=x=>x===null?null:(x==null?0:+x);
 async function pollStageT(){if(!DB||document.hidden||stBusy)return;stBusy=true;

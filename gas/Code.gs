@@ -67,6 +67,7 @@ function handle_(p) {
       case 'teacherAll': return out_(teacherAll_(p));
       case 'setShare': return out_(setShare_(p));
       case 'setClock': return out_(setClock_(p));
+      case 'setNotes': return out_(setNotes_(p));
       case 'helpClear': return out_(helpClear_(p));
       case 'uploadPdf': return out_(uploadPdf_(p));
       default: return out_({ ok: false, error: 'unknown action' });
@@ -466,7 +467,7 @@ function teacherAll_(p) {
   var groups = {};
   for (var g = 1; g <= MAXG; g++) { var gf = loadGroup_(gsh, g).fields; if (Object.keys(gf).length) groups[g] = gf; }
   var rm = rosterMap_(), roster = Object.keys(rm).map(function (c) { return { code: c, group: rm[c] }; });
-  return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_, clock: parseInt(cfgGet_('clock') || '0', 10) || 0, now: Date.now() };
+  return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_, notes: notesGet_(), clock: parseInt(cfgGet_('clock') || '0', 10) || 0, now: Date.now() };
 }
 
 // 만들어진 반 목록('학생응답' 시트 기준). 기본 반은 빈 문자열.
@@ -485,6 +486,26 @@ function toMs_(v) { return v instanceof Date ? v.getTime() : 0; }
 function setClock_(p) {
   if (!pinOk_(p)) return { ok: false, error: 'pin' };
   cfgSet_('clock', p.on ? String(Date.now()) : '');
+  return { ok: true };
+}
+
+// 발표자 노트: 단계 id(0~7) → 메모. 교사 화면에서만 보이며 학생용 조회(getLesson 등)에는 포함하지 않는다
+function notesGet_() {
+  var t = cfgGet_('notes');
+  if (!t) return {};
+  try { var o = JSON.parse(t); return (o && typeof o === 'object') ? o : {}; } catch (e) { return {}; }
+}
+function setNotes_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  var src = p.notes || {}, out = {}, total = 0;
+  for (var k in src) {
+    var id = parseInt(k, 10);
+    if (isNaN(id) || id < 0 || id > 7) continue;
+    var v = String(src[k] == null ? '' : src[k]).slice(0, 1500);
+    out[id] = v; total += v.length;
+  }
+  if (total > 20000) return { ok: false, error: 'too large' };
+  cfgSet_('notes', JSON.stringify(out));
   return { ok: true };
 }
 
