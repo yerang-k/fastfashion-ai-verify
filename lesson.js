@@ -16,7 +16,12 @@ const DEFAULT_LESSON={
  rosterOnly:false  // true면 명단에 등록된 참여 코드만 입장 가능
 };
 const REQUIRED_STAGES=[0,5]; // 준비(코드·모둠 입력)와 정리(제출)는 숨길 수 없음
-const MAX_GROUPS=10,MAX_CLAIMS=10,MAX_SRC=5;
+const MAX_GROUPS=10,MAX_CLAIMS=10,MAX_SRC=8;
+const SRC_LETTERS='ABCDEFGH';
+// 자료 링크: http(s)만 허용(javascript: 같은 주소 차단). 'www.…'처럼 붙여 넣으면 https:// 를 앞에 붙여 준다.
+const safeUrl=u=>{u=String(u||'').trim();if(/^(www\.|[\w-]+(\.[\w-]+)+(\/|$))/i.test(u)&&!/^[a-z]+:/i.test(u))u='https://'+u;return /^https?:\/\/\S+$/i.test(u)?u.slice(0,500):'';};
+// PDF: 구글 드라이브 파일 주소만 받아 학생 화면 안에서 열리는 미리보기 주소로 바꾼다.
+const drivePdf=u=>{const m=String(u||'').trim().match(/^https:\/\/drive\.google\.com\/(?:file\/(?:u\/\d+\/)?d\/|open\?id=|uc\?(?:[^#]*&)?id=)([A-Za-z0-9_-]{10,})/);return m?'https://drive.google.com/file/d/'+m[1]+'/preview':'';};
 
 function normLesson(raw){
  const L=JSON.parse(JSON.stringify(DEFAULT_LESSON));
@@ -31,7 +36,7 @@ function normLesson(raw){
   L.stages=st;}
  if(Array.isArray(raw.claims)&&raw.claims.length)
   L.claims=raw.claims.slice(0,MAX_CLAIMS).map((c,i)=>({n:i+1,t:String(c.t||''),hint:String(c.hint||''),
-   src:(Array.isArray(c.src)?c.src:[]).slice(0,MAX_SRC).map(s=>({type:String(s.type||''),title:String(s.title||''),body:String(s.body||'')}))}));
+   src:(Array.isArray(c.src)?c.src:[]).slice(0,MAX_SRC).map(s=>({type:String(s.type||''),title:String(s.title||''),body:String(s.body||''),url:safeUrl(s.url),pdf:drivePdf(s.pdf)}))}));
  const ncl=(L.claims||CLAIMS).length;
  if(Array.isArray(raw.groups)&&raw.groups.length)
   L.groups=raw.groups.slice(0,MAX_GROUPS).map((g,i)=>({n:i+1,size:Math.max(1,Math.min(12,+g.size||4)),claim:Math.max(1,Math.min(ncl,+g.claim||1))}));

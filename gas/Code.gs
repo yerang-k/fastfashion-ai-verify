@@ -34,7 +34,7 @@ function doPost(e) {
   return handle_(p);
 }
 
-var READ_ACTIONS_ = { getStudent: 1, getLesson: 1, getGroup: 1, getShare: 1, teacherAll: 1 };
+var READ_ACTIONS_ = { getStudent: 1, getLesson: 1, getGroup: 1, getShare: 1, teacherAll: 1, uploadPdf: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
 var STUDENT_ACTIONS_ = { saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getShare: 1 };
 var CLASS_ = ''; // 이번 요청의 반(기본 반은 빈 문자열)
 function cleanClass_(c) { return String(c || '').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20); }
@@ -67,6 +67,7 @@ function handle_(p) {
       case 'setShare': return out_(setShare_(p));
       case 'setClock': return out_(setClock_(p));
       case 'helpClear': return out_(helpClear_(p));
+      case 'uploadPdf': return out_(uploadPdf_(p));
       default: return out_({ ok: false, error: 'unknown action' });
     }
   } catch (err) {
@@ -484,4 +485,29 @@ function helpClear_(p) {
   var row = findRow_(sh, 1, cleanCode_(p.code));
   if (row > 0) sh.getRange(row, 6).setValue('');
   return { ok: true };
+}
+
+
+// ---------- 자료용 PDF 업로드(교사 화면) ----------
+// 파일은 교사 드라이브의 'AI 답변 믿어도 될까 자료' 폴더에 저장되고, '링크가 있는 모든 사용자 - 보기'로 공유된다(학생 정보는 없음).
+// ※ 처음 한 번, 편집기에서 authorizeDrive 함수를 실행해 드라이브 권한을 승인해야 한다.
+var MAX_PDF_BYTES = 15 * 1024 * 1024;
+function authorizeDrive() { return DriveApp.getRootFolder().getName(); }
+function pdfFolder_() {
+  var it = DriveApp.getFoldersByName('AI 답변 믿어도 될까 자료');
+  return it.hasNext() ? it.next() : DriveApp.createFolder('AI 답변 믿어도 될까 자료');
+}
+function uploadPdf_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  var b64 = String(p.base64Data || '');
+  if (!b64) return { ok: false, error: 'empty' };
+  if (b64.length > MAX_PDF_BYTES * 4 / 3 + 100) return { ok: false, error: 'too large' };
+  var name = String(p.filename || '자료.pdf').replace(/[\\/:*?"<>|]/g, '_').slice(0, 100);
+  if (!/\.pdf$/i.test(name)) name += '.pdf';
+  var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'application/pdf', name);
+  var b = blob.getBytes();
+  if (b.length < 5 || b[0] !== 0x25 || b[1] !== 0x50 || b[2] !== 0x44 || b[3] !== 0x46) return { ok: false, error: 'not pdf' }; // '%PDF' 로 시작해야 함
+  var file = pdfFolder_().createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { ok: true, name: file.getName(), url: 'https://drive.google.com/file/d/' + file.getId() + '/preview' };
 }

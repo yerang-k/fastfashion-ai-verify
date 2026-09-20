@@ -36,8 +36,8 @@ td input[type=text],td input[type=number],td select{width:100%}
 .help{background:var(--accent-soft)}
 .stagebtns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .savebar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--main);padding:10px 16px;margin:0 -22px -22px;border-radius:0 0 14px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#faf9f6}
-.srcbox{border:1px dashed var(--accent);border-radius:8px;padding:8px;margin:8px 0}
+.claimcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#faf9f6}.ctabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.ctab{border:1.5px solid var(--main);background:#fff;color:var(--main);border-radius:20px;padding:6px 14px;font-size:.92rem;cursor:pointer;font-family:inherit}.ctab.on{background:var(--main);color:#fff;font-weight:700}.ctab.add{border-style:dashed}.ctab:disabled{opacity:.4;cursor:default}
+.srcbox{border:1px dashed var(--accent);border-radius:8px;padding:8px;margin:8px 0}.pdfrow{margin:2px 0 4px}
 .lbl{font-size:.85rem;color:var(--sub);margin:6px 0 2px}
 details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--main)}
 .tab{display:none}.tab.show{display:block}
@@ -177,6 +177,7 @@ const PIN_KEY='aiverify_teacher_pin';
 const BASE=location.origin+location.pathname.replace(/[^/]*$/,'');
 let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[];
 const TABS=['📊 현황','📝 결과 정리','⚙️ 수업 설정','📁 데이터'];
+let CT=0; // 수업 설정 ③에서 지금 보고 있는 주장 탭
 const OPEN={}; // 수업 설정에서 펼쳐 둔 섹션 기억
 const QS=new URLSearchParams(location.search);
 const VCLS={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'};
@@ -392,15 +393,19 @@ function renderSettings(){
   h+=`<p class="small">지금은 <b>기본 자료</b>(패스트패션 주장 ${CLAIMS.length}개)를 쓰고 있어요. 수정하려면 기본 자료를 복사해서 편집을 시작하세요. 기본 자료 원본은 바뀌지 않고, 언제든 되돌릴 수 있어요.</p><button class="btn" onclick="startEditClaims()">편집 시작 (기본 자료 복사)</button>`;
  }else{
   h+=`<p class="small">자료 본문에는 <code>&lt;b&gt;강조&lt;/b&gt;</code> 같은 HTML을 쓸 수 있어요. 주장은 최대 ${MAX_CLAIMS}개, 주장당 자료 최대 ${MAX_SRC}개입니다.</p>`;
-  h+=DR.claims.map((c,ci)=>`<div class="claimcard"><b>주장 ${c.n}</b> <button class="btn small danger" style="float:right" onclick="delClaim(${ci})" ${DR.claims.length<=1?'disabled':''}>이 주장 삭제</button>
+  if(CT>=DR.claims.length)CT=DR.claims.length-1;
+  h+=`<div class="ctabs">${DR.claims.map((c,ci)=>`<button type="button" class="ctab${ci===CT?' on':''}" title="${esc((c.t||'').slice(0,60))}" onclick="setClaimTab(${ci})">주장 ${c.n}</button>`).join('')}<button type="button" class="ctab add" onclick="addClaim()" ${DR.claims.length>=MAX_CLAIMS?'disabled':''}>＋ 주장 추가</button></div>`;
+  h+=DR.claims.map((c,ci)=>ci!==CT?'':`<div class="claimcard"><b>주장 ${c.n}</b> <button class="btn small danger" style="float:right" onclick="delClaim(${ci})" ${DR.claims.length<=1?'disabled':''}>이 주장 삭제</button>
    <div class="lbl">검증할 AI 답변 문장</div><textarea oninput="DR.claims[${ci}].t=this.value;mark()">${esc(c.t)}</textarea>
    <div class="lbl">생각 열쇠(힌트)</div><textarea oninput="DR.claims[${ci}].hint=this.value;mark()">${esc(c.hint)}</textarea>
-   ${c.src.map((s,si)=>`<div class="srcbox"><b>자료 ${'ABCDE'[si]}</b> <button class="btn small danger" style="float:right" onclick="delSrc(${ci},${si})" ${c.src.length<=1?'disabled':''}>삭제</button>
+   ${c.src.map((s,si)=>`<div class="srcbox"><b>자료 ${SRC_LETTERS[si]}</b> <button class="btn small danger" style="float:right" onclick="delSrc(${ci},${si})" ${c.src.length<=1?'disabled':''}>삭제</button>
     <div class="lbl">종류 (예: 국제기구 보도자료 (2019))</div><input type="text" style="width:100%" value="${esc(s.type)}" oninput="DR.claims[${ci}].src[${si}].type=this.value;mark()">
     <div class="lbl">제목</div><input type="text" style="width:100%" value="${esc(s.title)}" oninput="DR.claims[${ci}].src[${si}].title=this.value;mark()">
-    <div class="lbl">본문</div><textarea oninput="DR.claims[${ci}].src[${si}].body=this.value;mark()">${esc(s.body)}</textarea></div>`).join('')}
+    <div class="lbl">본문</div><textarea oninput="DR.claims[${ci}].src[${si}].body=this.value;mark()">${esc(s.body)}</textarea>
+    <div class="lbl">🔗 링크 (선택) — 원문 기사·사이트 주소를 붙여 넣으세요</div><input type="text" style="width:100%" placeholder="https://" value="${esc(s.url||'')}" onchange="setSrcUrl(${ci},${si},this)">
+    <div class="lbl">📄 PDF (선택)</div>${pdfRow(ci,si,s)}</div>`).join('')}
    <button class="btn small ghost" onclick="addSrc(${ci})" ${c.src.length>=MAX_SRC?'disabled':''}>＋ 자료 추가</button></div>`).join('');
-  h+=`<button class="btn small ghost" onclick="addClaim()" ${DR.claims.length>=MAX_CLAIMS?'disabled':''}>＋ 주장 추가</button> <button class="btn small danger" onclick="resetClaims()">기본 자료로 되돌리기</button>`;
+  h+=`<button class="btn small danger" onclick="resetClaims()">기본 자료로 되돌리기</button>`;
  }
  h+=`</div></details>`;
 
@@ -419,13 +424,38 @@ function moveStage(i,d){const j=i+d;if(j<0||j>=DR.stages.length||DR.stages[i].id
 function addGroup(){if(DR.groups.length>=MAX_GROUPS)return;DR.groups.push({n:DR.groups.length+1,size:4,claim:1});mark();renderSettings();}
 function delGroup(){if(DR.groups.length<=1)return;const g=DR.groups[DR.groups.length-1];
  if(!confirm(`${g.n}모둠을 삭제할까요? 이미 ${g.n}모둠으로 접속한 학생은 모둠을 다시 골라야 해요.`))return;DR.groups.pop();mark();renderSettings();}
-function startEditClaims(){DR.claims=clone(CLAIMS);mark();renderSettings();}
-function resetClaims(){if(!confirm('편집한 주장·자료를 모두 지우고 기본 자료로 되돌릴까요? (저장 전까지는 학생 화면에 영향이 없어요)'))return;DR.claims=null;DR.groups.forEach(g=>{if(g.claim>CLAIMS.length)g.claim=1;});mark();renderSettings();}
-function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',src:[{type:'',title:'',body:''}]});mark();renderSettings();}
+function startEditClaims(){CT=0;DR.claims=clone(CLAIMS);mark();renderSettings();}
+function resetClaims(){CT=0;if(!confirm('편집한 주장·자료를 모두 지우고 기본 자료로 되돌릴까요? (저장 전까지는 학생 화면에 영향이 없어요)'))return;DR.claims=null;DR.groups.forEach(g=>{if(g.claim>CLAIMS.length)g.claim=1;});mark();renderSettings();}
+function setClaimTab(i){CT=i;renderSettings();}
+function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;CT=DR.claims.length;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',src:[{type:'',title:'',body:'',url:'',pdf:''}]});mark();renderSettings();}
 function delClaim(ci){if(DR.claims.length<=1)return;if(!confirm(`주장 ${ci+1}을(를) 삭제할까요?`))return;
- DR.claims.splice(ci,1);DR.claims.forEach((c,i)=>c.n=i+1);
+ DR.claims.splice(ci,1);DR.claims.forEach((c,i)=>c.n=i+1);CT=Math.max(0,ci-1);
  DR.groups.forEach(g=>{if(g.claim===ci+1)g.claim=1;else if(g.claim>ci+1)g.claim--;});mark();renderSettings();}
-function addSrc(ci){const c=DR.claims[ci];if(c.src.length>=MAX_SRC)return;c.src.push({type:'',title:'',body:''});mark();renderSettings();}
+/* 자료 링크·PDF: 화면 전체를 다시 그리지 않고 그 줄만 갱신한다(다시 그리면 바로 다음 「저장」 클릭이 씹힘) */
+function pdfRow(ci,si,s){const id=`pdfrow_${ci}_${si}`;
+ if(s.pdf)return `<div class="pdfrow" id="${id}">✅ PDF 연결됨 · <a href="${esc(s.pdf.replace('/preview','/view'))}" target="_blank" rel="noopener">열어 보기 ↗</a> <button class="btn small ghost" onclick="clearSrcPdf(${ci},${si})">연결 해제</button></div>`;
+ return `<div class="pdfrow" id="${id}"><label class="btn small ghost" style="display:inline-block;cursor:pointer">📤 PDF 파일 올리기<input type="file" accept="application/pdf,.pdf" style="display:none" onchange="uploadSrcPdf(${ci},${si},this)"></label> <span class="small">15MB 이하 · 또는 드라이브 링크를 붙여 넣기</span>
+  <input type="text" style="width:100%;margin-top:6px" placeholder="https://drive.google.com/file/d/…" onchange="setSrcPdf(${ci},${si},this)"></div>`;}
+function refreshPdfRow(ci,si,html){const el=document.getElementById(`pdfrow_${ci}_${si}`);if(!el)return;el.outerHTML=html==null?pdfRow(ci,si,DR.claims[ci].src[si]):`<div class="pdfrow" id="pdfrow_${ci}_${si}">${html}</div>`;}
+function setSrcUrl(ci,si,inp){const v=inp.value.trim(),u=safeUrl(v);if(v&&!u)alert('http:// 또는 https:// 로 시작하는 웹 주소를 넣어 주세요.');inp.value=u;DR.claims[ci].src[si].url=u;mark();}
+function setSrcPdf(ci,si,inp){const v=inp.value.trim();if(!v)return;const p=drivePdf(v);
+ if(!p){alert('구글 드라이브에 올린 PDF의 공유 링크만 붙여 넣을 수 있어요. (drive.google.com/file/d/… 형태)\n다른 사이트의 PDF는 위쪽 「링크」 칸에 넣으면 학생이 새 탭에서 열 수 있어요.');inp.value='';return;}
+ DR.claims[ci].src[si].pdf=p;mark();refreshPdfRow(ci,si);toast('PDF를 연결했어요. 드라이브에서 공유가 「링크가 있는 모든 사용자」인지 확인해 주세요.');}
+function clearSrcPdf(ci,si){DR.claims[ci].src[si].pdf='';mark();refreshPdfRow(ci,si);}
+async function uploadSrcPdf(ci,si,inp){const f=inp.files[0];if(!f)return;
+ if(!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf'){alert('PDF 파일만 올릴 수 있어요.');inp.value='';return;}
+ if(f.size>15*1024*1024){alert('15MB 이하만 올릴 수 있어요. 큰 파일은 드라이브에 올린 뒤 공유 링크를 붙여 넣어 주세요.');inp.value='';return;}
+ refreshPdfRow(ci,si,'⏳ PDF를 올리는 중이에요… 잠시만 기다려 주세요.');
+ try{
+  const b64=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]||'');r.onerror=()=>no(new Error('read'));r.readAsDataURL(f);});
+  const res=await api('uploadPdf',{filename:f.name,base64Data:b64});
+  if(!res.ok){const e=String(res.error||'');
+   const why=e==='pin'?'로그인이 풀렸어요. 새로고침 후 PIN을 다시 넣어 주세요.':e==='not pdf'?'PDF 파일이 아니에요.':e==='too large'?'파일이 너무 커요(15MB 이하).':e==='unknown action'?'서버(Apps Script)에 새 기능이 아직 안 올라갔어요. Code.gs를 붙여 넣고 새 버전으로 재배포해 주세요.':/permission|권한|DriveApp/i.test(e)?'드라이브 권한이 필요해요. Apps Script 편집기에서 authorizeDrive 함수를 한 번 실행해 권한을 승인해 주세요.':e;
+   refreshPdfRow(ci,si);alert('PDF를 올리지 못했어요.\n'+why);return;}
+  DR.claims[ci].src[si].pdf=res.url;mark();refreshPdfRow(ci,si);toast('PDF를 올리고 연결했어요.');
+ }catch(err){refreshPdfRow(ci,si);alert('PDF를 올리지 못했어요. 인터넷 연결을 확인하고 다시 해 보세요.');}
+}
+function addSrc(ci){const c=DR.claims[ci];if(c.src.length>=MAX_SRC)return;c.src.push({type:'',title:'',body:'',url:'',pdf:''});mark();renderSettings();}
 function delSrc(ci,si){const c=DR.claims[ci];if(c.src.length<=1)return;c.src.splice(si,1);mark();renderSettings();}
 async function saveSettings(){
  const CL=claimsOf(DR);

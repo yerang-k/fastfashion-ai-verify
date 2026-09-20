@@ -46,6 +46,31 @@ td select,td input{padding:6px;font-size:.9rem}
 .help{position:fixed;right:18px;bottom:18px;background:#fff;color:var(--main);border:2px solid var(--main);border-radius:30px;padding:10px 16px;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .mine{outline:3px solid var(--main);outline-offset:2px}
 .role{display:flex;gap:8px;flex-wrap:wrap}.role input{width:auto;flex:1;min-width:120px}
+.srcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.srccard{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.srctop{display:flex;align-items:center;gap:8px}.srctop .tag{margin:0}
+.srcletter{flex:none;width:26px;height:26px;border-radius:50%;background:var(--main);color:#fff;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.srccard h4{margin:0;font-size:1rem;line-height:1.45}
+.srcbody{font-size:.92rem;line-height:1.6;color:#333;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+.srcbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:8px}
+a.btn{text-decoration:none;display:inline-block}
+.srcmodal{position:fixed;inset:0;z-index:50;background:rgba(17,17,17,.88);display:flex;align-items:center;justify-content:center;padding:16px}
+.srcmodal[hidden]{display:none}
+.srcpanel{background:var(--bg);border-radius:14px;width:100%;max-width:1000px;height:min(92vh,900px);display:flex;flex-direction:column;overflow:hidden}
+.srchead{background:var(--main);border-bottom:3px solid var(--accent);padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.srctabs{display:flex;gap:6px;flex-wrap:wrap}
+.srctab{width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-weight:700;cursor:pointer;font-family:inherit}
+.srctab.on{background:var(--accent);border-color:var(--accent);color:var(--main)}
+.srchead .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+.srcview{flex:1;min-height:0;overflow:auto;padding:18px 22px;display:flex;flex-direction:column;gap:12px}
+.srcview h3{margin:4px 0 0;font-size:1.25rem;line-height:1.45}
+.srcmodes{display:flex;gap:6px}
+.srcmodes button{border:1.5px solid var(--main);background:#fff;color:var(--main);border-radius:20px;padding:6px 16px;font-size:.92rem;cursor:pointer;font-family:inherit}
+.srcmodes button.on{background:var(--main);color:#fff;font-weight:700}
+.srcfull{font-size:1.05rem;line-height:1.85;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:16px 18px}
+.srcpdf{flex:1;min-height:420px;width:100%;border:1.5px solid var(--line);border-radius:10px;background:#fff}
+.srcacts{display:flex;flex-wrap:wrap;gap:8px}
+@media(max-width:720px){.srcmodal{padding:0}.srcpanel{max-width:none;height:100%;border-radius:0}.srcview{padding:12px}}
 </style></head><body>
 <header>
  <h1>AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서 · 고2 · 50분</span></h1>
@@ -99,7 +124,7 @@ td select,td input{padding:6px;font-size:.9rem}
   <div class="todo">지금 할 일: 혼자서 우리 모둠 문장을 자료 3개와 대조해 판정하고, 보고서에 쓸 수 있게 고쳐 써요. <span class="small">(이 단계는 각자 해요. 모둠 의견은 다음 단계에서 모아요.)</span></div>
   <div id="myClaim"></div>
   <h3>📚 확인용 자료 카드</h3>
-  <div class="grid3" id="mySrc"></div>
+  <div class="srcgrid" id="mySrc"></div>
   <h3>🔎 내 검증 기록지</h3>
   <div class="grid3">
    <div class="box"><h4>① 출처</h4><textarea data-save id="i_src" placeholder="AI가 말한 출처가 있나요? 원 출처를 추적할 수 있나요?"></textarea></div>
@@ -125,6 +150,7 @@ td select,td input{padding:6px;font-size:.9rem}
   <h2>5. 모둠 정리: 발표할 내용 정하기 <span class="time">8분</span></h2>
   <div class="todo">지금 할 일: 모둠원이 각자 판정한 것을 나누고, 모둠이 <b>발표할</b> 판정·근거·고쳐 쓴 문장을 하나로 정리해요. 입력은 <b>기록자 한 명</b>만 해요.</div>
   <div id="myClaim7"></div>
+  <details><summary>📚 확인용 자료 다시 보기</summary><div class="srcgrid" id="mySrc7" style="margin-top:8px"></div></details>
   <details open><summary>내가 먼저 쓴 개인 검증 보기</summary><div class="box" id="myIndiv" style="margin-top:8px"></div></details>
   <div class="box" id="recBox" style="margin-top:14px"></div>
   <h3>모둠 판정 (발표용)</h3>
@@ -189,6 +215,12 @@ td select,td input{padding:6px;font-size:.9rem}
 </div>
 <p class="small" style="text-align:center"><a href="#" onclick="resetAll();return false" style="color:var(--sub)">이 기기의 내 응답 초기화</a></p>
 <button class="help" onclick="askHelp()">🙋 도움이 필요해요</button>
+<div class="srcmodal" id="srcModal" role="dialog" aria-modal="true" aria-label="자료 자세히 보기" hidden onclick="if(event.target===this)closeSrc()">
+ <div class="srcpanel">
+  <div class="srchead"><div class="srctabs" id="srcTabs"></div><button type="button" class="btn small ghost" id="srcClose" onclick="closeSrc()">✕ 닫기</button></div>
+  <div class="srcview" id="srcView"></div>
+ </div>
+</div>
 <div class="toast" id="toast"></div>
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script><script>
 const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'');let data=JSON.parse(localStorage.getItem(KEY)||'{}');
@@ -221,15 +253,34 @@ function applyLesson(raw){
  LESSON=n;try{localStorage.setItem(KEY+'_lesson',JSON.stringify(raw||null));}catch(e){}
  if(data.group&&!LESSON.groups.some(g=>g.n===+data.group)){delete data.group;}
  buildStatic();restore();show(cur);syncStage();}
+/* 자료 카드·자세히 보기 창. renderGroup()이 입력할 때마다 불리므로, 내용이 바뀐 때만 다시 그려서 열려 있는 창이 깜빡이거나 닫히지 않게 한다. */
+let SRCS=[],SRC_HTML='',SRC_OPEN=-1,SRC_MODE='text';
+function srcCardsHtml(list){return list.map((s,i)=>`<div class="srccard"><div class="srctop"><span class="srcletter">${SRC_LETTERS[i]}</span><span class="tag">${escH(s.type)}</span></div><h4>${escH(s.title)}</h4><div class="srcbody">${s.body}</div><div class="srcbtns"><button type="button" class="btn small" onclick="openSrc(${i},'text')">📖 자세히 보기</button>${s.pdf?`<button type="button" class="btn small ghost" onclick="openSrc(${i},'pdf')">📄 PDF 보기</button>`:''}${s.url?`<a class="btn small ghost" href="${escH(s.url)}" target="_blank" rel="noopener noreferrer">🔗 원문 열기 ↗</a>`:''}</div></div>`).join('');}
+function renderSrc(list){const h=srcCardsHtml(list);if(h===SRC_HTML)return;SRC_HTML=h;SRCS=list;$('mySrc').innerHTML=h;$('mySrc7').innerHTML=h;if(SRC_OPEN>=0)paintSrc();}
+function openSrc(i,mode){if(!SRCS[i])return;SRC_OPEN=i;SRC_MODE=(mode==='pdf'&&SRCS[i].pdf)?'pdf':'text';paintSrc();$('srcModal').hidden=false;document.body.style.overflow='hidden';$('srcClose').focus();}
+function closeSrc(){if($('srcModal').hidden)return;$('srcModal').hidden=true;$('srcView').innerHTML='';document.body.style.overflow='';SRC_OPEN=-1;}
+function setSrcMode(m){SRC_MODE=m;paintSrc();}
+function paintSrc(){const s=SRCS[SRC_OPEN];if(!s){closeSrc();return;}
+ if(SRC_MODE==='pdf'&&!s.pdf)SRC_MODE='text';
+ $('srcTabs').innerHTML=SRCS.map((x,i)=>`<button type="button" class="srctab${i===SRC_OPEN?' on':''}" onclick="openSrc(${i},'${SRC_MODE}')" aria-label="자료 ${SRC_LETTERS[i]}">${SRC_LETTERS[i]}</button>`).join('');
+ const modes=s.pdf?`<div class="srcmodes"><button type="button" class="${SRC_MODE==='text'?'on':''}" onclick="setSrcMode('text')">본문</button><button type="button" class="${SRC_MODE==='pdf'?'on':''}" onclick="setSrcMode('pdf')">PDF</button></div>`:'';
+ const link=s.url?`<a class="btn small ghost" href="${escH(s.url)}" target="_blank" rel="noopener noreferrer">🔗 원문 열기 ↗</a>`:'';
+ const head=`<div><span class="tag">${escH(s.type)}</span><h3>자료 ${SRC_LETTERS[SRC_OPEN]} · ${escH(s.title)}</h3></div>${modes}`;
+ $('srcView').innerHTML=SRC_MODE==='pdf'
+  ?`${head}<iframe class="srcpdf" src="${escH(s.pdf)}" title="${escH(s.title)} PDF"></iframe><div class="srcacts"><a class="btn small ghost" href="${escH(s.pdf.replace('/preview','/view'))}" target="_blank" rel="noopener noreferrer">새 탭에서 크게 열기 ↗</a>${link}</div>`
+  :`${head}<div class="srcfull">${s.body}</div>${link?`<div class="srcacts">${link}</div>`:''}`;
+ $('srcView').scrollTop=0;}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSrc();});
+
 function renderGroup(){
  renderRec();showPending();
  const g=+data.group||0;const c=claimOfGroup(LESSON,g);
  $('grpBadge').textContent='모둠: '+(g?g+'모둠':'-');
  document.querySelectorAll('.groups label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
  $('myIndiv').innerHTML=[['판정',data.i_verdict],['근거 한 문장',data.i_reason],['보고서용 문장',data.i_rewrite]].map(([l,v])=>`<p style="margin:4px 0"><b>${l}:</b> ${escH(v)||'<span class="small">(아직 안 썼어요)</span>'}</p>`).join('');
- if(!c){const none='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('myClaim').innerHTML=none;$('myClaim7').innerHTML=none;$('mySrc').innerHTML='';return;}
+ if(!c){const none='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('myClaim').innerHTML=none;$('myClaim7').innerHTML=none;renderSrc([]);return;}
  const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p><p class="small">💡 생각 열쇠: ${c.hint}</p></div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
- $('mySrc').innerHTML=c.src.map((s,i)=>`<div class="box"><span class="tag">${s.type}</span><h4>자료 ${'ABCDE'[i]} ·${s.title}</h4><p class="small" style="margin:0">${s.body}</p></div>`).join('');
+ renderSrc(c.src);
  document.querySelectorAll('#shareTable tr').forEach(r=>r.classList.remove('mine'));
  const row=$('row'+g);if(row){row.classList.add('mine');
   const v=row.querySelector('select'),r=row.querySelector('input');
@@ -237,7 +288,7 @@ function renderGroup(){
   if(data.g_reason&&!r.value){r.value=data.g_reason.slice(0,80);data['sh_r'+g]=r.value;}}
 }
 /* 단계 이동: 화면 표시(show) / 이동(go) / 진행 통제를 지키는 이동(tryGo·step) */
-function show(i){const o=order();if(!o.includes(i))i=o[0];cur=i;
+function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i)closeSrc();cur=i;
  document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('show',+s.dataset.i===i));
  const p=o.indexOf(i),lp=locked()?o.indexOf(LESSON.current):o.length-1;
  document.querySelectorAll('#steps button').forEach((b,j)=>{b.classList.toggle('active',j===p);b.classList.toggle('done',j<p);b.classList.toggle('locked',locked()&&j>lp);});
