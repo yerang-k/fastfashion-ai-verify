@@ -67,6 +67,7 @@ function handle_(p) {
       case 'teacherAll': return out_(teacherAll_(p));
       case 'setShare': return out_(setShare_(p));
       case 'setClock': return out_(setClock_(p));
+      case 'deleteClass': return out_(deleteClass_(p));
       case 'setNotes': return out_(setNotes_(p));
       case 'helpClear': return out_(helpClear_(p));
       case 'uploadPdf': return out_(uploadPdf_(p));
@@ -468,6 +469,23 @@ function teacherAll_(p) {
   for (var g = 1; g <= MAXG; g++) { var gf = loadGroup_(gsh, g).fields; if (Object.keys(gf).length) groups[g] = gf; }
   var rm = rosterMap_(), roster = Object.keys(rm).map(function (c) { return { code: c, group: rm[c] }; });
   return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_, notes: notesGet_(), clock: parseInt(cfgGet_('clock') || '0', 10) || 0, now: Date.now() };
+}
+
+// 반 삭제: 그 반의 시트 3개(학생응답·모둠기록지·명단)와 설정 줄을 지운다. 기본 반은 지울 수 없음(설정·시트의 기준이라)
+function deleteClass_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  if (!CLASS_) return { ok: false, error: 'default' };
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  [SHEET_STUDENTS, SHEET_GROUPS, SHEET_ROSTER].forEach(function (n) { var sh = ss.getSheetByName(sn_(n)); if (sh) ss.deleteSheet(sh); });
+  var cs = ss.getSheetByName(SHEET_CONFIG), cache = CacheService.getScriptCache(), suf = '__' + CLASS_;
+  if (cs) {
+    for (var r = cs.getLastRow(); r >= 2; r--) {
+      var k = String(cs.getRange(r, 1).getValue());
+      if (k.length > suf.length && k.slice(-suf.length) === suf) { try { cache.remove('cfg:' + k); } catch (e) {} cs.deleteRow(r); }
+    }
+  }
+  rosterDirty_();
+  return { ok: true };
 }
 
 // 만들어진 반 목록('학생응답' 시트 기준). 기본 반은 빈 문자열.
