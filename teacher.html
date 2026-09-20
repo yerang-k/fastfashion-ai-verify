@@ -95,20 +95,22 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-v.unk{border-style:dashed;color:#e8e8e4}#stageView .sv-v.bad{border-color:#f4f4f2;color:#f4f4f2}
 #stageView .sv-g.click{cursor:pointer;transition:border-color .15s}
 #stageView .sv-g.click:hover{border-color:var(--accent)}
-#stageView .sv-panel.sv-spot{cursor:pointer;border-color:var(--accent)}
-#stageView .sv-focus{display:flex;flex-direction:column;gap:calc(1.6cqh*var(--k))}
+#stageView .sv-inner.spot{height:100%}
+#stageView .sv-panel.sv-spot{cursor:pointer;border-color:var(--accent);flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#stageView .sv-focus{display:flex;flex-direction:column;gap:calc(1.6cqh*var(--k));flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:.8vw;scrollbar-width:thin;scrollbar-color:#5a5a58 transparent}
 #stageView .sv-fc{font-size:calc(clamp(1rem,2.6cqh,1.5rem)*var(--k));color:#c8c8c4;line-height:1.35;word-break:keep-all;overflow-wrap:break-word}
 #stageView .sv-fv .sv-v{font-size:calc(clamp(1rem,3cqh,1.8rem)*var(--k));padding:.05em .8em}
 #stageView .sv-fb b{display:block;font-size:calc(clamp(.9rem,2.2cqh,1.2rem)*var(--k));color:var(--accent);letter-spacing:.03em}
 #stageView .sv-fb p{margin:.15em 0 0;font-size:calc(clamp(1.2rem,3.8cqh,2.6rem)*var(--k));line-height:1.45;color:#f4f4f2;font-weight:600;word-break:keep-all;overflow-wrap:break-word}
 #stageView .sv-fb p .m{font-weight:400}
-#stageView .sv-mini{display:flex;gap:.6vw;flex-wrap:wrap;margin-top:calc(1.4cqh*var(--k))}
+#stageView .sv-mini{display:flex;gap:.6vw;flex-wrap:wrap;margin-top:calc(1.4cqh*var(--k));flex:0 0 auto}
 #stageView .sv-mini span{padding:.3vh .9vw;border:1.5px solid #3a3a38;border-radius:22px;font-size:calc(clamp(.8rem,2cqh,1.1rem)*var(--k));color:#8a8a86;cursor:pointer}
 #stageView .sv-mini span.on{background:var(--accent);color:#111;border-color:var(--accent);font-weight:800}
 #stageView .sv-prog{height:calc(3.4cqh*var(--k));background:#2a2a28;border-radius:11px;overflow:hidden;margin:calc(1.2cqh*var(--k)) 0}
 #stageView .sv-prog i{display:block;height:100%;background:var(--accent)}
 #stageView .sv-steps{display:flex;gap:6px;flex-wrap:wrap;flex:0 0 auto}
-#stageView .sv-steps span{padding:.5vh 1vw;border:1.5px solid #3a3a38;border-radius:22px;color:#8a8a86;font-size:clamp(.75rem,1.8vh,1rem)}
+#stageView .sv-steps span{cursor:pointer;transition:border-color .15s;padding:.5vh 1vw;border:1.5px solid #3a3a38;border-radius:22px;color:#8a8a86;font-size:clamp(.75rem,1.8vh,1rem)}
+#stageView .sv-steps span:hover{border-color:var(--accent)}
 #stageView .sv-steps span.on{background:var(--accent);border-color:var(--accent);color:#111;font-weight:800}
 #stageView .sv-steps span.past{color:#d8d8d4;border-color:#5a5a58}
 #stageView .sv-stat{display:flex;gap:3vw;font-size:clamp(.85rem,2vh,1.2rem);color:#d8d8d4;flex-wrap:wrap;flex:0 0 auto}
@@ -248,6 +250,7 @@ function stepStage(d){const vs=visStages(LS),pos=vs.findIndex(s=>s.id===LS.curre
 function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
  else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
 let SPOT=null; // 모둠 공유 단계에서 크게 보고 있는 모둠 번호(없으면 null). 카드를 누르면 켜지고, 같은 곳을 다시 누르면 꺼짐
+function spotClick(e){const f=e.currentTarget.querySelector('.sv-focus');if(f&&e.target===f&&e.offsetX>f.clientWidth)return;spot(null);} // 스크롤바를 누른 경우는 작아지지 않게
 function spot(n){SPOT=(n==null||SPOT===n)?null:n;renderStageView();}
 function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
  const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${esc(v||'미판정')}</span>`;
@@ -258,7 +261,7 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
  if(id===4){
   const sp=SPOT&&G.find(x=>x.n===SPOT);
   if(sp){const c=claimOfGroup(LS,sp.n),f=DB.groups[sp.n]||{},val=k=>(f[k]&&f[k].v)||'',none='<span class="m">(아직 정리하지 않았어요)</span>';
-   return `<div class="sv-panel sv-spot" onclick="spot(null)" title="누르면 다시 작아져요"><h3>${sp.n}모둠 발표 <span class="m">— 화면을 누르면 다시 작아져요</span></h3><div class="sv-focus"><div class="sv-fc">${c?esc(wj(c.n+'. '+c.t)):''}</div><div class="sv-fv">${vb(f.g_verdict&&f.g_verdict.v)}</div><div class="sv-fb"><b>판정 근거 한 문장</b><p>${val('g_reason')?esc(wj(val('g_reason'))):none}</p></div><div class="sv-fb"><b>보고서용으로 고쳐 쓴 문장</b><p>${val('g_rewrite')?esc(wj(val('g_rewrite'))):none}</p></div></div><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spot(${x.n})">${x.n}모둠</span>`).join('')}</div></div>`;}
+   return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><h3>${sp.n}모둠 발표</h3><div class="sv-focus"><div class="sv-fc">${c?esc(wj(c.n+'. '+c.t)):''}</div><div class="sv-fv">${vb(f.g_verdict&&f.g_verdict.v)}</div><div class="sv-fb"><b>판정 근거 한 문장</b><p>${val('g_reason')?esc(wj(val('g_reason'))):none}</p></div><div class="sv-fb"><b>보고서용으로 고쳐 쓴 문장</b><p>${val('g_rewrite')?esc(wj(val('g_rewrite'))):none}</p></div></div><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spot(${x.n})">${x.n}모둠</span>`).join('')}</div></div>`;}
   return `<div class="sv-panel"><h3>모둠 발표 · 판정 ${DB.shareOpen?'공개 중':'(공개 전 — 발표가 끝나면 공개하세요)'} <span class="m">· 모둠 카드를 누르면 발표 내용이 크게 보여요</span></h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`:'<span class="m">발표 대기</span>',true)).join('')}</div></div>`;}
  if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
  if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>${wj('신뢰할 수 있는 자료와 일치')}</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>${wj('맞지만 조건·범위 설명이 빠짐')}</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>${wj('출처를 찾을 수 없음')}</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>${wj('신뢰할 수 있는 자료와 어긋남')}</p></div></div></div>`;
@@ -271,12 +274,12 @@ function renderStageView(){
   <div class="sv-head"><div class="sv-hl"><div class="sv-no">${st?`지금은 ${pos+1} / ${vs.length} 단계`:'&nbsp;'}</div><div class="sv-name">${st?esc(st.name):'자유 진행'}</div></div>
    <div class="sv-hr"><div class="sv-time" id="svTime">${esc(clockText(st))}</div><div class="sv-timer" id="stageTimer">${fmt(elapsed())}</div></div></div>
   <div class="sv-bar"><i id="stageBar" style="width:${clockPct()}%"></i></div>
-  <div class="sv-body"><div class="sv-inner${st&&svPanel(st.id)?'':' nopanel'}${st&&(st.id===0||st.id===1||st.id===6)?' big':''}">
+  <div class="sv-body"><div class="sv-inner${st&&svPanel(st.id)?'':' nopanel'}${st&&(st.id===0||st.id===1||st.id===6)?' big':''}${st&&st.id===4&&SPOT?' spot':''}">
    ${g?`<div class="sv-todo">${esc(g.todo)}</div>`:(st?'':'<div class="sv-todo">학생이 자유롭게 이동할 수 있어요</div>')}
    ${g&&!(st&&st.id===4&&SPOT)?`<div class="sv-points">${g.points.map(p=>`<div><span>${esc(wj(p))}</span></div>`).join('')}</div>`:''}
    ${st?svPanel(st.id):''}
   </div></div>
-  <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
+  <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}" onclick="setStage(${s.id})" title="이 단계로 이동">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
   <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div>${help?`<div><b>${help}</b>도움 요청</div>`:''}</div>
   <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="toggleClock()">${CLOCK?'시계 초기화':'▶ 수업 시작'}</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
  fitStage();
@@ -291,6 +294,8 @@ function fitTodo(v){const t=v.querySelector('.sv-todo');if(!t)return;
  let f=base;while(over()&&f>12){f-=1;t.style.setProperty('--tf',f+'px');}}
 function fitStage(){const v=$('stageView');if(!v||getComputedStyle(v).display==='none')return;
  fitTodo(v);
+ const foc=v.querySelector('.sv-spot .sv-focus');
+ if(foc){v.removeAttribute('data-clamp');for(let k=1.8;k>=1;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(foc.scrollHeight<=foc.clientHeight+1)return;}v.style.setProperty('--k',1);return;} // 1배로도 길면 스크롤
  const body=v.querySelector('.sv-body'),inner=v.querySelector('.sv-inner');if(!body||!inner)return;
  const fits=()=>inner.scrollHeight<=body.clientHeight+1&&v.scrollHeight<=v.clientHeight+1;
  const tryK=from=>{for(let k=from;k>=.5;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(fits())return true;}return false;};
