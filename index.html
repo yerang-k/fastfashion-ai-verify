@@ -339,7 +339,9 @@ const DEV=(()=>{try{let d=localStorage.getItem(KEY+'_dev');if(!d){d=Math.random(
 async function api(action,payload,post){if(PREVIEW&&(post||/^(save|help)/.test(action)))return {ok:true,locked:true,fields:{},groups:{}}; // 미리보기는 서버에 아무것도 쓰지 않음
  const body=Object.assign({action,class:CLASS_ID},payload||{});
  const r=post?await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}):await fetch(API_URL+'?'+new URLSearchParams(body));
- const j=await r.json();if(!j.ok)throw new Error(j.error||'api');return j;}
+ const j=await r.json();if(!j.ok){if(j.error==='no class')noClass();throw new Error(j.error||'api');}return j;}
+/* 서버에 없는(삭제된) 반이면 화면 전체를 막아서 옛 주소로 계속 들어와 있지 않게 함 */
+function noClass(){if(document.getElementById('noCls'))return;const d=document.createElement('div');d.id='noCls';d.style.cssText='position:fixed;inset:0;z-index:99999;background:#111;color:#f4f4f2;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:1.2rem;line-height:1.7';d.innerHTML='<div><div style="font-size:2rem;font-weight:800;color:#e0c9a3;margin-bottom:10px">이 반은 없어요</div>삭제됐거나 주소가 잘못됐어요.<br>선생님께 새 학생 링크를 받아 다시 들어오세요.</div>';document.body.appendChild(d);}
 let sTimer=null,gTimer=null,gdirty={},snapSeq=0;
 (data._gpend||[]).forEach(k=>{gdirty[k]={v:data[k]==null?'':data[k],t:(data._gt&&data._gt[k])||Date.now()};}); // 새로고침해도 저장 전인 모둠 기록을 이어서 저장할 수 있게 복원
 function queueSync(){clearTimeout(sTimer);sTimer=setTimeout(pushStudent,1500);}
