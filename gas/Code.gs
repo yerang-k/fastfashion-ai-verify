@@ -34,8 +34,8 @@ function doPost(e) {
   return handle_(p);
 }
 
-var READ_ACTIONS_ = { getStudent: 1, getLesson: 1, getGroup: 1, getShare: 1, teacherAll: 1, uploadPdf: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
-var STUDENT_ACTIONS_ = { saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getShare: 1 };
+var READ_ACTIONS_ = { getStage: 1, getStudent: 1, getLesson: 1, getGroup: 1, getShare: 1, teacherAll: 1, uploadPdf: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
+var STUDENT_ACTIONS_ = { getStage: 1, saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getShare: 1 };
 var CLASS_ = ''; // 이번 요청의 반(기본 반은 빈 문자열)
 function cleanClass_(c) { return String(c || '').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20); }
 function sn_(name) { return CLASS_ ? name + '_' + CLASS_ : name; } // 반별 시트 이름
@@ -48,9 +48,10 @@ function handle_(p) {
   var lock = null;
   try {
     // 읽기만 하는 요청은 줄을 세우지 않고 바로 처리한다(학생 수만큼 쌓여 느려지는 것을 방지). 쓰기만 잠금.
-    if (!READ_ACTIONS_[p.action]) { lock = LockService.getScriptLock(); lock.waitLock(20000); }
+    if (!READ_ACTIONS_[p.action] && p.action !== 'setStage') { lock = LockService.getScriptLock(); lock.waitLock(20000); }
     switch (p.action) {
       case 'saveStudent': return out_(saveStudent_(p));
+      case 'getStage': return out_(getStage_());
       case 'getStudent': return out_(getStudent_(p));
       case 'getLesson': return out_(getLesson_(p));
       case 'setLesson': return out_(setLesson_(p));
@@ -212,10 +213,20 @@ function cfgSet_(key, val) {
   var cache = CacheService.getScriptCache(), ckey = 'cfg:' + ck_(key);
   try { cache.put(ckey, JSON.stringify({ v: String(val) }), 21600); } catch (e) { try { cache.remove(ckey); } catch (x) {} } // 너무 크면 캐시를 비워 옛 값이 남지 않게
 }
+// 현재 단계: 'stage' 키에 따로 저장('null'=자유 이동). 없으면 수업 설정 JSON 안의 current를 씀(옛 방식과 호환)
+function stageOverride_() { var v = cfgGet_('stage'); return v === '' ? undefined : (v === 'null' ? null : parseInt(v, 10)); }
 function lessonGet_() {
-  var t = cfgGet_('lesson');
-  if (!t) return null;
-  try { return JSON.parse(t); } catch (e) { return null; }
+  var t = cfgGet_('lesson'), l = null;
+  if (t) { try { l = JSON.parse(t); } catch (e) { l = null; } }
+  var st = stageOverride_();
+  if (st !== undefined) { l = l || {}; l.current = st; }
+  return l;
+}
+// 학생·무대 화면이 자주 묻는 가벼운 요청: 지금 단계 + 수업 설정 버전(lv) + 판정 공개 여부(so). 시트를 읽지 않고 캐시만 읽는다
+function getStage_() {
+  var st = stageOverride_(), cur;
+  if (st !== undefined) cur = st; else { var l = lessonGet_() || {}; cur = ('current' in l) ? l.current : 0; }
+  return { ok: true, current: cur, lv: cfgGet_('lessonVer'), so: cfgGet_('shareOpen') === 'true' };
 }
 
 // 학생용: 수업 설정 + 이 기기(또는 코드)가 배정받은 코드·모둠
@@ -234,7 +245,7 @@ function getLesson_(p) {
   var rg = effCode ? (rosterMap_()[effCode] || 0) : 0;
   if (rg) grp = rg;
   var me = (row > 0 || rg) ? { code: effCode, group: grp } : null;
-  return { ok: true, lesson: lesson, me: me };
+  return { ok: true, lesson: lesson, me: me, lv: cfgGet_('lessonVer') };
 }
 
 function setLesson_(p) {
@@ -247,19 +258,23 @@ function setLesson_(p) {
   var json = JSON.stringify(merged);
   if (json.length > MAX_JSON) return { ok: false, error: 'too large' };
   cfgSet_('lesson', json);
+  cfgSet_('lessonVer', String(Date.now()));
   return { ok: true };
 }
 
 // 교사가 학생에게 보여 줄 '현재 단계'를 지정한다(단계 id 0~7). 비우면(null) 학생이 자유롭게 이동한다.
 function setStage_(p) {
   if (!pinOk_(p)) return { ok: false, error: 'pin' };
-  var l = lessonGet_() || {};
-  var n = parseInt(p.stage, 10);
-  if (p.stage === null || p.stage === '' || p.stage === undefined) l.current = null;
+  var n = parseInt(p.stage, 10), val;
+  if (p.stage === null || p.stage === '' || p.stage === undefined) val = 'null';
   else if (isNaN(n) || n < 0 || n > 7) return { ok: false, error: 'bad stage' };
-  else l.current = n;
-  cfgSet_('lesson', JSON.stringify(l));
-  return { ok: true, current: l.current };
+  else val = String(n);
+  // 캐시에 먼저 넣어 학생들이 곧바로 새 단계를 보게 하고, 시트에는 그 뒤에 저장(다른 학생의 저장 때문에 기다리지 않도록 문서 잠금을 따로 씀)
+  try { CacheService.getScriptCache().put('cfg:' + ck_('stage'), JSON.stringify({ v: val }), 21600); } catch (e) {}
+  var lk = null;
+  try { lk = LockService.getDocumentLock(); lk.waitLock(10000); } catch (e) { lk = null; }
+  try { cfgSet_('stage', val); } finally { if (lk) { try { lk.releaseLock(); } catch (x) {} } }
+  return { ok: true, current: val === 'null' ? null : n };
 }
 
 /* ---------- 명단 · 학생 관리 (교사) ---------- */
