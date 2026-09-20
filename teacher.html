@@ -135,9 +135,21 @@ body.stagemode-on .sv-help.show{display:flex}
 /* 학생 코드(학년-반-번호)는 기본으로 흐리게 — 프로젝터에 비쳐도 읽히지 않고, 마우스를 올리거나 클릭하면 보임 */
 body.hide-codes .cd{filter:blur(7px);transition:filter .15s}body.hide-codes .cd:hover,body.hide-codes .cd:focus{filter:none}
 body.present{font-size:20px}body.present header,body.present .tabs,body.present .nopresent{display:none}
+/* 학생 화면 미리보기 + 사이드 보드 */
+.board{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:14px;align-items:start}
+.board .phase{margin:0}
+.pv{background:#fff;border:1px solid var(--line,#ddd);border-radius:14px;padding:10px}
+.pv .pvbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.pv .pvbar .small{margin-right:4px}
+.pv .pvbox{position:relative;width:100%;overflow:hidden;border-radius:10px;border:1px solid #ddd;background:#f4f1ea}
+.pv iframe{position:absolute;left:0;top:0;width:1100px;height:760px;border:0;transform-origin:0 0}
+.prog .row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:6px 0;border-bottom:1px solid #eee;font-size:.9rem}
+.prog .row:last-child{border:0}
+.prog .row b{min-width:3.6em}
+@media(max-width:1000px){.board{grid-template-columns:1fr}.board .pvcol{order:2}}
 </style></head><body class="hide-codes">
 <header>
- <h1>교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서 · 고2 · 50분</span></h1>
+ <h1>교사 화면 · AI 답변, 믿어도 될까?</h1>
  <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
 </header>
 <div class="wrap">
@@ -150,6 +162,9 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
  </div>
 
  <div id="app" style="display:none">
+  <div class="board">
+  <div class="pvcol"><div class="pv"><div class="pvbar"><span class="small"><b>학생 화면 미리보기</b> (읽기 전용) ·</span><span id="pvChips"></span></div><div class="pvbox" id="pvBox"><iframe id="pvFrame" title="학생 화면 미리보기"></iframe></div></div></div>
+  <div class="sidecol">
   <div class="phase">
    <h2>지금 학생에게 보여 줄 단계 <span class="small" id="phaseInfo"></span></h2>
    <div class="pchips" id="pchips"></div>
@@ -162,6 +177,8 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
    <div class="phrow" style="align-items:stretch"><div class="notebox" id="noteBox"></div></div>
    <div class="phrow"><button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
   </div>
+  <div class="card prog" id="progList" style="margin-top:14px"></div>
+  </div></div>
   <div class="tabs" id="tabs"></div>
 
   <section class="tab" id="tab1"><div id="live"></div></section>
@@ -236,9 +253,24 @@ async function refresh(force){
  $('updBadge').textContent='갱신 '+hms(Date.now());$('shareBtn').textContent=r.shareOpen?'🔓 공개 중 (누르면 비공개)':'🔒 비공개 (누르면 공개)';
  if(force||!dirty){if(force||!typing(document.activeElement)||!$('settings').contains(document.activeElement)){DR=clone(LS);dirty=false;renderSettings();}}
  renderClasses();renderControl();renderStageView();
- renderLive();
+ renderLive();renderBoard();
  renderResults();return true;
 }
+/* 미리보기: 학생 화면(index.html?preview=1)을 iframe으로 끼워 넣고 화면 폭에 맞게 축소. 서버에는 쓰지 않는 읽기 전용 모드 */
+let PVG=1,PVSRC='';
+function fitPreview(){const b=$('pvBox'),f=$('pvFrame');if(!b||!f||!b.clientWidth)return;const k=b.clientWidth/1100;f.style.transform='scale('+k+')';b.style.height=Math.round(760*k)+'px';}
+function pvGroup(g){PVG=g;renderBoard();}
+function renderBoard(){
+ const gs=LS.groups.map(x=>x.n);if(!gs.includes(PVG))PVG=gs[0]||1;
+ $('pvChips').innerHTML=gs.map(g=>`<button class="btn small ${g===PVG?'':'ghost'}" onclick="pvGroup(${g})">${g}모둠</button>`).join(' ');
+ const src=BASE+'index.html?preview=1&pg='+PVG+(CLASS_ID?'&class='+encodeURIComponent(CLASS_ID):'');
+ if(src!==PVSRC){PVSRC=src;$('pvFrame').src=src;}
+ fitPreview();
+ const S=DB.students,st=LS.current;
+ $('progList').innerHTML='<h2 style="margin-top:0">모둠별 진행</h2>'+(HELP.length?`<div class="small" style="color:#b23">🙋 도움 요청 ${HELP.length}건: ${HELP.map(r=>esc(r.group)+'모둠').join(', ')}</div>`:'')+LS.groups.map(gr=>{const g=gr.n,m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
+  return `<div class="row"><b>${g}모둠</b><span>참여 ${m.length}/${gr.size}</span><span>제출 ${m.filter(submitted).length}</span><span>개인 판정 ${m.filter(s=>s.data.i_verdict).length}/${m.length}</span><span>모둠 ${vBadge(f.g_verdict&&f.g_verdict.v)}</span></div>`;}).join('');
+}
+window.addEventListener('resize',()=>{if(window.fitPreview)fitPreview();});
 async function toggleShare(){const r=await api('setShare',{open:!DB.shareOpen});if(r.ok){toast(r.shareOpen?'모둠 판정을 공개했어요':'비공개로 바꿨어요');refresh();}else toast('실패했어요');}
 async function clearRec(g){if(!confirm(`${g}모둠 기록자를 풀까요? 모둠원 누구나 다시 기록자를 맡을 수 있어요.`))return;const r=await api('clearRecorder',{group:g});if(r.ok){toast('기록자를 풀었어요');refresh();}else toast('풀지 못했어요');}
 async function clearHelp(i){await api('helpClear',{code:HELP[i].code});refresh();}
