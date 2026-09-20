@@ -117,6 +117,15 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-stat b{font-size:clamp(1.2rem,3.4vh,2.2rem);color:#fff;margin-right:.2em}
 #stageView .sv-ctl{position:absolute;right:2vw;bottom:2vh;display:flex;gap:8px;opacity:.35}
 #stageView .sv-ctl:hover{opacity:1}
+.sv-help{display:none;position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.72);align-items:center;justify-content:center;cursor:pointer}
+body.stagemode-on .sv-help.show{display:flex}
+.sv-helpbox{background:#181816;border:1.5px solid var(--accent);border-radius:18px;padding:3vh 3vw;max-width:min(90vw,52rem);color:#f4f4f2}
+.sv-helpbox h3{margin:0 0 1.6vh;color:var(--accent);font-size:clamp(1.1rem,2.6vh,1.6rem)}
+.sv-helpbox dl{display:grid;grid-template-columns:auto 1fr;gap:.9vh 2vw;margin:0;font-size:clamp(.95rem,2.2vh,1.3rem)}
+.sv-helpbox dt{color:var(--accent);font-weight:700;white-space:nowrap}
+.sv-helpbox dd{margin:0}
+.sv-helpbox small{color:#a8a8a4}
+.sv-helpbox p{margin:1.6vh 0 0;color:#8a8a86;font-size:clamp(.8rem,1.8vh,1rem)}
 #stageView .sv-ctl button{background:#2a2a28;color:#f4f4f2;border:1px solid #444;padding:.6vh .9vw;border-radius:8px;cursor:pointer;font:inherit;font-size:clamp(.75rem,1.7vh,.9rem)}
 /* 학생 코드(학년-반-번호)는 기본으로 흐리게 — 프로젝터에 비쳐도 읽히지 않고, 마우스를 올리거나 클릭하면 보임 */
 body.hide-codes .cd{filter:blur(7px);transition:filter .15s}body.hide-codes .cd:hover,body.hide-codes .cd:focus{filter:none}
@@ -166,6 +175,16 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
  </div>
 </div>
 <div id="stageView"></div>
+<div id="keyHelp" class="sv-help" onclick="toggleKeyHelp()"><div class="sv-helpbox"><h3>키보드·리모컨 안내</h3>
+ <dl><dt>→ · PageDown · Space</dt><dd>다음 단계 <small>(리모컨 '다음' 버튼)</small></dd>
+ <dt>← · PageUp</dt><dd>이전 단계</dd>
+ <dt>Home · End</dt><dd>첫 단계 · 마지막 단계</dd>
+ <dt>1 ~ 9 · 0</dt><dd>모둠 공유에서 그 모둠 발표를 크게 (0 = 10모둠)</dd>
+ <dt>→ ←  (크게 보는 중)</dt><dd>다음·이전 모둠 <small>(마지막 다음은 카드 목록으로)</small></dd>
+ <dt>Esc</dt><dd>크게 보기 해제</dd>
+ <dt>F</dt><dd>전체화면</dd>
+ <dt>?</dt><dd>이 안내 열기·닫기</dd></dl>
+ <p>아무 곳이나 누르면 닫혀요</p></div></div>
 <div class="toast" id="toast"></div>
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script>
 <script>
@@ -291,7 +310,7 @@ function renderStageView(){
   </div></div>
   <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}" onclick="stepClick(${s.id})" title="이 단계로 이동">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
   <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div>${help?`<div><b>${help}</b>도움 요청</div>`:''}</div>
-  <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="toggleClock()">${CLOCK?'시계 초기화':'▶ 수업 시작'}</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
+  <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="toggleClock()">${CLOCK?'시계 초기화':'▶ 수업 시작'}</button><button onclick="toggleKeyHelp()">? 키 안내</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
  fitStage();
 }
 /* 맨 위 단계 이름·시계는 고정 크기. 그 아래 내용은 남은 공간에 맞춰 --k(0.5~2.2배)로 자동 조절: 짧은 단계는 키우고, 긴 단계는 줄이고, 그래도 넘치면 카드 문장을 1줄로 */
@@ -372,8 +391,23 @@ function renderResults(){
  $('results').innerHTML=h;
 }
 // Esc는 발표용 결과 보기만 닫는다. 무대 화면은 브라우저 전체화면이 실제로 풀릴 때만(또는 '나가기' 버튼) 닫혀서, 실수로 누른 키 하나에 교사용 화면이 프로젝터에 뜨지 않음
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.body.classList.remove('present');
- if(document.body.classList.contains('stagemode-on')&&LS.current===4&&/^[0-9]$/.test(e.key)&&!typing(document.activeElement)){const n=e.key==='0'?10:+e.key;if(LS.groups.some(g=>g.n===n))spot(n);}});
+/* 무대 화면 키보드·무선 프레젠터(리모컨) 조작. 리모컨의 '다음/이전' 버튼은 보통 PageDown/PageUp(또는 ←/→)을 보낸다.
+   → PageDown Space: 다음 · ← PageUp: 이전 · Home/End: 처음/끝 · F: 전체화면 · ?: 키 안내
+   모둠 공유 단계에서 모둠 발표를 크게 보는 중이면 다음/이전 키가 모둠 사이를 이동하고, 마지막(첫) 모둠을 넘으면 카드 목록으로 돌아감 */
+function keyNav(d){
+ if(LS.current===4&&SPOT){const ns=LS.groups.map(g=>g.n),t=ns[ns.indexOf(SPOT)+d];if(t!==undefined)spot(t);else spot(null);return;}
+ if(LS.current==null)return; // 자유 이동일 때는 키로 단계를 지정하지 않음
+ stepStage(d);}
+function toggleKeyHelp(){$('keyHelp').classList.toggle('show');}
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){document.body.classList.remove('present');if($('keyHelp').classList.contains('show'))toggleKeyHelp();else if(SPOT)spot(null);}
+ if(!document.body.classList.contains('stagemode-on')||e.ctrlKey||e.metaKey||e.altKey||typing(document.activeElement))return;
+ const k=e.key,nav={ArrowRight:1,PageDown:1,' ':1,ArrowLeft:-1,PageUp:-1};
+ if(k in nav){e.preventDefault();if(!e.repeat)keyNav(nav[k]);return;}
+ if(k==='Home'||k==='End'){e.preventDefault();const vs=visStages(LS);if(LS.current!=null&&vs.length)setStage((k==='Home'?vs[0]:vs[vs.length-1]).id);return;}
+ if(k==='?'){e.preventDefault();toggleKeyHelp();return;}
+ if((k==='f'||k==='F')&&!document.fullscreenElement){try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(x){}return;}
+ if(LS.current===4&&/^[0-9]$/.test(k)){const n=k==='0'?10:+k;if(LS.groups.some(g=>g.n===n))spot(n);}});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)document.body.classList.remove('stagemode-on');});
 
 /* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
