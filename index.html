@@ -229,7 +229,9 @@ let cur=data._stage||0;
 const $=id=>document.getElementById(id);
 const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ---- 수업 구조(단계·모둠·주장·진행 통제): 교사가 서버에 저장한 설정, 없으면 기본값 ---- */
-let LESSON=normLesson((()=>{try{return JSON.parse(localStorage.getItem(KEY+'_lesson')||'null');}catch(e){return null;}})());
+let RAWL=(()=>{try{return JSON.parse(localStorage.getItem(KEY+'_lesson')||'null');}catch(e){return null;}})(); // 서버가 준 수업 설정 원본
+let LESSON=normLesson(RAWL);
+let LV=null,STAGE_OK=0,SHARE_OPEN=null,stageBusy=false,tickN=0; // 빠른 단계 조회(pollStage)용 상태 — 함수들이 호출되기 전에 선언되어 있어야 함(let은 선언 전에 쓰면 오류)
 let built=false;
 const order=()=>visStages(LESSON).map(s=>s.id);
 const locked=()=>LESSON.current!=null; // true면 교사가 정한 현재 단계만 볼 수 있음
@@ -248,7 +250,7 @@ function buildStatic(){
  built=true;
 }
 function applyLesson(raw){
- const n=normLesson(raw);if(built&&JSON.stringify(n)===JSON.stringify(LESSON))return;
+ RAWL=raw;const n=normLesson(raw);if(built&&JSON.stringify(n)===JSON.stringify(LESSON))return;
  if(built)collect();
  LESSON=n;try{localStorage.setItem(KEY+'_lesson',JSON.stringify(raw||null));}catch(e){}
  if(data.group&&!LESSON.groups.some(g=>g.n===+data.group)){delete data.group;}
@@ -391,6 +393,7 @@ function applyGroup(fields){if(fields){REC=(fields._rec&&fields._rec.v)||'';rend
 async function pollGroup(){if(!ONLINE||!data.group||document.hidden)return;
  try{applyGroup((await api('getGroup',{group:+data.group,code:data.code,dev:DEV})).fields);}catch(e){}}
 async function pollShare(){if(!ONLINE||cur!==4||document.hidden)return;
+ if(SHARE_OPEN===false&&Date.now()-STAGE_OK<8000){$('shareNote').textContent=' (선생님이 공개하면 다른 모둠 판정이 자동으로 채워져요.)';return;} // 공개 전이면 조회 생략(서버 부하 감소)
  try{const r=await api('getShare');$('shareNote').textContent=r.open?'':' (선생님이 공개하면 다른 모둠 판정이 자동으로 채워져요.)';
   if(!r.open)return;data._shA=data._shA||{};let ch=false;
   for(const n in r.groups){if(+n===+data.group)continue;const g=r.groups[n],row=$('row'+n);if(!row)continue;
@@ -422,7 +425,7 @@ function applyMe(me){if(!me||!data._ready)return;let ch=false;
  if(me.group&&+me.group!==+data.group&&LESSON.groups.some(g=>g.n===+me.group)){setGroupRadio(me.group);onGroupChange();ch=true;}
  if(ch){toast('선생님이 참여 코드/모둠을 바꿨어요');save();renderGroup();}}
 async function pollLesson(){if(!ONLINE||document.hidden)return;
- try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);}catch(e){}}
+ try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);if(r.lv!==undefined)LV=r.lv||'';}catch(e){}}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
 buildStatic();restore();go(cur);syncStage();
 function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();
@@ -432,8 +435,17 @@ function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChan
  save();renderGroup();}
 document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
 let polling=false; // 서버가 느릴 때 요청이 쌓이지 않게, 이전 조회가 끝나기 전이면 이번 차례는 건너뜀
+/* 단계 변경을 빨리 알아채기: 가벼운 getStage(캐시만 읽음)를 2.5초마다 물어, 단계만 바뀌었으면 설정을 다시 받지 않고 바로 적용한다.
+   서버가 아직 옛 버전이면 getStage가 실패하므로(STAGE_OK가 갱신되지 않음) 예전처럼 4초 간격 전체 조회로 자동으로 돌아간다. */
+const rc=x=>x===null?null:(x==null?0:+x); // 단계 값 비교용(null=자유 이동, 없음=0)
+async function pollStage(){if(!ONLINE||document.hidden||stageBusy)return;stageBusy=true;
+ try{const r=await api('getStage');STAGE_OK=Date.now();SHARE_OPEN=!!r.so;const lv=r.lv==null?'':r.lv;
+  if(LV!==null&&lv!==LV){await pollLesson();} // 단계 구성·모둠·자료 같은 설정이 바뀜 → 전체를 다시 받음
+  else{const base=RAWL||{};if(rc(r.current)!==rc(base.current))applyLesson(Object.assign({},base,{current:r.current}));} // 단계만 바뀜 → 바로 적용
+ }catch(e){}finally{stageBusy=false;}}
 async function pollTick(){if(polling)return;polling=true;
- try{await pollLesson();if(needGroup())await pollGroup();await pollShare();}finally{polling=false;}}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollLesson();if(needGroup())pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
-if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}pollLesson();setInterval(pollTick,4000);}
+ try{tickN++;if(Date.now()-STAGE_OK>10000||tickN%3===1)await pollLesson(); // 빠른 조회가 잘 되는 동안은 전체 설정 조회를 드물게(내 코드·모둠 변경 확인용)
+  if(needGroup())await pollGroup();await pollShare();}finally{polling=false;}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollStage();pollLesson();if(needGroup())pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
+if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}pollLesson();setInterval(pollTick,6000);setInterval(pollStage,2500);}
 </script></body></html>
