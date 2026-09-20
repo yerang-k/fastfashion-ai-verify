@@ -77,6 +77,9 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-points span{min-width:0;word-break:keep-all;overflow-wrap:break-word;text-wrap:balance}
 #stageView .sv-inner.nopanel{height:100%}
 #stageView .sv-inner.nopanel .sv-points{margin:auto 0}
+/* 준비·마무리 단계: 카드를 세로로 쌓고 글자를 크게(배율 --k로 화면에 맞춤) */
+#stageView .sv-inner.big .sv-points{flex-direction:column;flex-wrap:nowrap;gap:calc(2cqh*var(--k))}
+#stageView .sv-inner.big .sv-points div{flex:0 0 auto;min-width:0;padding:calc(2.2cqh*var(--k)) 2vw;border-radius:18px;font-size:calc(clamp(1.3rem,min(1.9vw,3.6cqh),2.2rem)*var(--k))}
 #stageView .sv-panel{background:#181816;border:1.5px solid #3a3a38;border-radius:16px;padding:calc(1.8cqh*var(--k)) 1.4vw}
 #stageView .sv-panel h3{margin:0 0 calc(1.2cqh*var(--k));font-size:calc(clamp(.85rem,2.6cqh,1.2rem)*var(--k));color:var(--accent);letter-spacing:.04em}
 #stageView .sv-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(13vw,1fr));gap:calc(.8vw*var(--k))}
@@ -249,7 +252,7 @@ function renderStageView(){
   <div class="sv-head"><div class="sv-hl"><div class="sv-no">${st?`지금은 ${pos+1} / ${vs.length} 단계`:'&nbsp;'}</div><div class="sv-name">${st?esc(st.name):'자유 진행'}</div></div>
    <div class="sv-hr"><div class="sv-time" id="svTime">${esc(clockText(st))}</div><div class="sv-timer" id="stageTimer">${fmt(elapsed())}</div></div></div>
   <div class="sv-bar"><i id="stageBar" style="width:${clockPct()}%"></i></div>
-  <div class="sv-body"><div class="sv-inner${st&&svPanel(st.id)?'':' nopanel'}">
+  <div class="sv-body"><div class="sv-inner${st&&svPanel(st.id)?'':' nopanel'}${st&&(st.id===0||st.id===6)?' big':''}">
    ${g?`<div class="sv-todo">${esc(g.todo)}</div>`:(st?'':'<div class="sv-todo">학생이 자유롭게 이동할 수 있어요</div>')}
    ${g?`<div class="sv-points">${g.points.map(p=>`<div><span>${esc(wj(p))}</span></div>`).join('')}</div>`:''}
    ${st?svPanel(st.id):''}
@@ -262,7 +265,7 @@ function renderStageView(){
 /* 맨 위 단계 이름·시계는 고정 크기. 그 아래 내용은 남은 공간에 맞춰 --k(0.5~2.2배)로 자동 조절: 짧은 단계는 키우고, 긴 단계는 줄이고, 그래도 넘치면 카드 문장을 1줄로 */
 /* '지금 할 일' 문장을 한 줄에 맞춤: 먼저 자간을 조금씩 좁히고(최대 -0.05em), 그래도 넘치면 글자 크기를 줄임 */
 function fitTodo(v){const t=v.querySelector('.sv-todo');if(!t)return;
- const base=Math.max(19,Math.min(innerWidth*.026,innerHeight*.046,42));
+ const base=Math.max(19,Math.min(innerWidth*.026,innerHeight*.046,42))*(v.querySelector('.sv-inner.big')?1.35:1);
  t.style.setProperty('--tf',base+'px');t.style.setProperty('--ts','0em');
  const over=()=>t.scrollWidth>t.clientWidth+1;
  let ls=0;while(over()&&ls>-0.05){ls=Math.round((ls-.01)*100)/100;t.style.setProperty('--ts',ls+'em');}
