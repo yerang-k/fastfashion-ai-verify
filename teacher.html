@@ -150,7 +150,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 </style></head><body class="hide-codes">
 <header>
  <h1>교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서</span></h1>
- <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" id="delClsBtn" onclick="delClass()">🗑 반 삭제</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
+ <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" id="delClsBtn" onclick="delClass()">🗑 반 삭제</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="changePin()">PIN 변경</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
 </header>
 <div class="wrap">
  <div class="card" id="login" style="max-width:420px;margin:40px auto">
@@ -289,6 +289,16 @@ async function delClass(){
  const t=prompt('「'+CLASS_ID+'」 반의 학생 응답·모둠 기록·명단·수업 설정이 모두 사라지고 되돌릴 수 없어요.\n정말 지우려면 반 이름을 그대로 입력하세요.');
  if(t===null)return;if(t.trim()!==CLASS_ID){toast('반 이름이 달라서 지우지 않았어요');return;}
  const r=await api('deleteClass');if(r.ok){alert('「'+CLASS_ID+'」 반을 지웠어요. 기본 반으로 이동해요.');goClass('');}else toast(r.error==='pin'?'PIN이 맞지 않아요':'지우지 못했어요(서버를 새로 배포했는지 확인하세요)');
+}
+async function changePin(){
+ const cur=prompt('지금 PIN을 입력하세요.');if(cur===null)return;
+ const n1=prompt('새 PIN(4~20자, 숫자·영문)을 입력하세요.');if(n1===null)return;
+ if(!/^[A-Za-z0-9]{4,20}$/.test(n1)){alert('4~20자의 숫자·영문만 쓸 수 있어요.');return;}
+ const n2=prompt('확인을 위해 새 PIN을 한 번 더 입력하세요.');if(n2===null)return;
+ if(n1!==n2){alert('두 번 입력한 값이 달라요.');return;}
+ const r=await api('changePin',{pin:cur,newPin:n1});
+ if(r.ok){pin=n1;try{sessionStorage.setItem(PIN_KEY,pin);}catch(e){}alert('PIN을 바꿨어요. 다른 기기(교사·무대 화면)는 새 PIN으로 다시 로그인해야 해요.');}
+ else toast(r.error==='pin'?'지금 PIN이 맞지 않아요':'바꾸지 못했어요');
 }
 async function copyLink(){const u=studentLink();try{await navigator.clipboard.writeText(u);toast(clsLabel(CLASS_ID)+' 학생 링크를 복사했어요');}catch(e){prompt('이 주소를 복사해 학생에게 알려 주세요',u);}}
 

@@ -67,6 +67,7 @@ function handle_(p) {
       case 'teacherAll': return out_(teacherAll_(p));
       case 'setShare': return out_(setShare_(p));
       case 'setClock': return out_(setClock_(p));
+      case 'changePin': return out_(changePin_(p));
       case 'createClass': return out_(createClass_(p));
       case 'deleteClass': return out_(deleteClass_(p));
       case 'setNotes': return out_(setNotes_(p));
@@ -428,6 +429,14 @@ function getShare_() {
 }
 
 /* ---------- 교사 (PIN 필요) ---------- */
+// 교사 PIN 변경: 지금 PIN(p.pin)이 맞아야 하고, 새 PIN은 4~20자의 숫자·영문만 허용
+function changePin_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  var np = String(p.newPin || '').trim();
+  if (!/^[A-Za-z0-9]{4,20}$/.test(np)) return { ok: false, error: 'bad pin' };
+  PropertiesService.getScriptProperties().setProperty('TEACHER_PIN', np);
+  return { ok: true };
+}
 // 틀린 횟수는 '요청한 사람(p.cid = 그 기기가 만든 임의 번호)'마다 따로 센다. 학생이 틀려도 그 학생만 10분 잠기고 교사는 영향 없음.
 // 다만 cid는 요청자가 마음대로 바꿀 수 있어서, 전체 실패가 10분에 100번을 넘으면(누가 cid를 바꿔 가며 PIN을 찍는 상황)
 // 이미 PIN으로 로그인한 적 있는 기기(6시간 유지)만 통과시킨다 → 수업 전에 교사 화면·무대 화면 기기를 모두 한 번씩 로그인해 둘 것.
