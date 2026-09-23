@@ -175,8 +175,8 @@ function rosterDelete_(code) {
 function saveStudent_(p) {
   var code = cleanCode_(p.code), group = cleanGroup_(p.group);
   if (!code || !group) return { ok: false, error: 'code/group required' };
-  var rg = rosterMap_()[code];
-  if (rg) group = rg; // 명단(교사 지정)이 있으면 항상 그 모둠
+  var rmap = rosterMap_(), inRoster = Object.prototype.hasOwnProperty.call(rmap, code), rg = rmap[code] || 0;
+  if (rg) group = rg; // 명단에 모둠까지 정해져 있으면 항상 그 모둠(모둠 없이 학번만 등록된 경우는 학생이 고른 모둠을 그대로 씀)
   var json = JSON.stringify(p.data || {});
   if (json.length > MAX_JSON) return { ok: false, error: 'too large' };
   var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
@@ -185,7 +185,8 @@ function saveStudent_(p) {
   var rowC = findRow_(sh, 1, code);
   var rowD = dev ? findRow_(sh, 3, dev) : -1; // 같은 기기가 코드를 고친 경우 → 이름만 바꿈
   // '명단만 입장'이 켜져 있으면 서버도 막는다(화면의 확인을 우회해 직접 요청을 보내도 명단 밖 코드는 저장되지 않음)
-  if (!rg && rowC < 0 && (lessonGet_() || {}).rosterOnly) return { ok: false, error: 'not in roster' };
+  // 주의: 모둠 없이 학번만 등록된 코드도 '명단에 있는' 코드다(rg가 0이어도 inRoster는 true) — rg만 보면 저장이 막히는 버그였음
+  if (!inRoster && rowC < 0 && (lessonGet_() || {}).rosterOnly) return { ok: false, error: 'not in roster' };
   var row = rowC > 0 ? rowC : rowD;
   var submittedAt = p.submitted ? now : '';
   if (row < 0) {
