@@ -22,7 +22,7 @@ var SHEET_CONFIG = '설정';
 var HEAD_STUDENTS = ['code', 'group', 'dev', 'updatedAt', 'submittedAt', 'helpAt', 'json'];
 var HEAD_GROUPS = ['group', 'updatedAt', 'json'];
 var SHEET_ROSTER = '명단';
-var HEAD_ROSTER = ['code', 'group'];
+var HEAD_ROSTER = ['code', 'group', 'name'];
 var MAXG = 20; // 허용하는 최대 모둠 번호
 var MAX_JSON = 45000; // 셀 하나 한도(50,000자) 안쪽
 
@@ -147,12 +147,23 @@ function rosterMap_() {
   return m;
 }
 function rosterDirty_() { try { CacheService.getScriptCache().remove('roster:' + CLASS_); } catch (e) {} }
-function rosterUpsert_(code, group) {
+function rosterUpsert_(code, group, name) {
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var row = findRow_(sh, 1, code);
-  if (row < 0) putRow_(sh, -1, [code, group]); else sh.getRange(row, 2).setValue(group);
+  if (row < 0) putRow_(sh, -1, [code, group, name || '']);
+  else { sh.getRange(row, 2).setValue(group); if (name !== undefined) sh.getRange(row, 3).setValue(name); }
   rosterDirty_();
 }
+// 명단을 코드·모둠·이름 3열로 그대로 읽는다(캐시 없이, 자주 쓰는 함수가 아니라서). rosterMap_()은 빠른 조회용으로 모둠만 준다.
+function rosterRows_() {
+  var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  return sh.getRange(2, 1, last - 1, 3).getValues().map(function (r) {
+    return { code: String(r[0] instanceof Date ? r[0].toISOString() : r[0]), group: parseInt(r[1], 10) || 0, name: String(r[2] || '') };
+  });
+}
+function cleanName_(n) { return String(n || '').trim().slice(0, 10); }
 function rosterDelete_(code) {
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var row = findRow_(sh, 1, code);
@@ -291,13 +302,14 @@ function setRoster_(p) {
     if (c) { if (!(c in map)) order.push(c); map[c] = g; }
   });
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
+  var prevName = {}; if (p.mode !== 'replace') rosterRows_().forEach(function (r) { prevName[r.code] = r.name; }); // 이름은 이 화면에서 안 다루니 그대로 보존
   var cur = p.mode === 'replace' ? {} : rosterMap_();
   var curOrder = p.mode === 'replace' ? [] : Object.keys(cur);
   order.forEach(function (c) { if (!(c in cur)) curOrder.push(c); cur[c] = map[c]; });
   var last = sh.getLastRow();
-  if (last >= 2) sh.getRange(2, 1, last - 1, 2).clearContent();
+  if (last >= 2) sh.getRange(2, 1, last - 1, 3).clearContent();
   if (curOrder.length) sh.getRange(2, 1, curOrder.length, 1).setNumberFormat('@');
-  if (curOrder.length) sh.getRange(2, 1, curOrder.length, 2).setValues(curOrder.map(function (c) { return [c, cur[c]]; }));
+  if (curOrder.length) sh.getRange(2, 1, curOrder.length, 3).setValues(curOrder.map(function (c) { return [c, cur[c], prevName[c] || '']; }));
   rosterDirty_();
   // 이미 접속한 학생의 모둠도 명단에 맞춤
   var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS), sl = ssh.getLastRow();
@@ -314,15 +326,23 @@ function updateStudent_(p) {
   var code = cleanCode_(p.code);
   var newCode = cleanCode_(p.newCode) || code;
   var g = p.group == null || p.group === '' ? 0 : cleanGroup_(p.group);
+  var nm = ('name' in p) ? cleanName_(p.name) : undefined; // 안 보내면(다른 호출자) 이름은 그대로 둠
   var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(ssh, 1, code);
   var roster = rosterMap_();
   if (newCode !== code && (findRow_(ssh, 1, newCode) > 0 || roster[newCode])) return { ok: false, error: 'dup' };
   var curGroup = g || roster[code] || (row > 0 ? parseInt(ssh.getRange(row, 2).getValue(), 10) : 0);
-  if (!curGroup) return { ok: false, error: 'group required' };
-  if (row > 0) { ssh.getRange(row, 1).setNumberFormat('@'); ssh.getRange(row, 1, 1, 2).setValues([[newCode, curGroup]]); }
+  if (row > 0 && !curGroup) return { ok: false, error: 'group required' }; // 아직 접속 전(명단만 있는) 학생은 모둠 없이 코드·이름만 먼저 등록할 수 있음
+  if (row > 0) {
+    ssh.getRange(row, 1).setNumberFormat('@'); ssh.getRange(row, 1, 1, 2).setValues([[newCode, curGroup]]);
+    if (nm !== undefined) { // 이미 접속한 학생이면 응답 데이터 안의 이름도 함께 바꿔 준다
+      var d = {}; try { d = JSON.parse(ssh.getRange(row, 7).getValue() || '{}') || {}; } catch (e) {}
+      d.studentName = nm;
+      ssh.getRange(row, 7).setValue(JSON.stringify(d));
+    }
+  }
   if (newCode !== code) rosterDelete_(code);
-  rosterUpsert_(newCode, curGroup); // 이후 학생 기기가 저장해도 이 모둠이 유지됨
+  rosterUpsert_(newCode, curGroup, nm); // 이후 학생 기기가 저장해도 이 모둠·이름이 유지됨
   return { ok: true };
 }
 
@@ -478,7 +498,7 @@ function teacherAll_(p) {
   var gsh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
   var groups = {};
   for (var g = 1; g <= MAXG; g++) { var gf = loadGroup_(gsh, g).fields; if (Object.keys(gf).length) groups[g] = gf; }
-  var rm = rosterMap_(), roster = Object.keys(rm).map(function (c) { return { code: c, group: rm[c] }; });
+  var roster = rosterRows_();
   return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_, notes: notesGet_(), clock: parseInt(cfgGet_('clock') || '0', 10) || 0, now: Date.now() };
 }
 

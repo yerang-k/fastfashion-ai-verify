@@ -407,7 +407,7 @@ const posOf=id=>{const i=visStages(LS).findIndex(s=>s.id===id);return i<0?id+1:i
 let HELP=[];
 function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
  const rows=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,name:s.data.studentName||'',group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
- (DB.roster||[]).forEach(r=>{if(!known[r.code])rows.push({code:r.code,group:r.group,live:false});});return rows;}
+ (DB.roster||[]).forEach(r=>{if(!known[r.code])rows.push({code:r.code,name:r.name||'',group:r.group,live:false});});return rows;}
 function renderLive(){
  const S=DB.students;HELP=S.filter(s=>s.helpAt);
  let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
@@ -420,16 +420,16 @@ function renderLive(){
 }
 function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.activeElement)&&el.contains(document.activeElement)))return;
  ROWS=buildRows();
- el.innerHTML=`<p class="small">코드나 모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
+ el.innerHTML=`<p class="small">코드·이름·모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
   <table><tr><th>코드</th><th>이름</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" class="cd" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
-  <td class="small cd">${esc(r.name)||'-'}</td>
+  <td><input type="text" class="cd" id="rn${i}" value="${esc(r.name)}" maxlength="10" placeholder="이름"></td>
   <td><select id="rg${i}">${!r.group?'<option value="0" selected>미정</option>':''}${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${r.group&&!LS.groups.some(g=>g.n===+r.group)?`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`:''}</select></td>
   <td>${r.live?posOf(r.stage)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
   <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
 function toggleHide(){const on=document.body.classList.toggle('hide-codes');$('hideBtn').textContent=on?'🙈 코드 가림 켜짐':'👁 코드 보임';}
 function openStudentMgr(){showTab(2);const d=$('a5');if(d){d.open=true;OPEN.a5=true;d.scrollIntoView({behavior:'smooth'});}}
-async function saveRow(i){const r=ROWS[i],nc=$('rc'+i).value.trim(),ng=+$('rg'+i).value;if(!nc){toast('코드를 입력해 주세요');return;}
- const res=await api('updateStudent',{code:r.code,newCode:nc,group:ng});
+async function saveRow(i){const r=ROWS[i],nc=$('rc'+i).value.trim(),ng=+$('rg'+i).value,nn=$('rn'+i).value.trim();if(!nc){toast('코드를 입력해 주세요');return;}
+ const res=await api('updateStudent',{code:r.code,newCode:nc,group:ng,name:nn});
  if(res.ok){toast('저장했어요');refresh(true);}else toast(res.error==='dup'?'이미 사용 중인 코드예요':'저장하지 못했어요');}
 async function delRow(i){const r=ROWS[i];if(!confirm(`${r.code} 학생의 응답과 명단 등록을 삭제할까요? 되돌릴 수 없어요.`))return;
  const res=await api('deleteStudent',{code:r.code});if(res.ok){toast('삭제했어요');refresh(true);}else toast('삭제하지 못했어요');}
