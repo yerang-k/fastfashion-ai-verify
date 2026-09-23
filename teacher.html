@@ -520,8 +520,8 @@ function renderSettings(){
  h+=`</div></details>`;
 
  h+=`<details class="acc" id="a4" ${OPEN.a4?'open':''}><summary>④ 학생 명단 · 입장 방식 <span class="small">등록 ${(DB.roster||[]).length}명${DR.rosterOnly?' · 명단만 입장':''}</span></summary><div class="accbody">
-  <p class="small">한 줄에 <b>참여코드</b>만 적거나, <b>참여코드, 모둠</b>을 적어 붙여 넣으세요. (예: <code>2-3-07</code> 또는 <code>2-3-07, 2</code>) 모둠을 안 적으면 학생이 입장할 때 스스로 고릅니다. 모둠까지 적으면 그 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠도 함께 바뀝니다. 개별 수정은 아래 ‘⑤ 학생 관리’에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
-  <textarea id="rosterText" style="min-height:120px" placeholder="2-3-01&#10;2-3-02&#10;2-3-03"></textarea>
+  <p class="small">엑셀에서 <b>학번, 모둠, 이름</b> 칸을 복사해 그대로 붙여 넣으세요. 한 줄에 <b>참여코드</b>만, <b>참여코드+모둠</b>, <b>참여코드+이름</b>, <b>참여코드+모둠+이름</b> 중 편한 형식으로 적어도 됩니다. (예: <code>2-3-07</code> / <code>2-3-07, 2</code> / <code>2-3-07, 홍길동</code> / <code>2-3-07, 2, 홍길동</code>) 모둠을 안 적으면 학생이 입장할 때 스스로 고르고, 적으면 그 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠·이름도 함께 바뀝니다. 한 명씩 고치려면 아래 ‘⑤ 학생 관리’에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
+  <textarea id="rosterText" style="min-height:120px" placeholder="2-3-01, 1, 김도윤&#10;2-3-02, 1, 박서연&#10;2-3-03, 2, 이하준"></textarea>
   <div style="margin:8px 0"><button class="btn small" onclick="saveRoster('merge')">추가·수정 (기존 명단 유지)</button> <button class="btn small danger" onclick="saveRoster('replace')">전체 교체</button></div>
   <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 참여 코드만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label></div></details>`;
 
@@ -577,8 +577,13 @@ async function saveSettings(){
 function cancelSettings(){if(dirty&&!confirm('저장하지 않은 변경을 버릴까요?'))return;dirty=false;DR=clone(LS);renderSettings();}
 function parseRoster(text){const list=[],bad=[];
  text.split(/\r?\n/).forEach(line=>{line=line.trim();if(!line)return;const p=line.split(/[\s,;\t]+/).filter(Boolean);
-  if(p.length<2){list.push({code:p[0],group:0});return;} // 모둠 없이 학번만 적으면 학생이 입장할 때 스스로 고름
-  const g=parseInt(String(p[1]||'').replace(/[^\d]/g,''),10);if(!g||g<1||g>LS.groups.length)bad.push(line);else list.push({code:p[0],group:g});});
+  if(p.length===1){list.push({code:p[0],group:0});return;} // 학번만 적으면 학생이 입장할 때 스스로 모둠을 고름
+  if(p.length===2){ // 학번,모둠 또는 학번,이름 (두 번째 칸이 숫자면 모둠으로 봄)
+   if(/^\d+$/.test(p[1])){const g=+p[1];if(g<1||g>LS.groups.length){bad.push(line);return;}list.push({code:p[0],group:g});return;}
+   list.push({code:p[0],group:0,name:p[1].slice(0,10)});return;}
+  if(!/^\d+$/.test(p[1])){bad.push(line);return;} // 학번,모둠,이름
+  const g=+p[1];if(g<1||g>LS.groups.length){bad.push(line);return;}
+  list.push({code:p[0],group:g,name:p.slice(2).join(' ').slice(0,10)});});
  return{list,bad};}
 async function saveRoster(mode){
  const {list,bad}=parseRoster($('rosterText').value);

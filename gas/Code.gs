@@ -298,24 +298,35 @@ function setRoster_(p) {
   if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var list = (p.list || []).slice(0, 500), map = {}, order = [];
   list.forEach(function (r) {
-    var c = cleanCode_(r.code), g = cleanGroup_(r.group); // 모둠은 선택: 안 적으면 0(학생이 입장할 때 스스로 고름)
-    if (c) { if (!(c in map)) order.push(c); map[c] = g; }
+    var c = cleanCode_(r.code); if (!c) return;
+    if (!(c in map)) order.push(c);
+    map[c] = { group: cleanGroup_(r.group), name: ('name' in r) ? cleanName_(r.name) : undefined }; // 모둠·이름 둘 다 선택: 안 적으면 그대로 두거나(이름) 학생이 스스로 고름(모둠)
   });
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
-  var prevName = {}; if (p.mode !== 'replace') rosterRows_().forEach(function (r) { prevName[r.code] = r.name; }); // 이름은 이 화면에서 안 다루니 그대로 보존
-  var cur = p.mode === 'replace' ? {} : rosterMap_();
-  var curOrder = p.mode === 'replace' ? [] : Object.keys(cur);
-  order.forEach(function (c) { if (!(c in cur)) curOrder.push(c); cur[c] = map[c]; });
+  var cur = {}, curOrder = [];
+  if (p.mode !== 'replace') rosterRows_().forEach(function (r) { cur[r.code] = { group: r.group, name: r.name }; curOrder.push(r.code); });
+  order.forEach(function (c) {
+    if (!(c in cur)) { cur[c] = { group: 0, name: '' }; curOrder.push(c); }
+    var m = map[c];
+    cur[c] = { group: m.group || cur[c].group, name: m.name !== undefined ? m.name : cur[c].name };
+  });
   var last = sh.getLastRow();
   if (last >= 2) sh.getRange(2, 1, last - 1, 3).clearContent();
   if (curOrder.length) sh.getRange(2, 1, curOrder.length, 1).setNumberFormat('@');
-  if (curOrder.length) sh.getRange(2, 1, curOrder.length, 3).setValues(curOrder.map(function (c) { return [c, cur[c], prevName[c] || '']; }));
+  if (curOrder.length) sh.getRange(2, 1, curOrder.length, 3).setValues(curOrder.map(function (c) { return [c, cur[c].group, cur[c].name || '']; }));
   rosterDirty_();
-  // 이미 접속한 학생의 모둠도 명단에 맞춤
+  // 이미 접속한 학생의 모둠·이름도 명단에 맞춘다
   var ssh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS), sl = ssh.getLastRow();
   if (sl >= 2) {
-    var rng = ssh.getRange(2, 1, sl - 1, 2), vals = rng.getValues(), ch = false;
-    vals.forEach(function (r) { var g = map[String(r[0])]; if (g && r[1] !== g) { r[1] = g; ch = true; } });
+    var rng = ssh.getRange(2, 1, sl - 1, HEAD_STUDENTS.length), vals = rng.getValues(), ch = false;
+    vals.forEach(function (r) {
+      var m = map[String(r[0])]; if (!m) return;
+      if (m.group && r[1] !== m.group) { r[1] = m.group; ch = true; }
+      if (m.name !== undefined) {
+        var d = {}; try { d = JSON.parse(r[6] || '{}') || {}; } catch (e) {}
+        if (d.studentName !== m.name) { d.studentName = m.name; r[6] = JSON.stringify(d); ch = true; }
+      }
+    });
     if (ch) { ssh.getRange(2, 1, sl - 1, 1).setNumberFormat('@'); rng.setValues(vals); }
   }
   return { ok: true, count: curOrder.length };
