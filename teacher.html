@@ -422,7 +422,7 @@ function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.ac
  ROWS=buildRows();
  el.innerHTML=`<p class="small">코드나 모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
   <table><tr><th>코드</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" class="cd" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
-  <td><select id="rg${i}">${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${LS.groups.some(g=>g.n===+r.group)?'':`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`}</select></td>
+  <td><select id="rg${i}">${!r.group?'<option value="0" selected>미정</option>':''}${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${r.group&&!LS.groups.some(g=>g.n===+r.group)?`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`:''}</select></td>
   <td>${r.live?posOf(r.stage)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
   <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
 function toggleHide(){const on=document.body.classList.toggle('hide-codes');$('hideBtn').textContent=on?'🙈 코드 가림 켜짐':'👁 코드 보임';}
@@ -519,8 +519,8 @@ function renderSettings(){
  h+=`</div></details>`;
 
  h+=`<details class="acc" id="a4" ${OPEN.a4?'open':''}><summary>④ 학생 명단 · 입장 방식 <span class="small">등록 ${(DB.roster||[]).length}명${DR.rosterOnly?' · 명단만 입장':''}</span></summary><div class="accbody">
-  <p class="small">한 줄에 <b>참여코드, 모둠</b>을 적어 붙여 넣으세요. (예: <code>2-3-07, 2</code> 또는 엑셀에서 복사한 두 칸) 명단에 있는 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠도 함께 바뀝니다. 개별 수정은 아래 ‘⑤ 학생 관리’에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
-  <textarea id="rosterText" style="min-height:120px" placeholder="2-3-01, 1&#10;2-3-02, 1&#10;2-3-03, 2"></textarea>
+  <p class="small">한 줄에 <b>참여코드</b>만 적거나, <b>참여코드, 모둠</b>을 적어 붙여 넣으세요. (예: <code>2-3-07</code> 또는 <code>2-3-07, 2</code>) 모둠을 안 적으면 학생이 입장할 때 스스로 고릅니다. 모둠까지 적으면 그 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠도 함께 바뀝니다. 개별 수정은 아래 ‘⑤ 학생 관리’에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
+  <textarea id="rosterText" style="min-height:120px" placeholder="2-3-01&#10;2-3-02&#10;2-3-03"></textarea>
   <div style="margin:8px 0"><button class="btn small" onclick="saveRoster('merge')">추가·수정 (기존 명단 유지)</button> <button class="btn small danger" onclick="saveRoster('replace')">전체 교체</button></div>
   <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 참여 코드만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label></div></details>`;
 
@@ -576,7 +576,8 @@ async function saveSettings(){
 function cancelSettings(){if(dirty&&!confirm('저장하지 않은 변경을 버릴까요?'))return;dirty=false;DR=clone(LS);renderSettings();}
 function parseRoster(text){const list=[],bad=[];
  text.split(/\r?\n/).forEach(line=>{line=line.trim();if(!line)return;const p=line.split(/[\s,;\t]+/).filter(Boolean);
-  const g=parseInt(String(p[1]||'').replace(/[^\d]/g,''),10);if(p.length<2||!g||g<1||g>LS.groups.length)bad.push(line);else list.push({code:p[0],group:g});});
+  if(p.length<2){list.push({code:p[0],group:0});return;} // 모둠 없이 학번만 적으면 학생이 입장할 때 스스로 고름
+  const g=parseInt(String(p[1]||'').replace(/[^\d]/g,''),10);if(!g||g<1||g>LS.groups.length)bad.push(line);else list.push({code:p[0],group:g});});
  return{list,bad};}
 async function saveRoster(mode){
  const {list,bad}=parseRoster($('rosterText').value);

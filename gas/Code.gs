@@ -191,9 +191,10 @@ function getStudent_(p) {
   var code = cleanCode_(p.code);
   var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
   var row = findRow_(sh, 1, code);
-  var rg = rosterMap_()[code] || 0;
+  var rmap = rosterMap_(), inRoster = Object.prototype.hasOwnProperty.call(rmap, code);
+  var rg = rmap[code] || 0; // 모둠 없이 학번만 등록된 경우 0(학생이 스스로 고름)
   var lesson = lessonGet_() || {};
-  var res = { ok: true, found: row > 0, rosterFound: !!rg, rosterGroup: rg, rosterOnly: !!lesson.rosterOnly };
+  var res = { ok: true, found: row > 0, rosterFound: inRoster, rosterGroup: rg, rosterOnly: !!lesson.rosterOnly };
   // 기기 번호(dev)는 본인 확인용 비밀이라 내려주지 않고, 요청한 기기와 같은지만 알려 준다
   if (row > 0) res.sameDev = String(sh.getRange(row, 3).getValue()) === String(p.dev || '');
   return res;
@@ -286,8 +287,8 @@ function setRoster_(p) {
   if (!pinOk_(p)) return { ok: false, error: 'pin' };
   var list = (p.list || []).slice(0, 500), map = {}, order = [];
   list.forEach(function (r) {
-    var c = cleanCode_(r.code), g = cleanGroup_(r.group);
-    if (c && g) { if (!(c in map)) order.push(c); map[c] = g; }
+    var c = cleanCode_(r.code), g = cleanGroup_(r.group); // 모둠은 선택: 안 적으면 0(학생이 입장할 때 스스로 고름)
+    if (c) { if (!(c in map)) order.push(c); map[c] = g; }
   });
   var sh = sheet_(sn_(SHEET_ROSTER), HEAD_ROSTER);
   var cur = p.mode === 'replace' ? {} : rosterMap_();
