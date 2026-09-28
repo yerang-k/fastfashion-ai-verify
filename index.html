@@ -125,15 +125,16 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
 
  <section class="stage card" data-i="3">
   <h2>4. 개인 검증: 내가 먼저 판정해 보기 <span class="time">9분</span></h2>
-  <div class="todo">지금 할 일: 혼자서 우리 모둠 문장을 자료 3개와 대조해 판정하고, 보고서에 쓸 수 있게 고쳐 써요. <span class="small">(이 단계는 각자 해요. 모둠 의견은 다음 단계에서 모아요.)</span></div>
+  <div class="todo">지금 할 일: 혼자서 우리 모둠 문장을 자료 3개와 대조해 판정하고, 보고서에 쓸 수 있게 고쳐 써요. 카드 요약만 보지 말고 <b>‘원문 열기 ↗’</b>를 눌러 실제 기사·자료를 직접 확인하세요. <span class="small">(이 단계는 각자 해요. 모둠 의견은 다음 단계에서 모아요.)</span></div>
   <div id="myClaim"></div>
   <h3>📚 확인용 자료 카드</h3>
+  <p class="small">카드 위쪽 태그(예: 국제기구 보도자료·학술 논문·언론 기사·정부 통계·블로그)는 이 정보가 <b>어떤 종류의 출처</b>에서 왔는지 보여줘요. 카드 요약은 힌트일 뿐이니, <b>‘원문 열기 ↗’</b>로 실제 페이지를 열어 그 내용이 정말 있는지, 요약이 정확한지 직접 확인해 보세요.</p>
   <div class="srcgrid" id="mySrc"></div>
   <h3>🔎 내 검증 기록지</h3>
   <div class="grid3">
-   <div class="box"><h4>① 출처</h4><textarea data-save id="i_src" placeholder="AI가 말한 출처가 있나요? 원 출처를 추적할 수 있나요?"></textarea></div>
-   <div class="box"><h4>② 정확성</h4><textarea data-save id="i_acc" placeholder="자료들과 비교하면? 숫자·조건·연도가 같은가요?"></textarea></div>
-   <div class="box"><h4>③ 신뢰성</h4><textarea data-save id="i_rel" placeholder="가장 믿을 수 있는 자료는? 믿기 어려운 자료는? 이유는?"></textarea></div>
+   <div class="box"><h4>① 출처</h4><textarea data-save id="i_src" placeholder="AI가 말한 출처가 있나요? '원문 열기'를 눌러, 그 출처가 실제로 존재하고 이 내용을 말하는지 확인해 보세요."></textarea></div>
+   <div class="box"><h4>② 정확성</h4><textarea data-save id="i_acc" placeholder="자료 3개가 말하는 숫자·조건·연도를 서로 비교해 보세요. 같은 기관의 자료인데도 수치가 다르거나, 나중에 내용이 수정된 경우도 있어요."></textarea></div>
+   <div class="box"><h4>③ 신뢰성</h4><textarea data-save id="i_rel" placeholder="자료 카드 위쪽 태그를 보고, 어떤 자료가 원 출처(정부·국제기구·학술 논문)이고 어떤 자료가 그걸 옮기거나 다시 소개한 것인지 구분해 보세요. 어느 쪽이 더 믿을 만한가요?"></textarea></div>
   </div>
   <h3>내 판정</h3>
   <div class="verdict">
