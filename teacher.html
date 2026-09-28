@@ -406,6 +406,11 @@ window.addEventListener('resize',fitStage);
 /* ---- 현황 ---- */
 const submitted=s=>s.submittedAt>0;
 const posOf=id=>{const i=visStages(LS).findIndex(s=>s.id===id);return i<0?id+1:i+1;}; // 단계 id가 아니라 화면에 보이는 순서(몇 번째 단계인지)
+// 단계별 '저장하기'를 눌러야 채워지는 칸(index.html의 SAVE_STAGES·stageKeys와 맞춤). 이 칸이 채워져 있어야 그 단계를 저장한 것으로 본다(제출 여부와는 별개)
+const STAGE_FIELD={1:['pre'],3:['i_verdict','i_rewrite'],4:['discuss'],5:['post','reflect']};
+const indivDone=(s,sid)=>STAGE_FIELD[sid].every(k=>!!s.data[k]);
+const stageName=sid=>{const st=LS.stages.find(x=>x.id===sid);return st?st.name:'';};
+const groupDone=g=>{const f=DB.groups[g]||{};return !!(f.g_verdict&&f.g_verdict.v)&&!!(f.g_rewrite&&f.g_rewrite.v);};
 let HELP=[];
 function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
  const rows=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,name:s.data.studentName||'',group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
@@ -414,11 +419,32 @@ function renderLive(){
  const S=DB.students;HELP=S.filter(s=>s.helpAt);
  let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
  if(HELP.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+HELP.map((r,i)=>`<div>${esc(r.group)}모둠 · <span class="cd">${esc(r.code)}${r.data.studentName?' '+esc(r.data.studentName):''}</span> · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`).join('')+`</div>`;
- h+=`<div class="card"><h2>모둠별 진행</h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th><th>제출</th><th>개인 판정</th><th>모둠 판정</th><th>고쳐 쓴 문장</th><th>기록자</th></tr>`;
+ const saveIds=[1,3,4,5].filter(id=>visStages(LS).some(s=>s.id===id)),hasG=visStages(LS).some(s=>s.id===7);
+ h+=`<div class="card"><h2>모둠별 진행 <span class="small">(단계별 칸은 학생이 그 단계에서 '저장하기'를 눌렀는지를 보여줘요 — 제출과는 별개예요)</span></h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th>${saveIds.map(id=>`<th>${esc(stageName(id))}</th>`).join('')}${hasG?'<th>모둠 정리</th>':''}<th>최종 제출</th><th>기록자</th></tr>`;
  LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g),m=S.filter(s=>+s.group===g),f=DB.groups[g]||{};
-  h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td><td>${m.filter(submitted).length}</td><td>${m.filter(s=>s.data.i_verdict).length}/${m.length}</td><td>${vBadge(f.g_verdict&&f.g_verdict.v)}</td><td>${f.g_rewrite&&f.g_rewrite.v?'✔':'-'}</td><td>${f._rec?`<span class="cd">${esc(f._rec.v)}</span> <button class="btn small ghost" onclick="clearRec(${g})">해제</button>`:'<span class="small">미정</span>'}</td></tr>`;});
+  const cells=saveIds.map(id=>{const done=m.filter(s=>indivDone(s,id)).length,ok=m.length>0&&done>=m.length;return `<td${ok?'':' style="font-weight:700"'}>${ok?'✅':'⚠️'} ${done}/${m.length}</td>`;}).join('');
+  const gcell=hasG?`<td${groupDone(g)?'':' style="font-weight:700"'}>${groupDone(g)?'✅ 완료':'⚠️ 미완료'}</td>`:'';
+  h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td>${cells}${gcell}<td>${m.filter(submitted).length}/${m.length}</td><td>${f._rec?`<span class="cd">${esc(f._rec.v)}</span> <button class="btn small ghost" onclick="clearRec(${g})">해제</button>`:'<span class="small">미정</span>'}</td></tr>`;});
  h+=`</table><p class="small" style="margin-bottom:0">학생 코드·모둠을 고치려면 <a href="#" onclick="openStudentMgr();return false" style="color:var(--accent-dk);font-weight:700">⚙️ 수업 설정 › 학생 관리</a>로 가세요.</p></div>`;
+ h+=currentStageCheck();
  $('live').innerHTML=h;renderStudentMgr();
+}
+// 지금 교사가 고정해 둔 단계(LS.current)를 기준으로, 저장을 안 한 학생·모둠을 바로 알려 줌 — 다음 단계로 넘기기 전에 확인하는 용도
+function currentStageCheck(){
+ const sid=LS.current;
+ if(sid==null)return '';
+ if(STAGE_FIELD[sid]){
+  const S=DB.students,missing=S.filter(s=>!indivDone(s,sid));
+  if(!S.length)return '';
+  if(!missing.length)return `<div class="card"><h2>✅ 지금 단계 — 「${esc(stageName(sid))}」</h2><p class="small" style="margin:0">참여 중인 학생 ${S.length}명 모두 저장했어요. 다음 단계로 넘겨도 좋아요.</p></div>`;
+  return `<div class="card help"><h2>⚠️ 지금 단계 — 「${esc(stageName(sid))}」 미저장 ${missing.length}명</h2>`+missing.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>`<div>${esc(s.group)}모둠 · <span class="cd">${esc(s.code)}${s.data.studentName?' '+esc(s.data.studentName):''}</span></div>`).join('')+`</div>`;
+ }
+ if(sid===7){
+  const missing=LS.groups.filter(gr=>!groupDone(gr.n));
+  if(!missing.length)return `<div class="card"><h2>✅ 지금 단계 — 「${esc(stageName(sid))}」</h2><p class="small" style="margin:0">모든 모둠이 정리를 마쳤어요. 다음 단계로 넘겨도 좋아요.</p></div>`;
+  return `<div class="card help"><h2>⚠️ 지금 단계 — 「${esc(stageName(sid))}」 미완료 모둠</h2>`+missing.map(gr=>`<div>${gr.n}모둠${DB.groups[gr.n]&&DB.groups[gr.n]._rec?` · 기록자 <span class="cd">${esc(DB.groups[gr.n]._rec.v)}</span>`:' · 기록자 미정'}</div>`).join('')+`</div>`;
+ }
+ return '';
 }
 function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.activeElement)&&el.contains(document.activeElement)))return;
  ROWS=buildRows();
