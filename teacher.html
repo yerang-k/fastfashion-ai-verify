@@ -338,7 +338,9 @@ let holdStage=null; // 방금 누른 단계를 서버 응답이 오기 전에도
 async function setStage(id){const prev=LS.current;holdStage={id,until:Date.now()+10000};LS.current=id;renderControl();renderStageView();
  const r=await api('setStage',{stage:id});
  if(r.ok){const s=LS.stages.find(x=>x.id===id);toast(id==null?'학생이 자유롭게 이동할 수 있어요':`학생 화면을 「${s?s.name:''}」 단계로 넘겼어요`);refresh();}
- else{holdStage=null;LS.current=prev;renderControl();renderStageView();toast('바꾸지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}}
+ else{holdStage=null;LS.current=prev;renderControl();renderStageView();
+  const msg={pin:'PIN이 안 맞아요. 다시 로그인해 보세요(PIN을 바꾼 적이 있다면 이 화면은 옛 PIN을 기억하고 있을 수 있어요).','no class':'이 반을 서버에서 찾을 수 없어요. 주소의 ?class= 값이 맞는지 확인해 주세요.','bad stage':'잘못된 단계예요.'}[r.error];
+  toast(msg||'바꾸지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요'+(r.error?' ('+r.error+')':''));}}
 function stepStage(d){const vs=visStages(LS),pos=vs.findIndex(s=>s.id===LS.current),t=vs[pos+d];if(t)setStage(t.id);}
 
 /* ---- 무대 화면(프로젝터용): 큰 글씨로 현재 단계·타이머·참여 현황 ---- */
