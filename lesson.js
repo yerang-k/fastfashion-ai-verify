@@ -5,10 +5,10 @@ const DEFAULT_LESSON={
   {id:0,name:'준비',time:'3분',on:true},
   {id:1,name:'생각 열기',time:'5분',on:true},
   {id:2,name:'목표',time:'2분',on:true},
-  {id:3,name:'개인 검증',time:'9분',on:true},
+  {id:3,name:'개인 검증',time:'12분',on:true},
   {id:7,name:'모둠 정리',time:'8분',on:true},
   {id:4,name:'모둠 공유',time:'13분',on:true},
-  {id:5,name:'정리',time:'7분',on:true},
+  {id:5,name:'정리',time:'4분',on:true},
   {id:6,name:'마무리',time:'3분',on:true}],
  groups:[{n:1,size:4,claim:1},{n:2,size:4,claim:2},{n:3,size:4,claim:3},{n:4,size:4,claim:4},{n:5,size:3,claim:5}],
  claims:null,      // null이면 content.js 의 CLAIMS(기본 자료)를 사용
