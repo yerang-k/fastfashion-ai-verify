@@ -489,8 +489,8 @@ function currentStageCheck(){
 function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.activeElement)&&el.contains(document.activeElement)))return;
  ROWS=buildRows();
  el.innerHTML=`<p class="small">코드·이름·모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
-  <table><tr><th>코드</th><th>이름</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" class="cd" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
-  <td><input type="text" class="cd" id="rn${i}" value="${esc(r.name)}" maxlength="10" placeholder="이름"></td>
+  <table><tr><th>코드</th><th>이름</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
+  <td><input type="text" id="rn${i}" value="${esc(r.name)}" maxlength="10" placeholder="이름"></td>
   <td><select id="rg${i}">${!r.group?'<option value="0" selected>미정</option>':''}${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${r.group&&!LS.groups.some(g=>g.n===+r.group)?`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`:''}</select></td>
   <td>${r.live?posOf(r.stage)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
   <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
