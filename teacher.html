@@ -242,10 +242,15 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTi
 
 // 이 기기의 임의 번호: 서버가 PIN 실패 횟수를 '사람(기기)별'로 따로 세는 데 씀(학생이 틀려도 교사 기기는 잠기지 않음)
 const CID=(()=>{try{let c=localStorage.getItem('aiverify_teacher_cid');if(!c){c=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('aiverify_teacher_cid',c);}return c;}catch(e){return 'x'+Math.random().toString(36).slice(2);}})();
-async function api(action,payload){
- const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,pin,cid:CID,class:CLASS_ID},payload||{}))});
- return r.json();
+/* tmo(ms)를 주면 그 시간 안에 응답이 없을 때 요청을 포기한다(서버가 가끔 10초 넘게 멈추는 것을 피하려고, 같은 값을 다시 보내도 괜찮은 요청에만 씀) */
+async function api(action,payload,tmo){
+ const ctl=tmo?new AbortController():null,tm=tmo?setTimeout(()=>ctl.abort(),tmo):0;
+ try{
+  const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,pin,cid:CID,class:CLASS_ID},payload||{})),signal:ctl?ctl.signal:undefined});
+  return await r.json();
+ }finally{clearTimeout(tm);}
 }
+async function apiRetry(action,payload,tmo){try{return await api(action,payload,tmo);}catch(e){if(e&&e.name==='AbortError')return api(action,payload,tmo*2);throw e;}}
 async function login(){
  if(!API_URL){$('loginMsg').textContent='config.js 의 API_URL 이 비어 있어요. 서버(Apps Script) 주소를 먼저 넣어 주세요.';return;}
  pin=$('pin').value.trim();if(!pin)return;$('loginMsg').textContent='확인 중…';
@@ -273,7 +278,7 @@ function renderBoard(){
  const gs=LS.groups.map(x=>x.n);if(!gs.includes(PVG))PVG=gs[0]||1;
  $('pvChips').innerHTML=gs.map(g=>`<button class="btn small ${g===PVG?'':'ghost'}" onclick="pvGroup(${g})">${g}모둠</button>`).join(' ');
  const src=BASE+'index.html?preview=1&pg='+PVG+(CLASS_ID?'&class='+encodeURIComponent(CLASS_ID):'');
- if(src!==PVSRC){PVSRC=src;$('pvFrame').src=src;}
+ if(src!==PVSRC&&!document.body.classList.contains('stagemode-on')){PVSRC=src;$('pvFrame').src=src;}
  fitPreview();
 }
 window.addEventListener('resize',()=>{if(window.fitPreview)fitPreview();});
@@ -341,13 +346,14 @@ async function saveNote(){const id=NOTE_EDIT,txt=$('noteText').value;if(id==null
  else toast(r.error==='too large'?'노트가 너무 길어요':'저장하지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}
 let LASTRAW=0,LVT=null,stBusy=false; // LASTRAW=서버가 마지막으로 알려 준 단계(원본), LVT=수업 설정 버전
 const rcT=x=>x===null?null:(x==null?0:+x);
-async function pollStageT(){if(!DB||document.hidden||stBusy)return;stBusy=true;
- try{const r=await api('getStage');if(!r.ok)return;const lv=r.lv==null?'':r.lv,held=holdStage&&Date.now()<holdStage.until;
+async function pollStageT(){if(!DB||document.hidden||stBusy)return;stBusy=true;let slow=false;
+ try{const r=await api('getStage',null,4000);if(!r.ok)return;const lv=r.lv==null?'':r.lv,held=holdStage&&Date.now()<holdStage.until;
   if(!held&&(rcT(r.current)!==rcT(LASTRAW)||(LVT!==null&&lv!==LVT)))await refresh();
-  LVT=lv;}catch(e){}finally{stBusy=false;}}
+  LVT=lv;}catch(e){slow=!!(e&&e.name==='AbortError');}finally{stBusy=false;}
+ if(slow)setTimeout(pollStageT,100);}
 let holdStage=null; // 방금 누른 단계를 서버 응답이 오기 전에도 화면에 유지
 async function setStage(id){const prev=LS.current;holdStage={id,until:Date.now()+10000};LS.current=id;renderControl();renderStageView();
- const r=await api('setStage',{stage:id});
+ const r=await apiRetry('setStage',{stage:id},5000); // 같은 단계를 다시 보내도 결과가 같아서, 5초 넘게 답이 없으면 한 번 더 보냄
  if(r.ok){const s=LS.stages.find(x=>x.id===id);toast(id==null?'학생이 자유롭게 이동할 수 있어요':`학생 화면을 「${s?s.name:''}」 단계로 넘겼어요`);refresh();}
  else{holdStage=null;LS.current=prev;renderControl();renderStageView();
   const msg={pin:'PIN이 안 맞아요. 다시 로그인해 보세요(PIN을 바꾼 적이 있다면 이 화면은 옛 PIN을 기억하고 있을 수 있어요).','no class':'이 반을 서버에서 찾을 수 없어요. 주소의 ?class= 값이 맞는지 확인해 주세요.','bad stage':'잘못된 단계예요.'}[r.error];
@@ -355,7 +361,7 @@ async function setStage(id){const prev=LS.current;holdStage={id,until:Date.now()
 function stepStage(d){const vs=visStages(LS),pos=vs.findIndex(s=>s.id===LS.current),t=vs[pos+d];if(t)setStage(t.id);}
 
 /* ---- 무대 화면(프로젝터용): 큰 글씨로 현재 단계·타이머·참여 현황 ---- */
-function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){preloadIntro();renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
+function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){$('pvFrame').src='about:blank';PVSRC='';preloadIntro();renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
  else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
 let SPOT=null; // 모둠 공유 단계에서 크게 보고 있는 모둠 번호(없으면 null). 카드를 누르면 켜지고, 같은 곳을 다시 누르면 꺼짐
 function stepClick(id){if(id===LS.current&&SPOT){spot(null);return;}setStage(id);} // 지금 보고 있는 모둠 공유 단계 버튼을 다시 누르면 강조를 풀고 모든 모둠 카드로 돌아감
