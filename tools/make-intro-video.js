@@ -1,7 +1,7 @@
 // 생각 열기 도입 영상(media/intro-think.mp4) 제작 스크립트.
-// 장면 HTML → Edge 헤드리스로 PNG 캡처 → Windows 한국어 여성 음성(Heami)으로 나레이션 → ffmpeg으로 합쳐 mp4 생성.
+// 장면 HTML → Edge 헤드리스로 PNG 캡처 → 한국어 여성 AI 음성으로 나레이션 → ffmpeg으로 합쳐 mp4 생성.
 // 사용: node tools/make-intro-video.js   (문구를 고치려면 아래 NARR/상수만 바꾸고 다시 실행)
-// AI 답변 문장 5개는 content.js에서 그대로 읽어 와서 앱 화면과 글자가 어긋나지 않게 한다.
+// 지현 캐릭터는 tools/jihyun-character.js(SVG). AI 답변 문장 5개는 content.js에서 그대로 읽어 와서 앱 화면과 글자가 어긋나지 않게 한다.
 const fs = require('fs'), path = require('path'), os = require('os'), cp = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -33,24 +33,52 @@ const scenes = [
   { k: 'chat', n: 'AI가 대답했어요. ' + INTRO, intro: true },
   ...S.map((s, i) => ({ k: 'chat', n: s, intro: true, upto: i + 1, hl: i + 1 })),
   { k: 'chat', n: OUTRO + ' 지현이는 복사 버튼 위에 마우스를 올렸어요.', intro: true, upto: 5, outro: true, copy: true, cap: '지현이는 복사 버튼 위에 마우스를 올렸어요.' },
-  { k: 'ask2', n: '이 답변, 보고서에 그대로 써도 될까요?', hold: 5, intro: true, upto: 5, outro: true }, // 배경에는 전체 대화가 흐리게 깔린다
+  { k: 'ask2', n: '이 답변, 보고서에 그대로 써도 될까요?', hold: 5 },
 ];
 
+const J = require('./jihyun-character.js'); // 가상 학생 '지현' 캐릭터(SVG)
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+// 첫 장면: 밤늦게 노트북 앞에 앉은 지현(창문의 달, 11시를 가리키는 시계, 스탠드 불빛)
+function roomSvg() {
+  const ticks = Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6, x1 = 780 + 62 * Math.sin(a), y1 = 140 - 62 * Math.cos(a), x2 = 780 + 70 * Math.sin(a), y2 = 140 - 70 * Math.cos(a); return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#c9b18b" stroke-width="4" stroke-linecap="round"/>`; }).join('');
+  const stars = [[90, 120], [150, 220], [290, 110], [120, 330], [300, 300], [230, 380]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.5" fill="#e9dcc0" opacity=".8"/>`).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 900" width="960" height="900">
+  <defs><linearGradient id="lamp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd58a" stop-opacity=".34"/><stop offset="1" stop-color="#ffd58a" stop-opacity="0"/></linearGradient></defs>
+  <rect x="40" y="70" width="320" height="370" rx="18" fill="#172033" stroke="#3a3a38" stroke-width="10"/>
+  <path d="M40,440 L40,360 L90,360 L90,330 L140,330 L140,380 L200,380 L200,320 L250,320 L250,370 L310,370 L310,340 L360,340 L360,440 Z" fill="#0f1522"/>
+  <line x1="200" y1="70" x2="200" y2="440" stroke="#3a3a38" stroke-width="8"/><line x1="40" y1="250" x2="360" y2="250" stroke="#3a3a38" stroke-width="8"/>
+  ${stars}<circle cx="270" cy="160" r="46" fill="#e9dcc0"/><circle cx="288" cy="146" r="40" fill="#172033"/>
+  <circle cx="780" cy="140" r="78" fill="#181816" stroke="#c9b18b" stroke-width="7"/>${ticks}
+  <line x1="780" y1="140" x2="760" y2="105" stroke="#f4f4f2" stroke-width="8" stroke-linecap="round"/><line x1="780" y1="140" x2="780" y2="82" stroke="#f4f4f2" stroke-width="5" stroke-linecap="round"/><circle cx="780" cy="140" r="7" fill="#c9b18b"/>
+  <rect x="0" y="790" width="960" height="110" fill="#2a211b"/><rect x="0" y="790" width="960" height="6" fill="#3d3027"/>
+  <polygon points="236,626 96,792 360,792" fill="url(#lamp)"/>
+  <ellipse cx="150" cy="790" rx="52" ry="11" fill="#4a463e"/><path d="M150,786 L190,676 L246,630" fill="none" stroke="#6a645a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M214,616 L270,640 L252,668 L204,640 Z" fill="#c9b18b"/>
+  <rect x="808" y="722" width="120" height="30" rx="4" fill="#a58d5f"/><rect x="818" y="752" width="104" height="38" rx="4" fill="#55554f"/><rect x="812" y="690" width="100" height="32" rx="4" fill="#c9b18b"/>
+  <g transform="translate(330,300)">${J.inner('hello')}</g>
+</svg>`;
+}
+
 function html(sc) {
   const css = `*{box-sizing:border-box;margin:0}body{width:1920px;height:1080px;background:#111;color:#f4f4f2;font-family:"Malgun Gothic","Noto Sans KR",sans-serif;overflow:hidden;position:relative}
 .top{position:absolute;left:72px;top:40px;color:#c9b18b;font-size:26px;letter-spacing:.08em}
-.cap{position:absolute;left:0;right:0;bottom:64px;text-align:center;font-size:48px;line-height:1.6;padding:0 120px;word-break:keep-all}
+.cap{position:absolute;left:620px;right:70px;bottom:56px;text-align:center;font-size:46px;line-height:1.6;word-break:keep-all;text-wrap:balance}
+.cap.r{left:1000px;right:60px;font-size:42px}
 .cap span{background:rgba(0,0,0,.78);padding:8px 26px;border-radius:14px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px}
-.moon{font-size:120px;line-height:1}.sub{color:#c9b18b;font-size:40px;letter-spacing:.06em}
-.card{background:#181816;border:2px solid #3a3a38;border-radius:28px;padding:54px 90px;text-align:center}
-.lbl{color:#c9b18b;font-size:32px;margin-bottom:22px}.title{font-size:78px;font-weight:800;line-height:1.35;word-break:keep-all}
-.chat{position:absolute;left:150px;right:150px;top:104px}
+.room{position:absolute;left:20px;bottom:0}
+.titlecard{position:absolute;left:1010px;right:60px;top:210px;display:flex;flex-direction:column;gap:30px}
+.sub{color:#c9b18b;font-size:38px;letter-spacing:.05em;text-align:center}
+.card{background:#181816;border:2px solid #3a3a38;border-radius:28px;padding:50px 40px;text-align:center}
+.lbl{color:#c9b18b;font-size:30px;margin-bottom:20px}.title{font-size:66px;font-weight:800;line-height:1.38;word-break:keep-all}
+.who{position:absolute;left:30px;bottom:0;width:560px;height:760px}
+.who svg{position:absolute;left:0;bottom:0}
+.glow{position:absolute;left:-90px;bottom:-110px;width:760px;height:760px;border-radius:50%;background:radial-gradient(circle,rgba(201,177,139,.2),rgba(201,177,139,0) 66%)}
+.chat{position:absolute;left:620px;right:70px;top:104px}
 .row{display:flex;gap:22px;margin-bottom:22px;align-items:flex-start}.row.me{justify-content:flex-end}
 .av{flex:0 0 66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:28px}
-.me .av{background:#c9b18b;color:#111}.ai .av{background:#f4f4f2;color:#111;font-size:24px}
-.b{border-radius:26px;padding:22px 34px;font-size:35px;line-height:1.5;word-break:keep-all;max-width:1500px}
+.ai .av{background:#f4f4f2;color:#111;font-size:24px}
+.b{border-radius:26px;padding:22px 32px;font-size:33px;line-height:1.5;word-break:keep-all;max-width:1230px}
 .me .b{background:#c9b18b;color:#111}.ai .b{background:#1e1e1c;border:2px solid #3a3a38}
 .ai .b p{margin:0 0 10px}.ai .b p:last-child{margin:0}
 .n{display:inline-flex;width:1.2em;height:1.2em;border-radius:50%;background:#c9b18b;color:#111;font-weight:800;font-size:.8em;align-items:center;justify-content:center;margin-right:.45em;vertical-align:.05em}
@@ -58,17 +86,24 @@ function html(sc) {
 .hl .n{background:#111;color:#c9b18b}
 .copy{margin-left:88px;margin-top:6px;display:inline-flex;align-items:center;gap:10px;border:2px solid #c9b18b;color:#c9b18b;border-radius:14px;padding:10px 26px;font-size:32px;position:relative;box-shadow:0 0 0 8px rgba(201,177,139,.18)}
 .cur{position:absolute;left:calc(100% - 26px);top:46px;filter:drop-shadow(0 4px 6px #000)}
-.dim{opacity:.07;filter:blur(6px)}
-.q{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:48px}
-.q h1{font-size:84px;font-weight:800;line-height:1.3;text-align:center;word-break:keep-all}
-.opts{display:flex;flex-direction:column;gap:20px;width:1500px}
-.opt{background:#181816;border:2px solid #3a3a38;border-radius:22px;padding:22px 36px;font-size:38px;display:flex;gap:22px;align-items:center}
-.opt i{font-style:normal;flex:0 0 58px;height:58px;border-radius:50%;background:#c9b18b;color:#111;font-weight:800;font-size:34px;display:flex;align-items:center;justify-content:center}`;
+.qm{position:absolute;border-radius:50%;background:#c9b18b;color:#111;font-weight:800;display:flex;align-items:center;justify-content:center}
+.qwrap{position:absolute;left:700px;right:70px;top:150px;display:flex;flex-direction:column;gap:44px}
+.qwrap h1{font-size:76px;font-weight:800;line-height:1.3;word-break:keep-all;text-wrap:balance}
+.opts{display:flex;flex-direction:column;gap:20px}
+.opt{background:#181816;border:2px solid #3a3a38;border-radius:22px;padding:22px 34px;font-size:35px;display:flex;gap:22px;align-items:center;text-wrap:balance}
+.opt i{font-style:normal;flex:0 0 56px;height:56px;border-radius:50%;background:#c9b18b;color:#111;font-weight:800;font-size:32px;display:flex;align-items:center;justify-content:center}`;
   let body = '';
   if (sc.k === 'title') {
-    body = `<div class="center"><div class="moon">🌙</div><div class="sub">밤 11시 · 제출 마감 하루 전</div><div class="card"><div class="lbl">주제탐구 보고서 · 지현</div><div class="title">패스트패션은 정말<br>지구를 망치고 있을까?</div></div></div>`;
+    body = `<div class="room">${roomSvg()}</div><div class="titlecard"><div class="sub">🌙 밤 11시 · 제출 마감 하루 전</div><div class="card"><div class="lbl">주제탐구 보고서 · 지현</div><div class="title">패스트패션은 정말<br>지구를 망치고 있을까?</div></div></div>`;
+  } else if (sc.k === 'ask2') {
+    body = `<div class="who" style="width:620px;height:850px"><div class="glow"></div>${J.svg('think', 600)}
+      <div class="qm" style="left:480px;top:210px;width:84px;height:84px;font-size:54px;transform:rotate(10deg)">?</div>
+      <div class="qm" style="left:546px;top:330px;width:60px;height:60px;font-size:38px;transform:rotate(-8deg);opacity:.85">?</div>
+      <div class="qm" style="left:10px;top:290px;width:66px;height:66px;font-size:42px;transform:rotate(-12deg);opacity:.85">?</div></div>
+      <div class="qwrap"><h1>이 답변, 보고서에 그대로 써도 될까요?</h1><div class="opts">${OPTS.map((o, i) => `<div class="opt"><i>${i + 1}</i><span>${esc(o)}</span></div>`).join('')}</div></div>`;
   } else {
-    const me = `<div class="row me"><div class="b">${esc(ASK)}</div><div class="av">지</div></div>`;
+    const pose = sc.copy ? 'hesitate' : sc.k === 'ask' ? 'type' : 'read';
+    const me = `<div class="row me"><div class="b">${esc(ASK)}</div><div class="av" style="background:none">${J.face(66)}</div></div>`;
     let ai = '';
     if (sc.intro) {
       const ps = [`<p>${esc(INTRO)}</p>`];
@@ -76,12 +111,10 @@ function html(sc) {
       if (sc.outro) ps.push(`<p>${esc(OUTRO)}</p>`);
       ai = `<div class="row ai"><div class="av">AI</div><div><div class="b">${ps.join('')}</div>${sc.copy ? '<div class="copy">📋 복사<svg class="cur" width="54" height="54" viewBox="0 0 24 24"><path d="M3 2l7 18 2.5-7.5L20 10z" fill="#f4f4f2" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg></div>' : ''}</div></div>`;
     }
-    const chat = `<div class="chat${sc.k === 'ask2' ? ' dim' : ''}">${me}${ai}</div>`;
-    body = chat;
+    body = `<div class="who"><div class="glow"></div>${J.svg(pose, 540)}</div><div class="chat">${me}${ai}</div>`;
   }
   return `<!doctype html><meta charset="utf-8"><style>${css}</style><body><div class="top">지현의 탐구 보고서</div>${body}${
-    sc.cap ? `<div class="cap"><span>${esc(sc.cap)}</span></div>` : ''}${
-    sc.k === 'ask2' ? `<div class="q"><h1>이 답변, 보고서에 그대로 써도 될까요?</h1><div class="opts">${OPTS.map((o, i) => `<div class="opt"><i>${i + 1}</i>${esc(o)}</div>`).join('')}</div></div>` : ''}</body>`;
+    sc.cap ? `<div class="cap${sc.k === 'title' ? ' r' : ''}"><span>${esc(sc.cap)}</span></div>` : ''}</body>`;
 }
 
 // ---- 1) 장면 PNG ----
