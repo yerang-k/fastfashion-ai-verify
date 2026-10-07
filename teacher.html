@@ -101,6 +101,8 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-inner.big .sv-points div{flex:0 0 auto;min-width:0;padding:calc(1.8cqh*var(--k)) 2vw;border-radius:18px;font-size:calc(clamp(1.3rem,min(1.9vw,3.6cqh),2.2rem)*var(--k)*.8)}
 #stageView .sv-panel{background:#181816;border:1.5px solid #3a3a38;border-radius:16px;padding:calc(1.8cqh*var(--k)) 1.4vw}
 #stageView .sv-panel h3{margin:0 0 calc(1.2cqh*var(--k));font-size:calc(clamp(.85rem,2.6cqh,1.2rem)*var(--k));color:var(--accent);letter-spacing:.04em}
+#stageView .sv-join{text-align:center}
+#stageView .sv-url{font-weight:800;color:var(--accent);letter-spacing:.03em;line-height:1.25;word-break:break-all;font-family:Consolas,"Malgun Gothic",monospace}
 #stageView .sv-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(13vw,1fr));gap:calc(.8vw*var(--k))}
 #stageView .sv-g{border:1.5px solid #3a3a38;border-radius:12px;padding:calc(1.2cqh*var(--k)) calc(.8vw*var(--k));background:#1e1e1c;min-width:0}
 #stageView .sv-g b{font-size:calc(clamp(.95rem,3cqh,1.35rem)*var(--k))}
@@ -357,7 +359,7 @@ async function changePin(){
  if(r.ok){pin=n1;try{sessionStorage.setItem(PIN_KEY,pin);}catch(e){}alert('PIN을 바꿨어요. 다른 기기(교사·무대 화면)는 새 PIN으로 다시 로그인해야 해요.');}
  else toast(r.error==='pin'?'지금 PIN이 맞지 않아요':'바꾸지 못했어요');
 }
-async function copyLink(){const u=studentLink();try{await navigator.clipboard.writeText(u);toast(clsLabel(CLASS_ID)+' 학생 링크를 복사했어요');}catch(e){prompt('이 주소를 복사해 학생에게 알려 주세요',u);}}
+async function copyLink(){const u=LS.joinUrl||studentLink();try{await navigator.clipboard.writeText(u);toast(clsLabel(CLASS_ID)+' 학생 링크를 복사했어요');}catch(e){prompt('이 주소를 복사해 학생에게 알려 주세요',u);}}
 
 /* ---- 진행 통제: 교사가 '현재 단계'를 지정하면 학생은 그 단계 화면만 본다 ---- */
 function renderControl(){
@@ -409,11 +411,14 @@ let SPOT=null; // 모둠 공유 단계에서 크게 보고 있는 모둠 번호(
 function stepClick(id){if(id===LS.current&&SPOT){spot(null);return;}setStage(id);} // 지금 보고 있는 모둠 공유 단계 버튼을 다시 누르면 강조를 풀고 모든 모둠 카드로 돌아감
 function spotClick(e){const f=e.currentTarget.querySelector('.sv-focus');if(f&&e.target===f&&e.offsetX>f.clientWidth)return;spot(null);} // 스크롤바를 누른 경우는 작아지지 않게
 function spot(n){SPOT=(n==null||SPOT===n)?null:n;renderStageView();}
+/* 무대 화면에 크게 보여 줄 접속 주소: 설정에 적은 짧은 주소가 있으면 그것, 없으면 학생 링크(https:// 는 뺌) */
+function joinText(){return (LS.joinUrl||studentLink()).replace(/^https?:\/\//,'').replace(/\/$/,'');}
 function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
  const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${esc(v||'미판정')}</span>`;
  const card=(gr,extra,click)=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},m=S.filter(s=>+s.group===gr.n).length;
   return `<div class="sv-g${click?' click':''}"${click?` onclick="spot(${gr.n})" title="눌러서 발표 내용을 크게 보기"`:''}><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(wj(c.n+'. '+c.t)):''}</p>${extra(f,gr)}</div>`;};
  if(id===1)return `<div class="sv-panel"><button class="sv-play" onclick="playIntro()">▶ 영상으로 시작하기<small>약 1분 20초 · 키보드 V</small></button></div>`;
+ if(id===0){const t=joinText(),n=t.length,fs=n<=16?'min(8.6vw,17cqh)':n<=26?'min(5.4vw,11cqh)':'min(2.6vw,6cqh)';return `<div class="sv-panel sv-join"><h3>접속 주소 · 브라우저 주소창에 입력하세요</h3><div class="sv-url" style="font-size:calc(${fs}*var(--k))">${esc(t)}</div></div>`;}
  if(id===3)return `<div class="sv-panel"><h3>모둠별 담당 문장 · 개인 검증 진행</h3><div class="sv-groups">${G.map(gr=>card(gr,(f,g)=>{const m=S.filter(s=>+s.group===g.n);return `<span class="m">개인 판정 ${m.filter(s=>s.data.i_verdict).length}/${m.length}명</span>`;})).join('')}</div></div>`;
  if(id===7)return `<div class="sv-panel"><h3>모둠 정리 · 발표할 내용</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>`<span class="m">${f._rec?'✍️ 기록자 정함':'✍️ 기록자 미정'}</span> `+vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
  if(id===4){
@@ -624,7 +629,10 @@ function renderSettings(){
   <p class="small">엑셀에서 <b>학번, 모둠, 이름</b> 칸을 복사해 그대로 붙여 넣으세요. 한 줄에 <b>참여코드</b>만, <b>참여코드+모둠</b>, <b>참여코드+이름</b>, <b>참여코드+모둠+이름</b> 중 편한 형식으로 적어도 됩니다. (예: <code>2-3-07</code> / <code>2-3-07, 2</code> / <code>2-3-07, 홍길동</code> / <code>2-3-07, 2, 홍길동</code>) 모둠을 안 적으면 학생이 입장할 때 스스로 고르고, 적으면 그 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠·이름도 함께 바뀝니다. 한 명씩 고치려면 아래 ‘⑤ 학생 관리’에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
   <textarea id="rosterText" style="min-height:120px" placeholder="2-3-01, 1, 김도윤&#10;2-3-02, 1, 박서연&#10;2-3-03, 2, 이하준"></textarea>
   <div style="margin:8px 0"><button class="btn small" onclick="saveRoster('merge')">추가·수정 (기존 명단 유지)</button> <button class="btn small danger" onclick="saveRoster('replace')">전체 교체</button></div>
-  <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 참여 코드만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label></div></details>`;
+  <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 참여 코드만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label>
+  <div class="lbl" style="margin-top:14px">학생 접속 주소 (짧은 주소) — 수업 시작(준비 단계)에 무대 화면에 크게 보여 줘요</div>
+  <input type="text" style="width:100%" value="${esc(DR.joinUrl||'')}" placeholder="예: https://tinyurl.com/22satzqq (비워 두면 긴 학생 링크가 나와요)" oninput="DR.joinUrl=this.value;mark()">
+  <p class="small" style="margin:4px 0 0">짧은 주소는 tinyurl.com 같은 곳에서 만들 수 있어요. 학생이 주소창에 직접 칠 수 있게 짧을수록 좋아요. ‘학생 링크 복사’ 버튼도 이 주소를 복사해요.</p></div></details>`;
 
  h+=`<details class="acc" id="a5" ${OPEN.a5?'open':''}><summary>⑤ 학생 관리 <span class="small">접속 ${DB.students.length}명 · 코드/모둠 수정·삭제</span></summary><div class="accbody"><div id="studentMgr"></div></div></details>`;
 
