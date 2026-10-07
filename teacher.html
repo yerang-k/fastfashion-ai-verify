@@ -56,6 +56,8 @@ details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--main)
 .spane{display:none}.spane.show{display:block}
 body.present .smodal{display:none}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;pointer-events:none;z-index:9}.toast.on{opacity:1}
+.toast.ok{background:var(--accent);color:#111;font-weight:800;font-size:1.2rem;padding:14px 30px;bottom:14vh;border:2px solid #111;box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.savestat{font-weight:700;font-size:.9rem}.savestat.okk{color:#1b5e20}.savestat.warn{color:#a8875a}
 header select{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 8px;border-radius:20px}header select option{color:#111}
 .badge.btnlike{cursor:pointer;border:none;color:#fff;font:inherit}
 .phase{background:#fff;border-radius:14px;padding:18px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:18px}
@@ -280,7 +282,9 @@ const SELF=['AI 답변에서 확인이 필요한 문장을 골라낼 수 있다.
 const vBadge=v=>`<span class="v ${VCLS[v]||'none'}">${esc(v||'미판정')}</span>`;
 const hms=t=>t?new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'-';
 const CLN=()=>claimsOf(LS);
-function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
+let toastT;
+function toast(m,ok){const t=$('toast');t.textContent=m;t.className='toast on'+(ok?' ok':'');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),ok?3400:2400);} // ok=true면 저장됐다는 눈에 띄는 큰 알림
+const saved=m=>toast('✅ '+m,true);
 
 // 이 기기의 임의 번호: 서버가 PIN 실패 횟수를 '사람(기기)별'로 따로 세는 데 씀(학생이 틀려도 교사 기기는 잠기지 않음)
 const CID=(()=>{try{let c=localStorage.getItem('aiverify_teacher_cid');if(!c){c=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('aiverify_teacher_cid',c);}return c;}catch(e){return 'x'+Math.random().toString(36).slice(2);}})();
@@ -386,7 +390,7 @@ function editNote(){NOTE_EDIT=LS.current;renderNote();const t=$('noteText');if(t
 async function saveNote(){const id=NOTE_EDIT,txt=$('noteText').value;if(id==null)return;
  const next=Object.assign({},NOTES,{[id]:txt});
  const r=await api('setNotes',{notes:next});
- if(r.ok){NOTES=next;NOTE_EDIT=null;renderNote();toast('노트를 저장했어요');}
+ if(r.ok){NOTES=next;NOTE_EDIT=null;renderNote();saved('노트가 저장됐어요');}
  else toast(r.error==='too large'?'노트가 너무 길어요':'저장하지 못했어요. Apps Script를 새 버전으로 배포했는지 확인해 주세요');}
 let LASTRAW=0,LVT=null,stBusy=false; // LASTRAW=서버가 마지막으로 알려 준 단계(원본), LVT=수업 설정 버전
 const rcT=x=>x===null?null:(x==null?0:+x);
@@ -526,8 +530,8 @@ function openSettings(i){if(!DB){toast('먼저 PIN으로 들어가 주세요');r
 function closeSettings(){$('settingsModal').hidden=true;}
 function openStudentMgr(){openSettings(0);const d=$('a5');if(d){d.open=true;OPEN.a5=true;d.scrollIntoView({behavior:'smooth'});}}
 async function saveRow(i){const r=ROWS[i],nc=$('rc'+i).value.trim(),ng=+$('rg'+i).value,nn=$('rn'+i).value.trim();if(!nc){toast('코드를 입력해 주세요');return;}
- const res=await api('updateStudent',{code:r.code,newCode:nc,group:ng,name:nn});
- if(res.ok){toast('저장했어요');refresh(true);}else toast(res.error==='dup'?'이미 사용 중인 코드예요':'저장하지 못했어요');}
+ let res;try{res=await api('updateStudent',{code:r.code,newCode:nc,group:ng,name:nn});}catch(e){res={ok:false,error:'network'};}
+ if(res.ok){saved((nn||nc)+' 학생 정보가 저장됐어요');refresh(true);}else toast(res.error==='dup'?'이미 사용 중인 코드예요':res.error==='network'?'저장하지 못했어요. 인터넷 연결을 확인해 주세요':'저장하지 못했어요');}
 async function delRow(i){const r=ROWS[i];if(!confirm(`${r.code} 학생의 응답과 명단 등록을 삭제할까요? 되돌릴 수 없어요.`))return;
  const res=await api('deleteStudent',{code:r.code});if(res.ok){toast('삭제했어요');refresh(true);}else toast('삭제하지 못했어요');}
 
@@ -585,7 +589,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement){document.body.classList.remove('stagemode-on');closeIntro();}});
 
 /* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
-const mark=()=>{dirty=true;};
+const mark=()=>{dirty=true;paintSaveStat();};
 document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('acc'))OPEN[d.id]=d.open;},true);
 function renderSettings(){
  if(!DR)return;const CL=claimsOf(DR);
@@ -636,8 +640,8 @@ function renderSettings(){
 
  h+=`<details class="acc" id="a5" ${OPEN.a5?'open':''}><summary>⑤ 학생 관리 <span class="small">접속 ${DB.students.length}명 · 코드/모둠 수정·삭제</span></summary><div class="accbody"><div id="studentMgr"></div></div></details>`;
 
- h+=`<div class="card" style="padding-bottom:0"><div class="savebar"><button class="btn" onclick="saveSettings()">💾 저장하고 학생 화면에 적용</button> <button class="btn ghost" onclick="cancelSettings()">변경 취소</button> <span class="small">단계·모둠·주장·입장 방식이 저장돼요. 명단 등록은 위 버튼으로 바로 적용됩니다.</span></div></div>`;
- $('settings').innerHTML=h;renderStudentMgr();
+ h+=`<div class="card" style="padding-bottom:0"><div class="savebar"><button class="btn" onclick="saveSettings()">💾 저장하고 학생 화면에 적용</button> <button class="btn ghost" onclick="cancelSettings()">변경 취소</button> <span class="savestat" id="saveStat"></span> <span class="small">단계·모둠·주장·입장 방식이 저장돼요. 명단 등록은 위 버튼으로 바로 적용됩니다.</span></div></div>`;
+ $('settings').innerHTML=h;paintSaveStat();renderStudentMgr();
 }
 function moveStage(i,d){const j=i+d;if(j<0||j>=DR.stages.length||DR.stages[i].id===0||DR.stages[j].id===0)return;[DR.stages[i],DR.stages[j]]=[DR.stages[j],DR.stages[i]];mark();renderSettings();}
 function addGroup(){if(DR.groups.length>=MAX_GROUPS)return;DR.groups.push({n:DR.groups.length+1,size:4,claim:1});mark();renderSettings();}
@@ -680,10 +684,14 @@ async function saveSettings(){
  const CL=claimsOf(DR);
  for(const c of CL){if(!String(c.t).trim()){toast(`주장 ${c.n}의 AI 답변 문장이 비어 있어요`);return;}}
  DR.stages.forEach(s=>{s.name=String(s.name).trim()||DEFAULT_LESSON.stages.find(d=>d.id===s.id).name;});
- const r=await api('setLesson',{lesson:DR});
- if(r.ok){dirty=false;toast('저장했어요. 학생 화면에 곧 반영돼요');await refresh(true);}else toast(r.error==='too large'?'내용이 너무 길어요. 자료를 줄여 주세요':'저장하지 못했어요');
+ const btn=document.querySelector('.savebar .btn:not(.ghost)'),label=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='저장 중…';}
+ let r;try{r=await api('setLesson',{lesson:DR});}catch(e){r={ok:false,error:'network'};}
+ if(btn){btn.disabled=false;btn.textContent=label;}
+ if(r.ok){dirty=false;SAVED_AT=hms(Date.now());saved('설정이 저장됐어요. 학생 화면에 곧 반영돼요');await refresh(true);paintSaveStat();}else toast(r.error==='too large'?'내용이 너무 길어요. 자료를 줄여 주세요':r.error==='network'?'저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요':'저장하지 못했어요');
 }
-function cancelSettings(){if(dirty&&!confirm('저장하지 않은 변경을 버릴까요?'))return;dirty=false;DR=clone(LS);renderSettings();}
+let SAVED_AT=''; // 설정을 마지막으로 저장한 시각(저장 버튼 옆에 계속 보여 줌)
+function paintSaveStat(){const e=$('saveStat');if(!e)return;e.className='savestat'+(dirty?' warn':SAVED_AT?' okk':'');e.textContent=dirty?'✏️ 저장하지 않은 변경이 있어요':SAVED_AT?'✅ 저장됐어요 ('+SAVED_AT+')':'';}
+function cancelSettings(){if(dirty&&!confirm('저장하지 않은 변경을 버릴까요?'))return;dirty=false;SAVED_AT='';DR=clone(LS);renderSettings();}
 function parseRoster(text){const list=[],bad=[];
  text.split(/\r?\n/).forEach(line=>{line=line.trim();if(!line)return;const p=line.split(/[\s,;\t]+/).filter(Boolean);
   if(p.length===1){list.push({code:p[0],group:0});return;} // 학번만 적으면 학생이 입장할 때 스스로 모둠을 고름
@@ -700,7 +708,7 @@ async function saveRoster(mode){
  if(!list.length&&mode!=='replace'){toast('등록할 명단을 붙여 넣어 주세요');return;}
  if(mode==='replace'&&!confirm(list.length?`기존 명단을 지우고 ${list.length}명으로 교체할까요?`:'명단을 모두 비울까요?'))return;
  const r=await api('setRoster',{list,mode});
- if(r.ok){toast(`명단 ${r.count}명 등록됨`);$('rosterText').value='';refresh();}else toast('저장하지 못했어요');
+ if(r.ok){saved(`명단이 저장됐어요 (현재 ${r.count}명)`);$('rosterText').value='';refresh();}else toast('저장하지 못했어요');
 }
 
 /* ---- 내보내기 ---- */

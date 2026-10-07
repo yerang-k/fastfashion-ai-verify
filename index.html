@@ -43,6 +43,8 @@ table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px soli
 td select,td input{padding:6px;font-size:.9rem}
 .checklist label{display:block;padding:8px 10px;border-radius:8px;cursor:pointer}.checklist label:hover{background:var(--soft)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;pointer-events:none;z-index:9}.toast.on{opacity:1}
+.toast.ok{background:var(--accent);color:#111;font-weight:800;font-size:1.2rem;padding:14px 30px;bottom:14vh;border:2px solid #111;box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.savestat{font-weight:700}.savestat.okk{color:#1b5e20;background:var(--accent-soft);padding:3px 10px;border-radius:12px}.savestat.warn{color:#a8875a}
 .help{position:fixed;right:18px;bottom:18px;background:#fff;color:var(--main);border:2px solid var(--main);border-radius:30px;padding:10px 16px;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .mine{outline:3px solid var(--main);outline-offset:2px}
 .role{display:flex;gap:8px;flex-wrap:wrap}.role input{width:auto;flex:1;min-width:120px}
@@ -376,8 +378,8 @@ async function pushGroup(){clearTimeout(gTimer);if(!ONLINE||!data.group||!Object
 /* ---- 저장하기 버튼: 개인 검증(단계 3)·모둠 정리(단계 7)는 다 쓴 뒤 버튼을 눌러야 서버에 저장 ---- */
 const SAVE_STAGES=[1,3,4,5]; // 학생이 직접 응답을 쓰는 단계(저장하기 버튼이 있는 단계). 7(모둠 정리)은 기록자 전용 별도 저장
 function showPending(){const p7=Object.keys(gdirty).length>0,t7=$('saveState7'),sv=(data._sv&&typeof data._sv==='object')?data._sv:{};
- SAVE_STAGES.forEach(n=>{const t=$('saveState'+n);if(t)t.textContent=stagePending(n)?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요.':sv[n]?'✅ 저장했어요 ('+sv[n]+')':'다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)';});
- if(t7)t7.textContent=p7?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요. (저장해야 다른 모둠원 화면에 보여요)':data._sv7?'✅ 저장했어요 ('+data._sv7+')':'기록자만 저장할 수 있어요. 저장하면 다른 모둠원 화면에 보여요.';
+ SAVE_STAGES.forEach(n=>{const t=$('saveState'+n);if(!t)return;const pend=stagePending(n);t.className='small savestat'+(pend?' warn':sv[n]?' okk':'');t.textContent=pend?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요.':sv[n]?'✅ 저장됐어요 ('+sv[n]+')':'다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)';});
+ if(t7){t7.className='small savestat'+(p7?' warn':data._sv7?' okk':'');t7.textContent=p7?'✏️ 저장하지 않은 내용이 있어요. 다 쓴 뒤 저장하기를 눌러 주세요. (저장해야 다른 모둠원 화면에 보여요)':data._sv7?'✅ 저장됐어요 ('+data._sv7+')':'기록자만 저장할 수 있어요. 저장하면 다른 모둠원 화면에 보여요.';}
  if(pending())setBadge();}
 async function saveActivity(n){collect();
  if(!ONLINE){toast('서버에 연결되지 않아 이 기기에만 저장돼요');return;}
@@ -386,7 +388,7 @@ async function saveActivity(n){collect();
  if(n!==7){snapStage(n);ok=await pushStudent();if(ok){if(!data._sv||typeof data._sv!=='object')data._sv={};data._sv[n]=hhmm();}} // 이 단계에서 쓴 것만 저장(다른 단계의 저장 전 내용은 그대로 이 기기에만 남음)
  else{if(REC!==data.code){toast('기록자만 저장할 수 있어요');return;}ok=await pushGroup();if(ok&&!Object.keys(gdirty).length)data._sv7=hhmm();}
  localStorage.setItem(KEY,JSON.stringify(data));showPending();
- toast(ok?'저장했어요 ✅':'저장하지 못했어요. 네트워크를 확인하고 다시 눌러 주세요');}
+ if(ok)saved('저장됐어요');else toast('저장하지 못했어요. 네트워크를 확인하고 다시 눌러 주세요');}
 function autoSaveLeaving(){ // 저장하기를 누르지 않고 이 단계를 떠나도 쓴 내용이 사라지지 않게 자동 저장(개인 기록은 이어서 go()의 save()가 서버로 보냄)
  if(cur===7&&Object.keys(gdirty).length){pushGroup();toast('저장하지 않은 내용을 자동으로 저장했어요');}
  else if(SAVE_STAGES.includes(cur)&&stagePending(cur)){snapStage(cur);toast('저장하지 않은 내용을 자동으로 저장했어요');}} // 떠나는 단계만 저장해 두고, 이어서 go()의 save()가 서버로 보냄
@@ -446,7 +448,9 @@ function applyMe(me){if(!me||!data._ready)return;let ch=false;
  if(ch){toast('선생님이 참여 코드/모둠을 바꿨어요');save();renderGroup();}}
 async function pollLesson(){if(!ONLINE||document.hidden)return;
  try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);if(r.lv!==undefined)LV=r.lv||'';}catch(e){}}
-function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
+let toastT;
+function toast(m,ok){const t=$('toast');t.textContent=m;t.className='toast on'+(ok?' ok':'');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),ok?3400:2400);} // ok=true면 저장됐다는 눈에 띄는 큰 알림
+const saved=m=>toast('✅ '+m,true);
 buildStatic();restore();go(cur);syncStage();
 function onEdit(e){const k=e.target.id||e.target.name;if(k==='group')onGroupChange();
  const sec=e.target.closest?e.target.closest('.stage'):null,sid=sec?+sec.dataset.i:-1;
