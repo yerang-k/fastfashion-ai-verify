@@ -60,5 +60,6 @@
 - 요청마다 `class` 파라미터로 반 구분(`sn_()`=시트 이름, `ck_()`=설정 키 접미사). 기본 반은 접미사 없음.
 - `lesson`(설정 시트의 JSON)에 단계·모둠·주장·`current`·`rosterOnly` 저장. `setLesson`은 `current`를 건드리지 않고, 단계는 `setStage`로만 바뀜.
 - 속도: Apps Script는 요청 하나에 기본 1.4초쯤 걸린다(코드로 못 줄임, 가끔 10~17초 걸리는 요청도 있음). 그래서 학생·교사 화면의 단계 조회(`getStage`)는 4초 넘게 답이 없으면 포기하고 바로 다시 묻고, 교사의 `setStage`는 5초 후 한 번 더 보낸다. 서버는 반 존재 확인을 1분 캐시(`classExists_`, 반 삭제 시 즉시 지움)하고 교사 조회(`teacherAll`)는 모둠 기록지를 한 번에 읽는다(`allGroups_`). 무대 화면에서는 안 보이는 학생 화면 미리보기를 비워 서버에 묻지 않게 한다.
+- 학생 접속 주소: 설정 ④ 입장 방식의 "학생 접속 주소(짧은 주소)"에 적으면(수업 설정의 `joinUrl`, 반마다 따로) 무대 화면 준비 단계에 큰 글씨로 보이고 "학생 링크 복사"도 그 주소를 복사한다. 비워 두면 긴 학생 링크가 나온다. 기본 반용 짧은 주소 `https://tinyurl.com/22satzqq`(2026-10-08 TinyURL로 생성, `https://yerang-k.github.io/fastfashion-ai-verify/`로 연결). is.gd·v.gd는 이날 장애였음. 반별 짧은 주소는 TinyURL 등에서 만들어 설정에 붙여 넣는다.
 - 단계별 안내 문구(무대 화면)는 `lesson.js`의 `STAGE_GUIDE`에서 수정.
 - 생각 열기 도입 영상: `media/intro-think.mp4`(약 82초, Microsoft Edge 신경망 한국어 여성 음성 SunHi). 무대 화면 생각 열기 단계의 "영상으로 시작하기" 버튼 또는 V 키로 재생(재생 중 Space=일시정지, 다음·이전 키=영상 닫기). 교사 화면에서도 생각 열기 단계면 "생각 열기 영상 재생" 버튼이 보임. 지현 캐릭터는 `tools/jihyun-character.js`(SVG, 장면별 표정·자세)에서 그리고, 영상 문구·음성을 바꿀 때는 `tools/make-intro-video.js`를 고쳐 `node tools/make-intro-video.js`로 다시 만든다(Edge·ffmpeg와 `pip install edge-tts`, 인터넷 필요. 오프라인이면 `TTS=heami`로 Windows 내장 음성 사용. AI 답변 문장은 content.js에서 자동으로 읽음).
