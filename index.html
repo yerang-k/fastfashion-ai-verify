@@ -341,10 +341,14 @@ const needGroup=()=>cur===7||cur===4; // 모둠 기록이 화면에 필요한 �
 let REC=''; // 이 모둠의 기록자 코드('' = 아직 없음). 정해지면 기록자만 모둠 기록 칸을 쓸 수 있다
 const ONLINE=!!API_URL;
 const DEV=(()=>{try{let d=localStorage.getItem(KEY+'_dev');if(!d){d=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem(KEY+'_dev',d);}return d;}catch(e){return 'x';}})();
-async function api(action,payload,post){if(PREVIEW&&(post||/^(save|help)/.test(action)))return {ok:true,locked:true,fields:{},groups:{}}; // 미리보기는 서버에 아무것도 쓰지 않음
+/* tmo(ms)를 주면 그 시간 안에 응답이 없을 때 요청을 포기한다(서버가 가끔 10초 넘게 멈추는데, 그동안 화면이 단계 변경을 못 따라가는 것을 막으려고 조회용 요청에만 씀) */
+async function api(action,payload,post,tmo){if(PREVIEW&&(post||/^(save|help)/.test(action)))return {ok:true,locked:true,fields:{},groups:{}}; // 미리보기는 서버에 아무것도 쓰지 않음
  const body=Object.assign({action,class:CLASS_ID},payload||{});
- const r=post?await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}):await fetch(API_URL+'?'+new URLSearchParams(body));
- const j=await r.json();if(!j.ok){if(j.error==='no class')noClass();throw new Error(j.error||'api');}return j;}
+ const ctl=tmo?new AbortController():null,tm=tmo?setTimeout(()=>ctl.abort(),tmo):0,sg=ctl?{signal:ctl.signal}:{};
+ try{
+  const r=post?await fetch(API_URL,Object.assign({method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)},sg)):await fetch(API_URL+'?'+new URLSearchParams(body),sg);
+  const j=await r.json();if(!j.ok){if(j.error==='no class')noClass();throw new Error(j.error||'api');}return j;
+ }finally{clearTimeout(tm);}}
 /* 서버에 없는(삭제된) 반이면 화면 전체를 막아서 옛 주소로 계속 들어와 있지 않게 함 */
 function noClass(){if(document.getElementById('noCls'))return;const d=document.createElement('div');d.id='noCls';d.style.cssText='position:fixed;inset:0;z-index:99999;background:#111;color:#f4f4f2;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:1.2rem;line-height:1.7';d.innerHTML='<div><div style="font-size:2rem;font-weight:800;color:#e0c9a3;margin-bottom:10px">이 반은 없어요</div>삭제됐거나 주소가 잘못됐어요.<br>선생님께 새 학생 링크를 받아 다시 들어오세요.</div>';document.body.appendChild(d);}
 let sTimer=null,gTimer=null,gdirty={},snapSeq=0;
@@ -454,11 +458,12 @@ let polling=false; // 서버가 느릴 때 요청이 쌓이지 않게, 이전 �
 /* 단계 변경을 빨리 알아채기: 가벼운 getStage(캐시만 읽음)를 2.5초마다 물어, 단계만 바뀌었으면 설정을 다시 받지 않고 바로 적용한다.
    서버가 아직 옛 버전이면 getStage가 실패하므로(STAGE_OK가 갱신되지 않음) 예전처럼 4초 간격 전체 조회로 자동으로 돌아간다. */
 const rc=x=>x===null?null:(x==null?0:+x); // 단계 값 비교용(null=자유 이동, 없음=0)
-async function pollStage(){if(!ONLINE||document.hidden||stageBusy)return;stageBusy=true;
- try{const r=await api('getStage');STAGE_OK=Date.now();SHARE_OPEN=!!r.so;const lv=r.lv==null?'':r.lv;
+async function pollStage(){if(!ONLINE||document.hidden||stageBusy)return;stageBusy=true;let slow=false;
+ try{const r=await api('getStage',null,false,4000);STAGE_OK=Date.now();SHARE_OPEN=!!r.so;const lv=r.lv==null?'':r.lv;
   if(LV!==null&&lv!==LV){await pollLesson();} // 단계 구성·모둠·자료 같은 설정이 바뀜 → 전체를 다시 받음
   else{const base=RAWL||{};if(rc(r.current)!==rc(base.current))applyLesson(Object.assign({},base,{current:r.current}));} // 단계만 바뀜 → 바로 적용
- }catch(e){}finally{stageBusy=false;}}
+ }catch(e){slow=!!(e&&e.name==='AbortError');}finally{stageBusy=false;}
+ if(slow)setTimeout(pollStage,100);} // 4초 넘게 답이 없으면 포기하고 바로 다시 물음(기다리지 않음)
 async function pollTick(){if(polling)return;polling=true;
  try{tickN++;if(Date.now()-STAGE_OK>10000||tickN%3===1)await pollLesson(); // 빠른 조회가 잘 되는 동안은 전체 설정 조회를 드물게(내 코드·모둠 변경 확인용)
   if(needGroup())await pollGroup();await pollShare();}finally{polling=false;}}

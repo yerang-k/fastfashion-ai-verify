@@ -44,7 +44,7 @@ function ck_(key) { return CLASS_ ? key + '__' + CLASS_ : key; } // 반별 설�
 function handle_(p) {
   CLASS_ = cleanClass_(p['class']);
   // 반 시트는 createClass(교사 PIN)로만 만들어짐. 그 밖의 모든 요청(교사 화면 포함)은 없는 반이면 거절 — 안 그러면 삭제한 반을 열어 둔 다른 화면이 시트를 되살림
-  if (CLASS_ && p.action !== 'createClass' && !SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sn_(SHEET_STUDENTS))) return out_({ ok: false, error: 'no class' });
+  if (CLASS_ && p.action !== 'createClass' && !classExists_()) return out_({ ok: false, error: 'no class' });
   var lock = null;
   try {
     // 읽기만 하는 요청은 줄을 세우지 않고 바로 처리한다(학생 수만큼 쌓여 느려지는 것을 방지). 쓰기만 잠금.
@@ -80,6 +80,15 @@ function handle_(p) {
   } finally {
     if (lock) { try { lock.releaseLock(); } catch (x) {} }
   }
+}
+
+// 반이 있는지 확인: 시트를 여는 일이라 요청마다 하면 0.4~0.5초씩 느려진다 → 있는 반은 1분간 기억(삭제할 때는 바로 지움)
+function classExists_() {
+  var cache = CacheService.getScriptCache(), key = 'clsok:' + CLASS_;
+  try { if (cache.get(key) === '1') return true; } catch (e) {}
+  var ok = !!SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sn_(SHEET_STUDENTS));
+  if (ok) { try { cache.put(key, '1', 60); } catch (e) {} }
+  return ok;
 }
 
 function out_(obj) {
@@ -403,6 +412,20 @@ function loadGroup_(sh, g) {
 // 모둠이 '발표할 내용'만 담는다(개인 검증 기록은 각 학생의 응답에 따로 저장). 기록자는 칸이 아니라 모둠 기록의 _rec(기록자 코드)로 따로 관리
 var GROUP_FIELDS = ['g_verdict', 'g_reason', 'g_rewrite', 'g_speaker'];
 
+// 모둠 기록지를 한 번에 읽어 {모둠번호: 칸들}로 돌려준다(모둠마다 시트를 따로 읽던 것보다 훨씬 빠름). 빈 모둠은 뺀다
+function allGroups_() {
+  var sh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS), last = sh.getLastRow(), out = {}, seen = {};
+  if (last < 2) return out;
+  sh.getRange(2, 1, last - 1, 3).getValues().forEach(function (r) {
+    var g = parseInt(r[0], 10);
+    if (!(g >= 1 && g <= MAXG) || seen[g]) return;
+    seen[g] = true;
+    var f = {}; try { f = JSON.parse(r[2]) || {}; } catch (e) {}
+    if (Object.keys(f).length) out[g] = f;
+  });
+  return out;
+}
+
 function saveGroup_(p) {
   var g = studentGroup_(p); // 화면이 보낸 모둠 번호가 아니라, 서버에 저장된 '내 모둠'만 쓸 수 있음
   if (!g) return { ok: false, error: 'not yours' };
@@ -507,9 +530,7 @@ function teacherAll_(p) {
       });
     });
   }
-  var gsh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
-  var groups = {};
-  for (var g = 1; g <= MAXG; g++) { var gf = loadGroup_(gsh, g).fields; if (Object.keys(gf).length) groups[g] = gf; }
+  var groups = allGroups_();
   var roster = rosterRows_();
   return { ok: true, students: students, groups: groups, shareOpen: getConfig_().shareOpen, lesson: lessonGet_(), roster: roster, classes: classList_(), cls: CLASS_, notes: notesGet_(), clock: parseInt(cfgGet_('clock') || '0', 10) || 0, now: Date.now() };
 }
@@ -535,6 +556,7 @@ function deleteClass_(p) {
     }
   }
   rosterDirty_();
+  try { cache.remove('clsok:' + CLASS_); } catch (e) {}
   return { ok: true };
 }
 
