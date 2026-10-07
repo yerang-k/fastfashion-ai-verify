@@ -171,8 +171,8 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 </style></head><body class="hide-codes">
 <header>
  <h1>교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서</span></h1>
- <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" id="delClsBtn" onclick="delClass()">🗑 반 삭제</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="changePin()">PIN 변경</button><button class="badge btnlike" onclick="logout()" title="이 기기에 기억된 PIN을 지우고 PIN 입력 화면으로 돌아가요">🔒 로그아웃</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
- <button class="badge btnlike hsettings" onclick="openSettings(0)" title="수업 설정 · 데이터 내보내기">⚙ 설정</button>
+ <div class="status"><span class="badge" id="clsBadge" title="지금 보고 있는 반 (바꾸려면 ⚙ 설정 › 반·계정)">-</span><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
+ <button class="badge btnlike hsettings" onclick="openSettings(0)" title="수업 설정 · 반·계정 · 데이터 내보내기">⚙ 설정</button>
 </header>
 <div class="wrap">
  <div class="card" id="login" style="max-width:420px;margin:40px auto">
@@ -214,6 +214,23 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
   <div class="sbody">
    <section class="spane" id="spane0"><div id="settings"></div></section>
    <section class="spane" id="spane1">
+    <div class="card">
+     <h2>반 관리</h2>
+     <p class="small">지금 보고 있는 반: <b id="clsNow">-</b> · 수업 중에는 바꿀 일이 없어서 여기에 모아 두었어요.</p>
+     <div class="phrow"><span class="small">반 전환</span> <select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select> <button class="btn small" onclick="newClass()">＋ 새 반 만들기</button> <button class="btn small danger" id="delClsBtn" onclick="delClass()">🗑 이 반 삭제</button></div>
+    </div>
+    <div class="card">
+     <h2>화면 보호</h2>
+     <p class="small">켜 두면 수업 중 화면에 보일 수 있는 곳(현황·도움 요청 등)의 학생 코드·이름이 흐리게 보여요(마우스를 올리면 잠깐 보임). 이 설정 창의 학생 관리 표는 항상 선명해요.</p>
+     <button class="btn" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button>
+    </div>
+    <div class="card">
+     <h2>계정</h2>
+     <p class="small">교사 PIN은 모든 반이 같아요. 바꾸면 다른 기기(무대 화면 등)는 새 PIN으로 다시 로그인해야 해요.</p>
+     <button class="btn" onclick="changePin()">PIN 변경</button> <button class="btn ghost" onclick="logout()" title="이 기기에 기억된 PIN을 지우고 PIN 입력 화면으로 돌아가요">🔒 로그아웃</button>
+    </div>
+   </section>
+   <section class="spane" id="spane2">
    <div class="card">
     <h2>데이터 내보내기</h2>
     <p class="small">엑셀에서 바로 열 수 있는 CSV와, 원본 그대로의 JSON을 받을 수 있어요. 스프레드시트(‘학생응답’·‘모둠기록지’ 시트)에도 같은 데이터가 쌓여 있습니다.</p>
@@ -249,7 +266,7 @@ const PIN_KEY='aiverify_teacher_pin';
 const BASE=location.origin+location.pathname.replace(/[^/]*$/,'');
 let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[];
 const TABS=['📊 현황','📝 결과 정리'];
-const SPANES=['⚙️ 수업 설정','📁 데이터 내보내기'];
+const SPANES=['⚙️ 수업 설정','🏫 반·계정','📁 데이터 내보내기'];
 let CT=0; // 수업 설정 ③에서 지금 보고 있는 주장 탭
 const OPEN={}; // 수업 설정에서 펼쳐 둔 섹션 기억
 const QS=new URLSearchParams(location.search);
@@ -315,7 +332,7 @@ const clsLabel=c=>c||'기본 반';
 const studentLink=()=>BASE+'index.html'+(CLASS_ID?'?class='+encodeURIComponent(CLASS_ID):'');
 function renderClasses(){
  const list=Array.from(new Set([''].concat(DB.classes||[],[CLASS_ID])));
- $('delClsBtn').style.display=CLASS_ID?'':'none';$('classSel').innerHTML=list.map(c=>`<option value="${esc(c)}" ${c===CLASS_ID?'selected':''}>${esc(clsLabel(c))}</option>`).join('');
+ $('clsBadge').textContent='📚 '+clsLabel(CLASS_ID);$('clsNow').textContent=clsLabel(CLASS_ID);$('delClsBtn').style.display=CLASS_ID?'':'none';$('classSel').innerHTML=list.map(c=>`<option value="${esc(c)}" ${c===CLASS_ID?'selected':''}>${esc(clsLabel(c))}</option>`).join('');
 }
 function goClass(c){const u=new URL(location.href);if(c)u.searchParams.set('class',c);else u.searchParams.delete('class');location.href=u.toString();}
 function switchClass(c){if(dirty&&!confirm('저장하지 않은 설정 변경이 있어요. 반을 바꿀까요?')){renderClasses();return;}goClass(c);}
@@ -497,7 +514,7 @@ function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.ac
   <td>${r.live?posOf(r.stage)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
   <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
 function toggleHide(){const on=document.body.classList.toggle('hide-codes');$('hideBtn').textContent=on?'🙈 코드 가림 켜짐':'👁 코드 보임';}
-/* 설정 창: 수업 설정(0) · 데이터 내보내기(1). 닫아도 고치던 내용은 그대로 남는다(저장해야 학생 화면에 적용) */
+/* 설정 창: 수업 설정(0) · 반·계정(1) · 데이터 내보내기(2). 닫아도 고치던 내용은 그대로 남는다(저장해야 학생 화면에 적용) */
 function showSPane(i){document.querySelectorAll('.spane').forEach((p,j)=>p.classList.toggle('show',i===j));document.querySelectorAll('#stabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
 function openSettings(i){if(!DB){toast('먼저 PIN으로 들어가 주세요');return;}$('stabs').innerHTML=SPANES.map((n,j)=>`<button onclick="showSPane(${j})">${n}</button>`).join('');showSPane(i||0);$('settingsModal').hidden=false;}
 function closeSettings(){$('settingsModal').hidden=true;}
