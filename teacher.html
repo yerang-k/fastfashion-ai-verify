@@ -50,6 +50,7 @@ details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--main)
 .shead{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--main);color:#fff}
 .shead h2{margin:0;font-size:1.1rem;flex:1}
 .shead .badge{cursor:pointer;border:none;color:#fff;font:inherit;background:rgba(255,255,255,.18);padding:5px 14px;border-radius:20px}
+.shead #updBadge{cursor:default;background:none;font-size:.85rem;opacity:.75}
 .spanel .tabs{margin:14px 22px 0}
 .sbody{overflow:auto;padding:14px 22px 22px}
 .spane{display:none}.spane.show{display:block}
@@ -171,7 +172,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 </style></head><body class="hide-codes">
 <header>
  <h1>교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서</span></h1>
- <div class="status"><span class="badge" id="clsBadge" title="지금 보고 있는 반 (바꾸려면 ⚙ 설정 › 반·계정)">-</span><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
+ <div class="status"><span class="badge" id="clsBadge" title="지금 보고 있는 반 (바꾸려면 ⚙ 설정 › 반·계정)">-</span><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button></div>
  <button class="badge btnlike hsettings" onclick="openSettings(0)" title="수업 설정 · 반·계정 · 데이터 내보내기">⚙ 설정</button>
 </header>
 <div class="wrap">
@@ -209,7 +210,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 </div>
 <div id="settingsModal" class="smodal" hidden onclick="if(event.target===this)closeSettings()">
  <div class="spanel" role="dialog" aria-modal="true" aria-label="설정">
-  <div class="shead"><h2>⚙ 설정</h2><button class="badge" onclick="closeSettings()">✕ 닫기 (Esc)</button></div>
+  <div class="shead"><h2>⚙ 설정</h2><span class="badge" id="updBadge" title="교사 화면이 서버에서 마지막으로 새 정보를 받은 시각(6초마다 갱신)">-</span><button class="badge" onclick="closeSettings()">✕ 닫기 (Esc)</button></div>
   <div class="tabs" id="stabs"></div>
   <div class="sbody">
    <section class="spane" id="spane0"><div id="settings"></div></section>
