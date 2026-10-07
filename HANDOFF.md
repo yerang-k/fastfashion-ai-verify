@@ -60,4 +60,4 @@
 - 요청마다 `class` 파라미터로 반 구분(`sn_()`=시트 이름, `ck_()`=설정 키 접미사). 기본 반은 접미사 없음.
 - `lesson`(설정 시트의 JSON)에 단계·모둠·주장·`current`·`rosterOnly` 저장. `setLesson`은 `current`를 건드리지 않고, 단계는 `setStage`로만 바뀜.
 - 단계별 안내 문구(무대 화면)는 `lesson.js`의 `STAGE_GUIDE`에서 수정.
-- 생각 열기 도입 영상: `media/intro-think.mp4`(약 83초, 한국어 여성 음성 Heami). 무대 화면 생각 열기 단계의 "영상으로 시작하기" 버튼 또는 V 키로 재생(재생 중 Space=일시정지, 다음·이전 키=영상 닫기). 교사 화면에서도 생각 열기 단계면 "생각 열기 영상 재생" 버튼이 보임. 영상 문구·음성을 바꿀 때는 `tools/make-intro-video.js`를 고쳐 `node tools/make-intro-video.js`로 다시 만든다(Edge·ffmpeg 필요, AI 답변 문장은 content.js에서 자동으로 읽음).
+- 생각 열기 도입 영상: `media/intro-think.mp4`(약 82초, Microsoft Edge 신경망 한국어 여성 음성 SunHi). 무대 화면 생각 열기 단계의 "영상으로 시작하기" 버튼 또는 V 키로 재생(재생 중 Space=일시정지, 다음·이전 키=영상 닫기). 교사 화면에서도 생각 열기 단계면 "생각 열기 영상 재생" 버튼이 보임. 영상 문구·음성을 바꿀 때는 `tools/make-intro-video.js`를 고쳐 `node tools/make-intro-video.js`로 다시 만든다(Edge·ffmpeg와 `pip install edge-tts`, 인터넷 필요. 오프라인이면 `TTS=heami`로 Windows 내장 음성 사용. AI 답변 문장은 content.js에서 자동으로 읽음).

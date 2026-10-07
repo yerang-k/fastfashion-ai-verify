@@ -10,7 +10,10 @@ const FFDIR = process.env.FFDIR || 'C:/Users/ADMIN/AppData/Local/Microsoft/WinGe
 const FFMPEG = FFDIR + '/ffmpeg.exe', FFPROBE = FFDIR + '/ffprobe.exe';
 const WORK = process.env.WORK || path.join(os.tmpdir(), 'intro-video');
 const OUT = path.join(ROOT, 'media', 'intro-think.mp4');
-const RATE = +(process.env.RATE || 1); // 음성 속도(-10~10)
+// 음성: edge = Microsoft Edge 신경망 한국어 여성 음성 SunHi(기본, 인터넷과 `pip install edge-tts` 필요), heami = Windows 내장 음성(오프라인)
+const ENGINE = process.env.TTS || 'edge';
+const RATE = +(process.env.RATE || (ENGINE === 'edge' ? 10 : 1)); // edge: 속도 % (10 = +10%), heami: -10~10
+const AEXT = ENGINE === 'edge' ? 'mp3' : 'wav';
 fs.mkdirSync(WORK, { recursive: true }); fs.mkdirSync(path.dirname(OUT), { recursive: true });
 
 // ---- 앱과 같아야 하는 문구(index.html의 생각 열기 화면) ----
@@ -91,9 +94,16 @@ scenes.forEach((sc, i) => {
   if (!fs.existsSync(f + '.png')) throw new Error('캡처 실패 ' + f);
 });
 
-// ---- 2) 나레이션(Windows Heami 여성 음성) ----
-fs.writeFileSync(path.join(WORK, 'narr.json'), JSON.stringify(scenes.map(s => s.n)), 'utf8');
-fs.writeFileSync(path.join(WORK, 'tts.ps1'), `Add-Type -AssemblyName System.Speech
+// ---- 2) 나레이션(여성 AI 음성) ----
+if (ENGINE === 'edge') {
+  scenes.forEach((sc, i) => {
+    const f = path.join(WORK, `n${String(i).padStart(2, '0')}`);
+    fs.writeFileSync(f + '.txt', sc.n, 'utf8');
+    sh('python', ['-m', 'edge_tts', '--voice', 'ko-KR-SunHiNeural', `--rate=${RATE >= 0 ? '+' : ''}${RATE}%`, '--file', f + '.txt', '--write-media', f + '.mp3']);
+  });
+} else {
+  fs.writeFileSync(path.join(WORK, 'narr.json'), JSON.stringify(scenes.map(s => s.n)), 'utf8');
+  fs.writeFileSync(path.join(WORK, 'tts.ps1'), `Add-Type -AssemblyName System.Speech
 $lines = Get-Content -Raw -Encoding UTF8 '${path.join(WORK, 'narr.json').replace(/\\/g, '/')}' | ConvertFrom-Json
 $i = 0
 foreach ($t in $lines) {
@@ -102,11 +112,12 @@ foreach ($t in $lines) {
   $s.SetOutputToWaveFile(('${WORK.replace(/\\/g, '/')}/n{0:00}.wav' -f $i))
   $s.Speak($t); $s.Dispose(); $i++
 }`, 'utf8');
-sh('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(WORK, 'tts.ps1')]);
+  sh('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(WORK, 'tts.ps1')]);
+}
 
 // ---- 3) 타임라인 계산 ----
 const OV = 0.35, LEAD0 = 0.7, LEAD = 0.55, TAIL = 0.45;
-const dur = scenes.map((_, i) => parseFloat(sh(FFPROBE, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path.join(WORK, `n${String(i).padStart(2, '0')}.wav`)]).stdout));
+const dur = scenes.map((_, i) => parseFloat(sh(FFPROBE, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path.join(WORK, `n${String(i).padStart(2, '0')}.${AEXT}`)]).stdout));
 let t = 0; const starts = [], narrAt = [], clipLen = [];
 scenes.forEach((sc, i) => {
   const lead = i === 0 ? LEAD0 : LEAD, last = i === scenes.length - 1;
@@ -118,7 +129,7 @@ const total = t;
 // ---- 4) ffmpeg 합성 ----
 const args = ['-y', '-hide_banner', '-loglevel', 'error'];
 scenes.forEach((_, i) => args.push('-framerate', '25', '-loop', '1', '-t', clipLen[i].toFixed(3), '-i', path.join(WORK, `s${String(i).padStart(2, '0')}.png`)));
-scenes.forEach((_, i) => args.push('-i', path.join(WORK, `n${String(i).padStart(2, '0')}.wav`)));
+scenes.forEach((_, i) => args.push('-i', path.join(WORK, `n${String(i).padStart(2, '0')}.${AEXT}`)));
 const N = scenes.length;
 let fc = scenes.map((_, i) => `[${i}:v]format=yuv420p,setsar=1[v${i}]`).join(';');
 let prev = 'v0';
