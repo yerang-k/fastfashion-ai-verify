@@ -122,6 +122,14 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-stat b{font-size:clamp(1.2rem,3.4vh,2.2rem);color:#fff;margin-right:.2em}
 #stageView .sv-ctl{position:absolute;right:2vw;bottom:2vh;display:flex;gap:8px;opacity:.35}
 #stageView .sv-ctl:hover{opacity:1}
+/* 생각 열기 도입 영상: 무대 화면 위를 덮는 전체 화면 재생창 */
+.sv-video{position:fixed;inset:0;z-index:40;background:#000;display:flex;align-items:center;justify-content:center}
+.sv-video[hidden]{display:none}
+.sv-video video{width:100%;height:100%;object-fit:contain;background:#000}
+.sv-vclose{position:absolute;top:2vh;right:2vw;background:#2a2a28;color:#f4f4f2;border:1px solid #555;border-radius:10px;padding:.8vh 1.2vw;font:inherit;font-size:clamp(.8rem,1.8vh,1rem);cursor:pointer;opacity:.35}
+.sv-vclose:hover{opacity:1}
+#stageView .sv-play{display:block;width:100%;background:var(--accent);color:#111;border:0;border-radius:18px;padding:calc(2.2cqh*var(--k)) 2vw;font:inherit;font-weight:800;font-size:calc(clamp(1.3rem,min(2.3vw,4.4cqh),2.4rem)*var(--k));cursor:pointer}
+#stageView .sv-play small{display:block;font-weight:500;opacity:.7;font-size:.55em;margin-top:.3em}
 .sv-help{display:none;position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.72);align-items:center;justify-content:center;cursor:pointer}
 body.stagemode-on .sv-help.show{display:flex}
 .sv-helpbox{background:#181816;border:1.5px solid var(--accent);border-radius:18px;padding:3vh 3vw;max-width:min(90vw,52rem);color:#f4f4f2}
@@ -175,7 +183,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
    </div>
    <div class="phrow"><span class="small" id="flowInfo"></span></div>
    <div class="phrow" style="align-items:stretch"><div class="notebox" id="noteBox"></div></div>
-   <div class="phrow"><button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
+   <div class="phrow"><button class="btn small" id="introBtn" onclick="playIntro()" style="display:none">▶ 생각 열기 영상 재생</button> <button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
   </div>
   </div></div>
   <div class="tabs" id="tabs"></div>
@@ -197,10 +205,12 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
  </div>
 </div>
 <div id="stageView"></div>
+<div id="introVideo" class="sv-video" hidden><video id="introVid" src="media/intro-think.mp4" preload="none" controls controlsList="nofullscreen" playsinline></video><button class="sv-vclose" onclick="closeIntro()">✕ 닫기 (V)</button></div>
 <div id="keyHelp" class="sv-help" onclick="toggleKeyHelp()"><div class="sv-helpbox"><h3>키보드·리모컨 안내</h3>
  <dl><dt>→ · PageDown · Space</dt><dd>다음 단계 <small>(리모컨 '다음' 버튼)</small></dd>
  <dt>← · PageUp</dt><dd>이전 단계</dd>
  <dt>Home · End</dt><dd>첫 단계 · 마지막 단계</dd>
+ <dt>V</dt><dd>생각 열기 단계에서 도입 영상 재생·닫기 <small>(재생 중 Space = 일시정지, 다음·이전 키 = 영상 닫기)</small></dd>
  <dt>1 ~ 9 · 0</dt><dd>모둠 공유에서 그 모둠 발표를 크게 (0 = 10모둠)</dd>
  <dt>→ ←  (크게 보는 중)</dt><dd>다음·이전 모둠 <small>(마지막 다음은 카드 목록으로)</small></dd>
  <dt>Esc</dt><dd>크게 보기 해제</dd>
@@ -310,6 +320,7 @@ function renderControl(){
   +`<button class="pchip free ${cur==null?'on':''}" onclick="setStage(null)">자유 이동</button>`;
  $('prevBtn').disabled=cur==null||pos<=0;$('nextBtn').disabled=cur==null||pos>=vs.length-1;
  if(NOTE_EDIT==null||NOTE_EDIT!==cur)NOTE_EDIT=null,renderNote();
+ $('introBtn').style.display=cur===1?'':'none';
  $('flowInfo').innerHTML=`<b>모둠 편성:</b> ${LS.groups.map(g=>`${g.n}모둠 ${g.size}명(주장 ${g.claim})`).join(' · ')}`;
 }
 /* 다른 기기에서 단계를 바꿨을 때(예: 노트북에서 조작, 교실 컴퓨터는 무대 화면) 빨리 따라오기: 가벼운 getStage로 확인하고, 바뀌었을 때만 전체를 새로 받는다 */
@@ -344,7 +355,7 @@ async function setStage(id){const prev=LS.current;holdStage={id,until:Date.now()
 function stepStage(d){const vs=visStages(LS),pos=vs.findIndex(s=>s.id===LS.current),t=vs[pos+d];if(t)setStage(t.id);}
 
 /* ---- 무대 화면(프로젝터용): 큰 글씨로 현재 단계·타이머·참여 현황 ---- */
-function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
+function stageMode(on){document.body.classList.toggle('stagemode-on',on);if(on){preloadIntro();renderStageView();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
  else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
 let SPOT=null; // 모둠 공유 단계에서 크게 보고 있는 모둠 번호(없으면 null). 카드를 누르면 켜지고, 같은 곳을 다시 누르면 꺼짐
 function stepClick(id){if(id===LS.current&&SPOT){spot(null);return;}setStage(id);} // 지금 보고 있는 모둠 공유 단계 버튼을 다시 누르면 강조를 풀고 모든 모둠 카드로 돌아감
@@ -354,6 +365,7 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
  const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${esc(v||'미판정')}</span>`;
  const card=(gr,extra,click)=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},m=S.filter(s=>+s.group===gr.n).length;
   return `<div class="sv-g${click?' click':''}"${click?` onclick="spot(${gr.n})" title="눌러서 발표 내용을 크게 보기"`:''}><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(wj(c.n+'. '+c.t)):''}</p>${extra(f,gr)}</div>`;};
+ if(id===1)return `<div class="sv-panel"><button class="sv-play" onclick="playIntro()">▶ 영상으로 시작하기<small>약 1분 20초 · 키보드 V</small></button></div>`;
  if(id===3)return `<div class="sv-panel"><h3>모둠별 담당 문장 · 개인 검증 진행</h3><div class="sv-groups">${G.map(gr=>card(gr,(f,g)=>{const m=S.filter(s=>+s.group===g.n);return `<span class="m">개인 판정 ${m.filter(s=>s.data.i_verdict).length}/${m.length}명</span>`;})).join('')}</div></div>`;
  if(id===7)return `<div class="sv-panel"><h3>모둠 정리 · 발표할 내용</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>`<span class="m">${f._rec?'✍️ 기록자 정함':'✍️ 기록자 미정'}</span> `+vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
  if(id===4){
@@ -494,17 +506,26 @@ function keyNav(d){
  if(LS.current===4&&SPOT){const ns=LS.groups.map(g=>g.n),t=ns[ns.indexOf(SPOT)+d];if(t!==undefined)spot(t);else spot(null);return;}
  if(LS.current==null)return; // 자유 이동일 때는 키로 단계를 지정하지 않음
  stepStage(d);}
+/* 생각 열기 도입 영상(media/intro-think.mp4, tools/make-intro-video.js로 제작): 무대 화면의 '영상으로 시작하기' 버튼 또는 V 키 */
+let INTRO_LOADED=false;
+function preloadIntro(){if(INTRO_LOADED)return;INTRO_LOADED=true;const v=$('introVid');v.preload='auto';v.load();} // 무대 화면을 켤 때 미리 받아 두어 재생 시 지연 없게
+function playIntro(){const v=$('introVid');$('introVideo').hidden=false;try{v.currentTime=0;}catch(e){}v.play().catch(()=>{});}
+function closeIntro(){const v=$('introVid');v.pause();$('introVideo').hidden=true;}
+$('introVid').addEventListener('error',()=>{closeIntro();toast('영상 파일을 불러오지 못했어요');});
 function toggleKeyHelp(){$('keyHelp').classList.toggle('show');}
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'){document.body.classList.remove('present');if($('keyHelp').classList.contains('show'))toggleKeyHelp();else if(SPOT)spot(null);}
  if(!document.body.classList.contains('stagemode-on')||e.ctrlKey||e.metaKey||e.altKey||typing(document.activeElement))return;
  const k=e.key,nav={ArrowRight:1,PageDown:1,' ':1,ArrowLeft:-1,PageUp:-1};
+ if(!$('introVideo').hidden){e.preventDefault();if(e.repeat)return;const v=$('introVid');
+  if(k===' '||k==='Enter'){v.paused?v.play().catch(()=>{}):v.pause();}else if(k==='v'||k==='V'||k in nav||k==='Escape')closeIntro();return;}
+ if((k==='v'||k==='V')&&LS.current===1){e.preventDefault();playIntro();return;}
  if(k in nav){e.preventDefault();if(!e.repeat)keyNav(nav[k]);return;}
  if(k==='Home'||k==='End'){e.preventDefault();const vs=visStages(LS);if(LS.current!=null&&vs.length)setStage((k==='Home'?vs[0]:vs[vs.length-1]).id);return;}
  if(k==='?'){e.preventDefault();toggleKeyHelp();return;}
  if((k==='f'||k==='F')&&!document.fullscreenElement){try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(x){}return;}
  if(LS.current===4&&/^[0-9]$/.test(k)){const n=k==='0'?10:+k;if(LS.groups.some(g=>g.n===n))spot(n);}});
-document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)document.body.classList.remove('stagemode-on');});
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement){document.body.classList.remove('stagemode-on');closeIntro();}});
 
 /* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
 const mark=()=>{dirty=true;};
