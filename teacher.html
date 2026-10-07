@@ -171,7 +171,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 </style></head><body class="hide-codes">
 <header>
  <h1>교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서</span></h1>
- <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" id="delClsBtn" onclick="delClass()">🗑 반 삭제</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="changePin()">PIN 변경</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
+ <div class="status"><select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select><button class="badge btnlike" onclick="newClass()">＋ 새 반</button><button class="badge btnlike" id="delClsBtn" onclick="delClass()">🗑 반 삭제</button><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button><button class="badge btnlike" onclick="changePin()">PIN 변경</button><button class="badge btnlike" onclick="logout()" title="이 기기에 기억된 PIN을 지우고 PIN 입력 화면으로 돌아가요">🔒 로그아웃</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button><span class="badge" id="updBadge">-</span></div>
  <button class="badge btnlike hsettings" onclick="openSettings(0)" title="수업 설정 · 데이터 내보내기">⚙ 설정</button>
 </header>
 <div class="wrap">
@@ -327,6 +327,8 @@ async function delClass(){
  if(t===null)return;if(t.trim()!==CLASS_ID){toast('반 이름이 달라서 지우지 않았어요');return;}
  const r=await api('deleteClass');if(r.ok){alert('「'+CLASS_ID+'」 반을 지웠어요. 기본 반으로 이동해요.');goClass('');}else toast(r.error==='pin'?'PIN이 맞지 않아요':'지우지 못했어요(서버를 새로 배포했는지 확인하세요)');
 }
+/* 로그아웃: 이 탭에 기억해 둔 PIN을 지우고 처음 화면으로. (새로고침해도 PIN이 자동으로 다시 들어가는 것을 끊음) */
+function logout(){if(dirty&&!confirm('저장하지 않은 설정 변경이 있어요. 그래도 로그아웃할까요?'))return;try{sessionStorage.removeItem(PIN_KEY);}catch(e){}pin='';location.reload();}
 async function changePin(){
  const cur=prompt('지금 PIN을 입력하세요.');if(cur===null)return;
  const n1=prompt('새 PIN(4~20자, 숫자·영문)을 입력하세요.');if(n1===null)return;
