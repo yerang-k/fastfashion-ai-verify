@@ -428,8 +428,10 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
  if(id===4){
   const sp=SPOT&&G.find(x=>x.n===SPOT);
   if(sp){const c=claimOfGroup(LS,sp.n),f=DB.groups[sp.n]||{},val=k=>(f[k]&&f[k].v)||'',none='<span class="m">(아직 정리하지 않았어요)</span>';
-   return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><h3>${sp.n}모둠 발표</h3><div class="sv-focus"><div class="sv-fc">${c?esc(wj(c.n+'. '+c.t)):''}</div><div class="sv-fv">${vb(f.g_verdict&&f.g_verdict.v)}</div><div class="sv-fb"><b>🔎 우리 모둠이 찾은 확인 포인트</b><p>${val('g_find')?esc(wj(val('g_find'))):none}</p></div><div class="sv-fb"><b>판정 근거 한 문장</b><p>${val('g_reason')?esc(wj(val('g_reason'))):none}</p></div><div class="sv-fb"><b>보고서용으로 고쳐 쓴 문장</b><p>${val('g_rewrite')?esc(wj(val('g_rewrite'))):none}</p></div></div><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spot(${x.n})">${x.n}모둠</span>`).join('')}</div></div>`;}
+   return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><h3>${sp.n}모둠 발표</h3><div class="sv-focus"><div class="sv-fc">${c?esc(wj(c.n+'. '+c.t)):''}</div><div class="sv-fv">${vb(f.g_verdict&&f.g_verdict.v)}</div><div class="sv-fb"><b>🔎 우리 모둠이 찾은 확인 포인트</b><p>${val('g_find')?esc(wj(val('g_find'))):none}</p></div><div class="sv-fb"><b>판정 근거 한 문장</b><p>${val('g_reason')?esc(wj(val('g_reason'))):none}</p></div></div><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spot(${x.n})">${x.n}모둠</span>`).join('')}</div></div>`;}
   return `<div class="sv-panel"><h3>모둠 발표 · 확인 포인트와 판정</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p><b>${esc(wj((f.g_find&&f.g_find.v)||''))}</b></p><p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`:'<span class="m">발표 대기</span>',true)).join('')}</div></div>`;}
+ if(id===6){const it=(LS.summary&&LS.summary.items)||[];
+  return `<div class="sv-panel"><h3>🧩 우리가 찾은 AI 자료 확인 포인트</h3>${it.length?`<div class="sv-groups">${it.map((x,i)=>`<div class="sv-g"><b>${i+1}${x.title?'. '+esc(wj(x.title)):''}</b><p>${esc(wj(x.text))}</p>${x.by?`<span class="m">— ${esc(x.by)}</span>`:''}</div>`).join('')}</div>`:'<p class="m">정리본이 아직 없어요. ⚙ 설정 → 수업 설정 ⑥에서 만들어 주세요.</p>'}</div>`;}
  if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
  if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>${wj('신뢰할 수 있는 자료와 일치')}</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>${wj('맞지만 조건·범위 설명이 빠짐')}</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>${wj('출처를 찾을 수 없음')}</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>${wj('신뢰할 수 있는 자료와 어긋남')}</p></div></div></div>`;
  return '';
@@ -441,7 +443,7 @@ function renderStageView(){
   <div class="sv-head"><div class="sv-hl"><div class="sv-no">${st?`지금은 ${pos+1} / ${vs.length} 단계`:'&nbsp;'}</div><div class="sv-name">${st?esc(st.name):'자유 진행'}</div></div>
    <div class="sv-hr"><div class="sv-time" id="svTime">${esc(clockText(st))}</div><div class="sv-timer" id="stageTimer">${fmt(elapsed())}</div></div></div>
   <div class="sv-bar"><i id="stageBar" style="width:${clockPct()}%"></i></div>
-  <div class="sv-body"><div class="sv-inner${st&&svPanel(st.id)?'':' nopanel'}${st&&(st.id===0||st.id===1||st.id===6)?' big':''}${st&&st.id===4&&SPOT?' spot':''}">
+  <div class="sv-body"><div class="sv-inner${st&&svPanel(st.id)?'':' nopanel'}${st&&(st.id===0||st.id===1)?' big':''}${st&&st.id===4&&SPOT?' spot':''}">
    ${g?`<div class="sv-todo">${esc(g.todo)}</div>`:(st?'':'<div class="sv-todo">학생이 자유롭게 이동할 수 있어요</div>')}
    ${g&&!(st&&st.id===4&&SPOT)?`<div class="sv-points">${g.points.map(p=>`<div><span>${esc(wj(p))}</span></div>`).join('')}</div>`:''}
    ${st?svPanel(st.id):''}
@@ -476,10 +478,10 @@ window.addEventListener('resize',fitStage);
 const submitted=s=>s.submittedAt>0;
 const posOf=id=>{const i=visStages(LS).findIndex(s=>s.id===id);return i<0?id+1:i+1;}; // 단계 id가 아니라 화면에 보이는 순서(몇 번째 단계인지)
 // 단계별 '저장하기'를 눌러야 채워지는 칸(index.html의 SAVE_STAGES·stageKeys와 맞춤). 이 칸이 채워져 있어야 그 단계를 저장한 것으로 본다(제출 여부와는 별개)
-const STAGE_FIELD={1:['pre'],3:['i_find','i_verdict','i_rewrite'],4:['checklist'],5:['post','reflect']};
+const STAGE_FIELD={1:['pre'],3:['i_find','i_verdict'],4:['checklist'],5:['post','reflect']};
 const indivDone=(s,sid)=>STAGE_FIELD[sid].every(k=>!!s.data[k]);
 const stageName=sid=>{const st=LS.stages.find(x=>x.id===sid);return st?st.name:'';};
-const groupDone=g=>{const f=DB.groups[g]||{};return !!(f.g_verdict&&f.g_verdict.v)&&!!(f.g_rewrite&&f.g_rewrite.v);};
+const groupDone=g=>{const f=DB.groups[g]||{};return !!(f.g_verdict&&f.g_verdict.v)&&!!(f.g_find&&f.g_find.v);};
 let HELP=[];
 function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
  const rows=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,name:s.data.studentName||'',group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
@@ -538,9 +540,9 @@ async function delRow(i){const r=ROWS[i];if(!confirm(`${r.code} 학생의 응답
 /* ---- 결과 정리 (마무리 단계용) ---- */
 function bars(rows,total){return rows.map(([l,n])=>`<div class="bar"><div class="l">${esc(l)}</div><div class="t"><div class="f" style="width:${total?Math.round(n/total*100):0}%"></div></div><div class="n">${n}명 (${total?Math.round(n/total*100):0}%)</div></div>`).join('');}
 // 개인 검증 기록(i_*)은 학생 각자의 응답에 저장돼 있다. 모둠 기록(g_*)은 모둠이 발표할 내용(기록자 입력)
-function memberAnswers(g){const ms=DB.students.filter(s=>+s.group===g&&s.data&&(s.data.i_verdict||s.data.i_reason||s.data.i_rewrite||s.data.i_find));if(!ms.length)return '';
+function memberAnswers(g){const ms=DB.students.filter(s=>+s.group===g&&s.data&&(s.data.i_verdict||s.data.i_reason||s.data.i_find));if(!ms.length)return '';
  return `<details><summary>모둠원 개인 조사 기록 (${ms.length}명)</summary>`+ms.map((s,i)=>{const m=s.data,d=k=>esc(m[k])||'-';
-  return `<div class="quote"><b>모둠원 ${i+1}</b> · 판정 ${vBadge(m.i_verdict)}<br><b>근거:</b> ${d('i_reason')}<br><b>보고서용 문장:</b> ${d('i_rewrite')}<br><b>내가 찾은 확인 포인트:</b> ${d('i_find')}<br><b>확인한 것:</b> ${d('i_did')}<br><b>이상하거나 새로 안 점:</b> ${d('i_odd')}</div>`;}).join('')+`</details>`;}
+  return `<div class="quote"><b>모둠원 ${i+1}</b> · 판정 ${vBadge(m.i_verdict)}<br><b>근거:</b> ${d('i_reason')}<br><b>내가 찾은 확인 포인트:</b> ${d('i_find')}<br><b>확인한 것:</b> ${d('i_did')}<br><b>이상하거나 새로 안 점:</b> ${d('i_odd')}</div>`;}).join('')+`</details>`;}
 function renderResults(){
  const S=DB.students,done=S.filter(submitted);
  let h=`<div class="card nopresent"><button class="btn" onclick="document.body.classList.add('present');window.scrollTo(0,0)">🖥 발표 화면으로 보기</button> <span class="small">(Esc 로 돌아옵니다) · 아래 결과는 제출한 ${done.length}명 기준이며, 학생 코드는 표시하지 않아요.</span></div>`;
@@ -549,7 +551,6 @@ function renderResults(){
   h+=`<div class="claim"><div><b>${esc(c.n)}.</b> ${esc(c.t)}</div><div style="margin:4px 0">${g}모둠 판정: ${vBadge(v('g_verdict'))}</div>
    <div class="quote"><b>모둠 확인 포인트:</b> ${esc(v('g_find'))||'<span class="small">(작성 없음)</span>'}</div>
    <div class="quote"><b>모둠 발표 근거:</b> ${esc(v('g_reason'))||'<span class="small">(작성 없음)</span>'}</div>
-   <div class="quote"><b>모둠 발표 보고서용 문장:</b> ${esc(v('g_rewrite'))||'<span class="small">(작성 없음)</span>'}</div>
    ${memberAnswers(g)}</div>`;});
  h+=`</div>`;
  h+=`<div class="card"><h2>② 처음 판단과 지금 판단</h2><div class="grid2"><div><h3>처음 (2단계)</h3>${bars(PRE.map(o=>[o,done.filter(s=>s.data.pre===o).length]),done.length)}</div><div><h3>지금 (7단계)</h3>${bars(POST.map(o=>[o,done.filter(s=>s.data.post===o).length]),done.length)}</div></div>
@@ -657,6 +658,15 @@ function renderSettings(){
 
  h+=`<details class="acc" id="a5" ${OPEN.a5?'open':''}><summary>⑤ 학생 관리 <span class="small">접속 ${DB.students.length}명 · 코드/모둠 수정·삭제</span></summary><div class="accbody"><div id="studentMgr"></div></div></details>`;
 
+ DR.summary=normSummary(DR.summary);
+ h+=`<details class="acc" id="a6" ${OPEN.a6?'open':''}><summary>⑥ 마무리 정리본 <span class="small">${DR.summary.items.length}개 · 마무리 단계에서 학생·무대 화면에 보여요</span></summary><div class="accbody">
+  <p class="small">학생들이 찾은 확인 포인트를 반 전체가 한눈에 보도록 정리하는 목록이에요. <b>‘모둠 확인 포인트 가져오기’</b>로 각 모둠이 쓴 글을 불러온 뒤, 표현을 다듬고 이름을 붙이고, 선생님이 더할 것도 넣으세요. 저장하면 마무리 단계의 학생 화면(‘🧩 우리가 찾은 AI 자료 확인 포인트 보기’ 버튼)과 무대 화면에 나와요. 처음에는 선생님이 더하는 두 가지가 들어 있어요.</p>`;
+ h+=DR.summary.items.map((it,i)=>`<div class="srcbox"><div class="lbl">${i+1}번 · 이름 (선택)</div><input type="text" style="width:100%" maxlength="30" value="${esc(it.title)}" placeholder="예: 출처가 실제로 있는지 확인하기" oninput="sumSet(${i},'title',this.value)">
+   <div class="lbl">내용</div><textarea oninput="sumSet(${i},'text',this.value)">${esc(it.text)}</textarea>
+   <div class="lbl">누가 찾았나 (선택)</div><input type="text" style="width:100%" maxlength="20" value="${esc(it.by)}" placeholder="예: 3모둠 / 선생님" oninput="sumSet(${i},'by',this.value)">
+   <div style="margin-top:6px"><button class="btn small ghost" onclick="sumMove(${i},-1)" ${i===0?'disabled':''}>▲</button> <button class="btn small ghost" onclick="sumMove(${i},1)" ${i===DR.summary.items.length-1?'disabled':''}>▼</button> <button class="btn small danger" onclick="sumDel(${i})">삭제</button></div></div>`).join('');
+ h+=`<div style="margin-top:8px"><button class="btn small" onclick="sumImport()">모둠 확인 포인트 가져오기</button> <button class="btn small ghost" onclick="sumAdd()" ${DR.summary.items.length>=MAX_SUM?'disabled':''}>＋ 항목 추가</button></div></div></details>`;
+
  h+=`<div class="card" style="padding-bottom:0"><div class="savebar"><button class="btn" onclick="saveSettings()">💾 저장하고 학생 화면에 적용</button> <button class="btn ghost" onclick="cancelSettings()">변경 취소</button> <span class="savestat" id="saveStat"></span> <span class="small">단계·모둠·주장·입장 방식이 저장돼요. 명단 등록은 위 버튼으로 바로 적용됩니다.</span></div></div>`;
  $('settings').innerHTML=h;paintSaveStat();renderStudentMgr();
 }
@@ -698,6 +708,16 @@ async function uploadSrcPdf(ci,si,inp){const f=inp.files[0];if(!f)return;
 }
 function addSrc(ci){const c=DR.claims[ci];if(c.src.length>=MAX_SRC)return;c.src.push({type:'',title:'',body:'',url:'',pdf:''});mark();renderSettings();}
 function delSrc(ci,si){const c=DR.claims[ci];if(c.src.length<=1)return;c.src.splice(si,1);if(c.cite){if(c.cite.src===si)c.cite.src=-1;else if(c.cite.src>si)c.cite.src--;}mark();renderSettings();}
+/* 마무리 정리본(설정 ⑥): 학생이 찾은 확인 포인트를 반 전체용으로 모아 다듬는 목록 */
+function sumSet(i,k,v){DR.summary.items[i][k]=v;mark();}
+function sumMove(i,d){const a=DR.summary.items,j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];mark();renderSettings();}
+function sumDel(i){DR.summary.items.splice(i,1);mark();renderSettings();}
+function sumAdd(){if(DR.summary.items.length>=MAX_SUM)return;DR.summary.items.push({title:'',text:'',by:''});mark();renderSettings();}
+function sumImport(){const a=DR.summary.items,mine=x=>/^\d+모둠$/.test(x.by);
+ const got=LS.groups.map(g=>{const f=(DB.groups[g.n]||{}).g_find;return f&&f.v&&f.v.trim()?{title:'',text:f.v.trim(),by:g.n+'모둠'}:null;}).filter(Boolean);
+ if(!got.length){toast('아직 모둠 확인 포인트가 없어요. 모둠 정리에서 기록자가 저장해야 해요');return;}
+ if(a.some(mine)&&!confirm('이미 가져온 모둠 항목은 새 글로 바뀌고, 고친 내용은 사라져요. 계속할까요?'))return;
+ DR.summary.items=got.concat(a.filter(x=>!mine(x))).slice(0,MAX_SUM);mark();renderSettings();toast(got.length+'개 모둠의 확인 포인트를 가져왔어요. 다듬고 저장해 주세요');}
 async function saveSettings(){
  const CL=claimsOf(DR);
  for(const c of CL){if(!String(c.t).trim()){toast(`주장 ${c.n}의 AI 답변 문장이 비어 있어요`);return;}}
@@ -735,11 +755,11 @@ const csvCell=v=>{v=String(v==null?'':v);if(/^[=+\-@]/.test(v))v="'"+v;return '"
 const csv=rows=>'﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
 function exportCSV(kind){
  if(kind==='students'){
-  const head=['코드','모둠','제출시각','처음 판단','처음 이유','지금 판단','다짐(확인 절차)','전체 토의','피드백',...SELF.map((_,i)=>'자기평가'+(i+1)),'개인 판정','개인 근거','개인 보고서용 문장','개인 확인한 것','개인 이상한 점','개인 확인 포인트','체크리스트'];
-  const rows=DB.students.map(s=>{const d=s.data;return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':''),d.i_verdict,d.i_reason,d.i_rewrite,d.i_did,d.i_odd,d.i_find,d.checklist];});
+  const head=['코드','모둠','제출시각','처음 판단','처음 이유','지금 판단','다짐(확인 절차)','전체 토의','피드백',...SELF.map((_,i)=>'자기평가'+(i+1)),'개인 판정','개인 근거','개인 확인한 것','개인 이상한 점','개인 확인 포인트','체크리스트'];
+  const rows=DB.students.map(s=>{const d=s.data;return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':''),d.i_verdict,d.i_reason,d.i_did,d.i_odd,d.i_find,d.checklist];});
   download('학생응답.csv',csv([head,...rows]),'text/csv;charset=utf-8');
  }else{
-  const K=[['g_find','확인 포인트'],['g_verdict','판정'],['g_reason','근거 한 문장'],['g_rewrite','보고서용 문장'],['g_speaker','발표자'],['_rec','기록자']];
+  const K=[['g_find','확인 포인트'],['g_verdict','판정'],['g_reason','근거 한 문장'],['g_speaker','발표자'],['_rec','기록자']];
   const rows=LS.groups.map(gr=>[gr.n+'모둠',(claimOfGroup(LS,gr.n)||{}).t||'',...K.map(([k])=>((DB.groups[gr.n]||{})[k]||{}).v||'')]);
   download('모둠기록지.csv',csv([['모둠','담당 주장',...K.map(k=>k[1])],...rows]),'text/csv;charset=utf-8');
  }

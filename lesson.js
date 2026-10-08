@@ -5,15 +5,18 @@ const DEFAULT_LESSON={
   {id:0,name:'준비',time:'3분',on:true},
   {id:1,name:'생각 열기',time:'5분',on:true},
   {id:2,name:'목표',time:'2분',on:true},
-  {id:3,name:'개인 조사',time:'12분',on:true},
+  {id:3,name:'개인 조사',time:'10분',on:true},
   {id:7,name:'모둠 정리',time:'8분',on:true},
   {id:4,name:'모둠 공유',time:'13분',on:true},
   {id:5,name:'정리',time:'4분',on:true},
-  {id:6,name:'마무리',time:'3분',on:true}],
+  {id:6,name:'마무리',time:'5분',on:true}],
  groups:[{n:1,size:4,claim:1},{n:2,size:4,claim:2},{n:3,size:4,claim:3},{n:4,size:4,claim:4},{n:5,size:3,claim:5}],
  claims:null,      // null이면 content.js 의 CLAIMS(기본 자료)를 사용
  current:0,        // 교사가 지정한 '현재 단계'(단계 id). 학생은 이 단계 화면만 본다. null=제한 없음(학생이 자유롭게 이동)
  rosterOnly:false, // true면 명단에 등록된 참여 코드만 입장 가능
+ summary:{items:[ // 마무리 단계에서 반 전체가 한눈에 보는 ‘우리가 찾은 AI 자료 확인 포인트’ 정리본. 모둠 글은 교사가 설정 ⑥에서 가져와 다듬고, 기본으로는 선생님이 더하는 두 가지만 들어 있음
+  {title:'누가 만든 자료인가',text:'자료를 만든 사람·기관은 누구이고, 어떤 목적이나 이해관계가 있는지 확인한다.',by:'선생님'},
+  {title:'말투가 자신 있다고 사실은 아니다',text:'AI의 답이 단정적이고 구체적인 숫자를 담고 있어도, 근거를 확인하기 전에는 사실로 받아들이지 않는다.',by:'선생님'}]},
  joinUrl:''        // 무대 화면 준비 단계에 크게 보여 줄 학생 접속 주소(짧은 주소). 비우면 학생 링크를 그대로 보여 줌
 };
 const REQUIRED_STAGES=[0,5]; // 준비(코드·모둠 입력)와 정리(제출)는 숨길 수 없음
@@ -45,6 +48,7 @@ function normLesson(raw){
  L.groups.forEach(g=>{if(g.claim>ncl)g.claim=1;});
  L.rosterOnly=!!raw.rosterOnly;
  L.joinUrl=safeUrl(raw.joinUrl);
+ L.summary=normSummary(raw.summary);
  const vis=L.stages.filter(s=>s.on);
  if(raw.current===null)L.current=null; // 명시적으로 null이면 제한 없음
  else{const c=raw.current==null?0:+raw.current;L.current=vis.some(s=>s.id===c)?c:vis[0].id;} // 숨겨진 단계면 첫 단계로
@@ -52,6 +56,8 @@ function normLesson(raw){
 }
 // AI 답변 아래 '근거 자료'로 보여 줄 인용(ref)과, 자료 카드 중 AI가 인용한 카드 위치(src, -1=없음), 카드 배지 문구(badge, 비우면 기본 문구)
 const normCite=c=>{c=c||{};const n=parseInt(c.src,10);return{ref:String(c.ref||'').slice(0,80),src:n>=0&&n<MAX_SRC?n:-1,badge:String(c.badge||'').slice(0,40)};};
+const MAX_SUM=10;
+const normSummary=s=>{const a=s&&Array.isArray(s.items)?s.items:DEFAULT_LESSON.summary.items;return{items:a.slice(0,MAX_SUM).map(x=>({title:String((x&&x.title)||'').slice(0,30),text:String((x&&x.text)||'').slice(0,240),by:String((x&&x.by)||'').slice(0,20)}))};};
 const claimsOf=L=>L.claims||CLAIMS;
 const visStages=L=>L.stages.filter(s=>s.on);
 const claimOfGroup=(L,g)=>{const gr=L.groups.find(x=>x.n===+g);return gr?claimsOf(L).find(c=>c.n===gr.claim)||null:null;};
@@ -66,15 +72,15 @@ const DEFAULT_NOTES={
  7:'먼저 모둠마다 기록자를 정하게 해요. 모둠원이 각자 찾은 확인 포인트를 말로 나누고, 모둠의 ‘확인 포인트 한 줄’을 정하게 해요(발표의 중심). 기록자만 입력할 수 있고, 저장하기를 눌러야 다른 모둠원 화면에 보여요.',
  4:'모둠 카드를 눌러 그 모둠의 발표 내용을 크게 보여 줘요(리모컨 →로 다음 모둠). 발표가 끝난 뒤 ‘모둠 판정 공개’를 켜면 학생 표가 채워져요. 다섯 모둠의 확인 포인트를 칠판에 모아 비슷한 것끼리 묶고, 학생이 우리 반 체크리스트를 쓰게 해요. 마지막에 묶음에 이름을 붙여 줘요(예: 출처가 실제로 있나 / 원 출처인가 / 숫자의 정의·조건 / 누가 만들었나) — 이때 출처·정확성·신뢰성이라는 말을 소개해요.',
  5:'우리 반 체크리스트로 처음 판단을 다시 보게 해요. “앞으로 반드시 할 확인 3가지”를 쓰고, 자기평가를 체크한 뒤 ‘제출하기’를 누르도록 안내해요.',
- 6:'학생이 만든 체크리스트와 오늘의 한 문장을 함께 읽어요. ‘참고 자료’에서 전문가들의 기준과 비교해 보게 해요. 다음 차시엔 학생이 탐구 주제로 모아 온 자료를 오늘 만든 체크리스트로 검증해 검증 노트로 써서 제출한다는 것을 안내하고 마무리해요.'
+ 6:'무대 화면의 ‘우리가 찾은 AI 자료 확인 포인트’(학생 화면은 ‘🧩 확인 포인트 보기’ 버튼)를 한번 쭉 함께 읽으며 정리해요. 정리본은 ⚙ 설정 ⑥에서 만들어요(‘모둠 확인 포인트 가져오기’ → 표현 다듬기·이름 붙이기 → 저장). 이어서 ‘참고 자료’의 전문가 기준과 비교해 보게 하고, 다음 차시엔 이 체크리스트로 자신이 모아 온 자료를 검증해 검증 노트로 써서 제출한다고 안내해요.'
 };
 const STAGE_GUIDE={
  0:{todo:'참여 코드를 입력하고 내 모둠을 선택해요',points:['참여 코드 입력','내 모둠 선택','‘준비 완료’ 누르기']},
  1:{todo:'AI 답변을 읽고, 보고서에 인용해도 되는지 나의 첫 판단을 적어요',points:['AI 답변 읽기','인용해도 될까? 첫 판단 고르기','그렇게 생각한 이유 쓰기']},
  2:{todo:'오늘의 목표와 우리가 할 일을 함께 읽어요',points:['AI 자료를 쓸 때 무엇을 확인해야 할지 직접 찾아내기','내 문장을 자료와 원문으로 조사하기','발견한 확인 포인트를 모둠에서 모으기','우리 반 체크리스트 만들기']},
- 3:{todo:'혼자서 우리 모둠 문장을 직접 조사하고, AI 자료를 쓸 때 확인해야 할 점을 찾아요',points:['자료 카드·원문 열어 보기','내가 확인한 것, 이상한 점 쓰기','‘AI 자료는 ○○을 확인해야겠다’ 쓰기','내 판정과 보고서용 문장 쓰기']},
+ 3:{todo:'혼자서 우리 모둠 문장을 직접 조사하고, AI 자료를 쓸 때 확인해야 할 점을 찾아요',points:['자료 카드·원문 열어 보기','내가 확인한 것, 이상한 점 쓰기','‘AI 자료는 ○○을 확인해야겠다’ 쓰기','내 판정과 근거 한 문장 쓰기']},
  4:{todo:'모둠별로 발표하고, 다섯 모둠의 확인 포인트를 모아 우리 반 체크리스트를 만들어요',points:['발표 듣기 (모둠당 2분)','다른 모둠 확인 포인트·판정 기록','다섯 조각을 모아 체크리스트 쓰기','전체 토의와 피드백 쓰기']},
  5:{todo:'우리 반 체크리스트로 처음 생각을 다시 보고, 배운 점을 정리해 제출해요',points:['체크리스트로 처음 판단 다시 보기','앞으로 반드시 할 확인 3가지 쓰기','자기평가 체크','제출하기']},
- 7:{todo:'각자 조사한 것을 나누고, 모둠이 발표할 확인 포인트와 판정을 하나로 정리해요',points:['기록자 한 명 정하기','서로 찾은 것 나누기','모둠 확인 포인트 한 줄 정하기','판정·근거·보고서용 문장 정리 (기록자만 입력)']},
- 6:{todo:'우리 반 체크리스트와 오늘의 한 문장을 읽고 마무리해요',points:['우리가 찾은 AI 자료 확인 포인트','AI의 답은 탐구의 출발점이지 인용할 결론이 아니다','다음 시간: 이 체크리스트로 내가 모아 온 자료를 검증해 검증 노트 쓰기']}
+ 7:{todo:'각자 조사한 것을 나누고, 모둠이 발표할 확인 포인트와 판정을 하나로 정리해요',points:['기록자 한 명 정하기','서로 찾은 것 나누기','모둠 확인 포인트 한 줄 정하기','판정·근거 한 문장 정리 (기록자만 입력)']},
+ 6:{todo:'우리가 찾은 확인 포인트를 한번 쭉 정리하고 마무리해요',points:['우리가 찾은 AI 자료 확인 포인트 정리','AI의 답은 탐구의 출발점이지 인용할 결론이 아니다','다음 시간: 이 체크리스트로 내가 모아 온 자료를 검증해 검증 노트 쓰기']}
 };
