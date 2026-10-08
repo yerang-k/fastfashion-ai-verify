@@ -4,3 +4,5 @@ const API_URL='https://script.google.com/macros/s/AKfycbyq06AzV1mWEJ1pKYN6DB4E4k
 
 // 반 구분: 주소 뒤에 ?class=1-3 처럼 붙이면 그 반의 설정·응답이 따로 저장됩니다. 붙이지 않으면 기본 반입니다.
 const CLASS_ID=(new URLSearchParams(location.search).get('class')||'').replace(/[^A-Za-z0-9가-힣_-]/g,'').slice(0,20);
+// 주소에 ?class= 가 아예 없으면(값이 빈 문자열이어도 키가 있으면 true) 반 선택 화면을 먼저 보여 줌. 기존에 반이 박힌 링크(?class=1-3)는 그대로 통과.
+const HAS_CLASS=new URLSearchParams(location.search).has('class');

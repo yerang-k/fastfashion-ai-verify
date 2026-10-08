@@ -34,8 +34,8 @@ function doPost(e) {
   return handle_(p);
 }
 
-var READ_ACTIONS_ = { getStage: 1, getStudent: 1, getLesson: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1, teacherAll: 1, uploadPdf: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
-var STUDENT_ACTIONS_ = { getStage: 1, saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1 };
+var READ_ACTIONS_ = { getStage: 1, getStudent: 1, getLesson: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1, teacherAll: 1, uploadPdf: 1, listClasses: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
+var STUDENT_ACTIONS_ = { getStage: 1, saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1, listClasses: 1 };
 var CLASS_ = ''; // 이번 요청의 반(기본 반은 빈 문자열)
 function cleanClass_(c) { return String(c || '').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20); }
 function sn_(name) { return CLASS_ ? name + '_' + CLASS_ : name; } // 반별 시트 이름
@@ -65,6 +65,7 @@ function handle_(p) {
       case 'clearRecorder': return out_(clearRecorder_(p));
       case 'getGroup': return out_(getGroup_(p));
       case 'getGroupIndiv': return out_(getGroupIndiv_(p));
+      case 'listClasses': return out_(listClasses_());
       case 'getShare': return out_(getShare_());
       case 'teacherAll': return out_(teacherAll_(p));
       case 'setShare': return out_(setShare_(p));
@@ -605,6 +606,9 @@ function classList_() {
   });
   return out;
 }
+
+// 학생·교사 입장 화면의 '반 선택'에서 씀. PIN 없이 반 이름만 공개(응답 내용은 안 줌). 반 하나로 한정하지 않는 요청이라 CLASS_ 와 무관하게 전체를 본다.
+function listClasses_() { return { ok: true, classes: classList_() }; }
 
 function toMs_(v) { return v instanceof Date ? v.getTime() : 0; }
 

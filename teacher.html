@@ -182,6 +182,11 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 <div class="wrap">
  <div class="card" id="login" style="max-width:420px;margin:40px auto">
   <h2>교사 확인</h2>
+  <div id="loginClassBox" style="display:none;margin-bottom:14px">
+   <p class="small">반을 먼저 골라 주세요.</p>
+   <p class="small" id="loginClassMsg">반 목록을 불러오는 중…</p>
+   <select id="loginClassSel" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--line);display:none"></select>
+  </div>
   <p class="small">교사 PIN을 입력하세요.</p>
   <form onsubmit="login();return false"><input type="password" id="pin" placeholder="PIN" autocomplete="off" style="width:100%">
   <div style="margin-top:12px;text-align:right"><button class="btn" type="submit">들어가기</button></div></form>
@@ -297,10 +302,22 @@ async function api(action,payload,tmo){
  }finally{clearTimeout(tm);}
 }
 async function apiRetry(action,payload,tmo){try{return await api(action,payload,tmo);}catch(e){if(e&&e.name==='AbortError')return api(action,payload,tmo*2);throw e;}}
+async function populateLoginClasses(){
+ $('loginClassBox').style.display='';
+ try{const r=await api('listClasses',{});
+  const list=Array.from(new Set(['',...(r.classes||[])]));
+  list.sort((a,b)=>(a||'').localeCompare(b||'','ko'));
+  $('loginClassSel').innerHTML=list.map(c=>`<option value="${esc(c)}">${esc(c||'기본 반')}</option>`).join('');
+  $('loginClassMsg').style.display='none';$('loginClassSel').style.display='';
+ }catch(e){$('loginClassMsg').textContent='반 목록을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.';}}
 async function login(){
  if(!API_URL){$('loginMsg').textContent='config.js 의 API_URL 이 비어 있어요. 서버(Apps Script) 주소를 먼저 넣어 주세요.';return;}
  pin=$('pin').value.trim();if(!pin)return;$('loginMsg').textContent='확인 중…';
- try{if(!await refresh(true)){$('loginMsg').textContent='PIN이 맞지 않거나 잠시 잠겨 있어요.';return;}}
+ if(!HAS_CLASS){ // 반이 아직 안 정해졌으면: PIN을 세션에 잠깐 저장해 두고 반을 붙여 새로고침 → 아래 자동 로그인 코드가 이어받음
+  const c=$('loginClassSel').style.display!=='none'?$('loginClassSel').value:'';
+  try{sessionStorage.setItem(PIN_KEY,pin);}catch(e){}
+  const u=new URL(location.href);u.searchParams.set('class',c);location.href=u.toString();return;}
+ try{if(!await refresh(true)){$('loginMsg').textContent='PIN이 맞지 않거나 잠시 잠겨 있어요.';try{sessionStorage.removeItem(PIN_KEY);}catch(e){}return;}}
  catch(e){$('loginMsg').textContent='서버에 연결하지 못했어요.';return;}
  try{sessionStorage.setItem(PIN_KEY,pin);}catch(e){}
  $('login').style.display='none';$('app').style.display='block';buildTabs();showTab(0);fitPreview();if(QS.get('view')==='stage')stageMode(true);
@@ -803,5 +820,6 @@ function tick(){const t=$('timer');if(!t)return;const txt=fmt(elapsed()),T=total
  if(st){const s=visStages(LS).find(x=>x.id===LS.current);st.textContent=clockText(s);}}
 setInterval(tick,1000);
 
-try{const p=sessionStorage.getItem(PIN_KEY);if(p&&API_URL){$('pin').value=p;login();}}catch(e){}
+if(!HAS_CLASS)populateLoginClasses();
+try{const p=HAS_CLASS&&sessionStorage.getItem(PIN_KEY);if(p&&API_URL){$('pin').value=p;login();}}catch(e){}
 </script></body></html>
