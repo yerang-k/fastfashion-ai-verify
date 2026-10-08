@@ -489,11 +489,11 @@ function getGroupIndiv_(p) {
       if (!r[0] || cleanGroup_(r[1]) !== g) return;
       var d = {};
       try { d = JSON.parse(r[6]) || {}; } catch (e) {}
-      if (!d.i_verdict && !d.i_reason && !d.i_did && !d.i_odd && !d.i_find) return; // 아직 아무것도 안 쓴 모둠원은 빼서 빈 칸이 늘어서지 않게
+      if (!d.i_verdict && !d.i_reason && !d.i_did && !d.i_odd) return; // 아직 아무것도 안 쓴 모둠원은 빼서 빈 칸이 늘어서지 않게
       members.push({
         me: String(r[0]) === myCode,
         i_verdict: String(d.i_verdict || ''), i_reason: String(d.i_reason || ''),
-        i_did: String(d.i_did || ''), i_odd: String(d.i_odd || ''), i_find: String(d.i_find || '')
+        i_did: String(d.i_did || ''), i_odd: String(d.i_odd || '')
       });
     });
   }

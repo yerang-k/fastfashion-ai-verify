@@ -153,7 +153,6 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
   <div class="grid3">
    <div class="box"><h4>① 내가 확인한 것</h4><textarea data-save id="i_did" placeholder="내가 맡은 자료를 어디를 어떻게 확인했나요? 예: ‘원문 열기’로 그 기관 자료를 열어 봤다 / 숫자를 Ctrl+F로 검색했다"></textarea></div>
    <div class="box"><h4>② 이상하거나 새로 알게 된 점</h4><textarea data-save id="i_odd" placeholder="AI의 말과 달랐던 점, 찾을 수 없었던 것, 빠져 있던 조건, 알고 보니 다른 곳에서 온 숫자 등 ‘어? 이상한데’ 싶었던 것을 적어 보세요."></textarea></div>
-   <div class="box" style="border-color:var(--main)"><h4>③ 내가 찾은 확인 포인트 ⭐</h4><textarea data-save id="i_find" placeholder="“AI가 준 자료를 쓸 때는 ________을(를) 확인해야겠다.” 조사하며 느낀 것을 한 줄로 정리해 보세요."></textarea></div>
   </div>
   <h3>내 판정 (내가 맡은 자료 기준 · 1차)</h3>
   <p class="small">이건 내 자료 하나만 본 1차 판단이에요. 모둠 정리에서 다른 두 자료와 비교하면 판정이 달라질 수 있어요 — 그게 정상이에요.</p>
@@ -344,7 +343,7 @@ function renderGroup(){
  const g=+data.group||0;const c=claimOfGroup(LESSON,g);
  $('grpBadge').textContent='모둠: '+(g?g+'모둠':'-');
  document.querySelectorAll('.groups label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
- $('myIndiv').innerHTML=[['내 확인 포인트',data.i_find],['판정',data.i_verdict],['근거 한 문장',data.i_reason]].map(([l,v])=>`<p style="margin:4px 0"><b>${l}:</b> ${escH(v)||'<span class="small">(아직 안 썼어요)</span>'}</p>`).join('');
+ $('myIndiv').innerHTML=[['판정',data.i_verdict],['근거 한 문장',data.i_reason]].map(([l,v])=>`<p style="margin:4px 0"><b>${l}:</b> ${escH(v)||'<span class="small">(아직 안 썼어요)</span>'}</p>`).join('');
  if(!c){const none='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('myClaim').innerHTML=none;$('myClaim7').innerHTML=none;renderSrc([]);return;}
  const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p>${c.cite&&c.cite.ref?`<p class="small">📎 AI가 댄 근거: <b>${escH(c.cite.ref)}</b></p>`:''}${c.hint?`<details class="hintbox"><summary>💡 막막하면 힌트 보기</summary><p class="small">${c.hint}</p></details>`:''}</div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
  renderSrc(c.src,c.cite);
@@ -485,7 +484,7 @@ async function pollGroup(){if(!ONLINE||!data.group||document.hidden)return;
 const I_VERDICT_EMOJI={'확인됨':'✅','부분적으로 맞음':'🟠','확인 불가':'❓','사실 아님':'❌'};
 function renderGroupIndiv(members){const box=$('groupIndiv');if(!box)return;
  if(!members||!members.length){box.innerHTML='<p class="small">(아직 모둠원이 쓴 내용이 없어요 — 저장하기를 누르면 여기 모여요)</p>';return;}
- box.innerHTML=members.map((m,i)=>`<div class="box" style="margin-top:${i?8:0}px"><b>모둠원 ${i+1}${m.me?' (나)':''}</b> ${m.i_verdict?(I_VERDICT_EMOJI[m.i_verdict]||'')+' '+escH(m.i_verdict):'<span class="small">(아직 판정 전)</span>'}<br>${m.i_did?`<span class="small"><b>①확인한 것:</b> ${escH(m.i_did)}</span><br>`:''}${m.i_odd?`<span class="small"><b>②이상한 점:</b> ${escH(m.i_odd)}</span><br>`:''}${m.i_find?`<span class="small"><b>③확인 포인트:</b> ${escH(m.i_find)}</span><br>`:''}${m.i_reason?`<span class="small"><b>근거:</b> ${escH(m.i_reason)}</span>`:''}</div>`).join('');}
+ box.innerHTML=members.map((m,i)=>`<div class="box" style="margin-top:${i?8:0}px"><b>모둠원 ${i+1}${m.me?' (나)':''}</b> ${m.i_verdict?(I_VERDICT_EMOJI[m.i_verdict]||'')+' '+escH(m.i_verdict):'<span class="small">(아직 판정 전)</span>'}<br>${m.i_did?`<span class="small"><b>①확인한 것:</b> ${escH(m.i_did)}</span><br>`:''}${m.i_odd?`<span class="small"><b>②이상한 점:</b> ${escH(m.i_odd)}</span><br>`:''}${m.i_reason?`<span class="small"><b>근거:</b> ${escH(m.i_reason)}</span>`:''}</div>`).join('');}
 async function pollGroupIndiv(){if(!ONLINE||!data.group||cur!==7||document.hidden)return;
  try{renderGroupIndiv((await api('getGroupIndiv',{group:+data.group,code:data.code,dev:DEV})).members);}catch(e){}}
 async function pollShare(){if(!ONLINE||cur!==4||document.hidden)return;
@@ -506,7 +505,7 @@ function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k
  if(el.type==='radio')el.checked=(el.value===data[k]);else if(el.type==='checkbox')el.checked=!!data[k];else el.value=data[k];});
  if(data.code)$('codeBadge').textContent='참여 코드: '+data.code+(data.studentName?' ('+data.studentName+')':'');}
 async function submitAll(){collect();const miss=[];
- if(order().includes(3)){if(!data.i_find)miss.push('내 확인 포인트');if(!data.i_verdict)miss.push('내 판정');} // 개인 검증 단계를 뺀 수업이면 묻지 않음
+ if(order().includes(3)){if(!data.i_verdict)miss.push('내 판정');} // 개인 검증 단계를 뺀 수업이면 묻지 않음
  if(!data.post)miss.push('지금의 판단');if(!data.reflect)miss.push('정리');
  if(miss.length&&!locked()){toast('아직 비어 있어요: '+miss.join(', '));return;} // 교사가 단계를 고정한 동안은 되돌아가 채울 수 없으니 막지 않고 제출(교사 화면에 '작성 없음'으로 보임)
  const prev=data._submitted;data._submitted=new Date().toLocaleTimeString('ko-KR');
