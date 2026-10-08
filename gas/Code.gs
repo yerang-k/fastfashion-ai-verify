@@ -421,7 +421,7 @@ function loadGroup_(sh, g) {
 }
 
 // 모둠이 '발표할 내용'만 담는다(개인 검증 기록은 각 학생의 응답에 따로 저장). 기록자는 칸이 아니라 모둠 기록의 _rec(기록자 코드)로 따로 관리
-var GROUP_FIELDS = ['g_verdict', 'g_reason', 'g_rewrite', 'g_speaker'];
+var GROUP_FIELDS = ['g_find', 'g_verdict', 'g_reason', 'g_rewrite', 'g_speaker'];
 
 // 모둠 기록지를 한 번에 읽어 {모둠번호: 칸들}로 돌려준다(모둠마다 시트를 따로 읽던 것보다 훨씬 빠름). 빈 모둠은 뺀다
 function allGroups_() {
@@ -484,8 +484,9 @@ function getShare_() {
   var groups = {};
   for (var g = 1; g <= MAXG; g++) {
     var f = loadGroup_(sh, g).fields;
-    if (f.g_verdict || f.g_reason) {
+    if (f.g_verdict || f.g_reason || f.g_find) {
       groups[g] = {
+        g_find: f.g_find ? f.g_find.v : '',
         g_verdict: f.g_verdict ? f.g_verdict.v : '',
         g_reason: f.g_reason ? f.g_reason.v : '',
         g_rewrite: f.g_rewrite ? f.g_rewrite.v : ''
