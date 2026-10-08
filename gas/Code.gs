@@ -34,8 +34,8 @@ function doPost(e) {
   return handle_(p);
 }
 
-var READ_ACTIONS_ = { getStage: 1, getStudent: 1, getLesson: 1, getGroup: 1, getShare: 1, teacherAll: 1, uploadPdf: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
-var STUDENT_ACTIONS_ = { getStage: 1, saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getShare: 1 };
+var READ_ACTIONS_ = { getStage: 1, getStudent: 1, getLesson: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1, teacherAll: 1, uploadPdf: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
+var STUDENT_ACTIONS_ = { getStage: 1, saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1 };
 var CLASS_ = ''; // 이번 요청의 반(기본 반은 빈 문자열)
 function cleanClass_(c) { return String(c || '').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20); }
 function sn_(name) { return CLASS_ ? name + '_' + CLASS_ : name; } // 반별 시트 이름
@@ -63,6 +63,7 @@ function handle_(p) {
       case 'saveGroup': return out_(saveGroup_(p));
       case 'clearRecorder': return out_(clearRecorder_(p));
       case 'getGroup': return out_(getGroup_(p));
+      case 'getGroupIndiv': return out_(getGroupIndiv_(p));
       case 'getShare': return out_(getShare_());
       case 'teacherAll': return out_(teacherAll_(p));
       case 'setShare': return out_(setShare_(p));
@@ -439,6 +440,29 @@ function getGroup_(p) {
   var g = studentGroup_(p);
   if (!g) return { ok: false, error: 'not yours' };
   return { ok: true, fields: loadGroup_(sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS), g).fields };
+}
+
+// 모둠 정리(5단계) 화면에서 '모둠원이 각자 조사한 내용'을 한눈에 보여 주기 위한 조회.
+// 요청한 학생 본인의 모둠만 볼 수 있다(studentGroup_이 code+dev로 본인 모둠을 확인). 개인 식별 코드는 내려주지 않고 'me'(본인 여부)만 표시한다.
+function getGroupIndiv_(p) {
+  var g = studentGroup_(p);
+  if (!g) return { ok: false, error: 'not yours' };
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
+  var last = sh.getLastRow(), myCode = cleanCode_(p.code), members = [];
+  if (last > 1) {
+    sh.getRange(2, 1, last - 1, HEAD_STUDENTS.length).getValues().forEach(function (r) {
+      if (!r[0] || cleanGroup_(r[1]) !== g) return;
+      var d = {};
+      try { d = JSON.parse(r[6]) || {}; } catch (e) {}
+      if (!d.i_verdict && !d.i_reason && !d.i_src && !d.i_acc && !d.i_rel) return; // 아직 아무것도 안 쓴 모둠원은 빼서 빈 칸이 늘어서지 않게
+      members.push({
+        me: String(r[0]) === myCode,
+        i_verdict: String(d.i_verdict || ''), i_reason: String(d.i_reason || ''),
+        i_src: String(d.i_src || ''), i_acc: String(d.i_acc || ''), i_rel: String(d.i_rel || '')
+      });
+    });
+  }
+  return { ok: true, members: members };
 }
 
 /* ---------- 설정: 모둠 공유 공개 ---------- */

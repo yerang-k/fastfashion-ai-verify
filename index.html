@@ -158,7 +158,8 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
   <details open><summary>내가 먼저 쓴 개인 조사 보기</summary><div class="box" id="myIndiv" style="margin-top:8px"></div></details>
   <div class="box" style="margin-top:14px;border-color:var(--main)">
    <h4>🔎 포인트 찾기 — 모둠원과 함께</h4>
-   <p class="small">모둠원이 각자 맡은 자료를 짧게 설명해 주세요. 그런 다음 함께 비교해 보세요: <b>세 자료가 말하는 숫자·조건·연도가 같은가요, 다른가요?</b> 다르다면 왜 다를까요? (예: 계산에 포함한 범위가 다름 / 시간이 지나 수치가 수정됨 / 서로 다른 보고서의 수치를 섞어 씀 등) 이 포인트가 우리 모둠 판정의 핵심 근거가 돼요.</p>
+   <p class="small">모둠원이 각자 조사한 내용이 아래에 모여요(저장하기를 눌러야 다른 모둠원 화면에 보여요). 함께 비교해 보세요: <b>세 자료가 말하는 숫자·조건·연도가 같은가요, 다른가요?</b> 다르다면 왜 다를까요? (예: 계산에 포함한 범위가 다름 / 시간이 지나 수치가 수정됨 / 서로 다른 보고서의 수치를 섞어 씀 등) 이 포인트가 우리 모둠 판정의 핵심 근거가 돼요.</p>
+   <div id="groupIndiv" style="margin-top:10px"><p class="small">(불러오는 중…)</p></div>
   </div>
   <div class="box" id="recBox" style="margin-top:14px"></div>
   <h3>모둠 판정 (발표용)</h3>
@@ -310,7 +311,7 @@ function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i)closeSrc();
  const bar=$('stageBar');bar.classList.toggle('show',locked());
  if(locked()){const st=LESSON.stages.find(x=>x.id===cur);bar.innerHTML=`선생님이 진행 중이에요 · 지금은 <b>${p+1}. ${st?st.name:''}</b> 단계 <span class="small">— 선생님이 다음으로 넘기면 화면이 자동으로 바뀌어요.</span>`;}
  $('mirrorPre').textContent=data.pre||'-';renderGroup();}
-function go(i){if(i!==cur)autoSaveLeaving();show(i);data._stage=cur;save();if(cur===4)pollShare();if(needGroup())pollGroup();window.scrollTo({top:0,behavior:'smooth'});}
+function go(i){if(i!==cur)autoSaveLeaving();show(i);data._stage=cur;save();if(cur===4)pollShare();if(needGroup())pollGroup();if(cur===7)pollGroupIndiv();window.scrollTo({top:0,behavior:'smooth'});}
 function tryGo(id){if(locked())return;const p=order().indexOf(id);if(p<0)return;go(id);}
 function step(d){if(locked())return false;const o=order(),p=o.indexOf(cur),t=(p<0?0:p)+d;if(t<0||t>=o.length)return false;go(o[t]);return true;}
 /* 교사가 지정한 현재 단계를 따라감. 준비(코드·모둠 입력)를 마치지 않은 학생은 준비 단계에 머문다. */
@@ -411,6 +412,12 @@ function applyGroup(fields){if(fields){REC=(fields._rec&&fields._rec.v)||'';rend
  if(ch){localStorage.setItem(KEY,JSON.stringify(data));renderGroup();}}
 async function pollGroup(){if(!ONLINE||!data.group||document.hidden)return;
  try{applyGroup((await api('getGroup',{group:+data.group,code:data.code,dev:DEV})).fields);}catch(e){}}
+const I_VERDICT_EMOJI={'확인됨':'✅','부분적으로 맞음':'🟠','확인 불가':'❓','사실 아님':'❌'};
+function renderGroupIndiv(members){const box=$('groupIndiv');if(!box)return;
+ if(!members||!members.length){box.innerHTML='<p class="small">(아직 모둠원이 쓴 내용이 없어요 — 저장하기를 누르면 여기 모여요)</p>';return;}
+ box.innerHTML=members.map((m,i)=>`<div class="box" style="margin-top:${i?8:0}px"><b>모둠원 ${i+1}${m.me?' (나)':''}</b> ${m.i_verdict?(I_VERDICT_EMOJI[m.i_verdict]||'')+' '+escH(m.i_verdict):'<span class="small">(아직 판정 전)</span>'}<br>${m.i_src?`<span class="small"><b>①출처:</b> ${escH(m.i_src)}</span><br>`:''}${m.i_acc?`<span class="small"><b>②내 자료 내용:</b> ${escH(m.i_acc)}</span><br>`:''}${m.i_rel?`<span class="small"><b>③신뢰성:</b> ${escH(m.i_rel)}</span><br>`:''}${m.i_reason?`<span class="small"><b>근거:</b> ${escH(m.i_reason)}</span>`:''}</div>`).join('');}
+async function pollGroupIndiv(){if(!ONLINE||!data.group||cur!==7||document.hidden)return;
+ try{renderGroupIndiv((await api('getGroupIndiv',{group:+data.group,code:data.code,dev:DEV})).members);}catch(e){}}
 async function pollShare(){if(!ONLINE||cur!==4||document.hidden)return;
  if(SHARE_OPEN===false&&Date.now()-STAGE_OK<8000){$('shareNote').textContent=' (선생님이 공개하면 다른 모둠 판정이 자동으로 채워져요.)';return;} // 공개 전이면 조회 생략(서버 부하 감소)
  try{const r=await api('getShare');$('shareNote').textContent=r.open?'':' (선생님이 공개하면 다른 모둠 판정이 자동으로 채워져요.)';
@@ -464,7 +471,7 @@ async function pollStage(){if(!ONLINE||document.hidden||stageBusy)return;stageBu
  }catch(e){}finally{stageBusy=false;}}
 async function pollTick(){if(polling)return;polling=true;
  try{tickN++;if(Date.now()-STAGE_OK>10000||tickN%3===1)await pollLesson(); // 빠른 조회가 잘 되는 동안은 전체 설정 조회를 드물게(내 코드·모둠 변경 확인용)
-  if(needGroup())await pollGroup();await pollShare();}finally{polling=false;}}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollStage();pollLesson();if(needGroup())pollGroup();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
-if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();}pollLesson();setInterval(pollTick,6000);setInterval(pollStage,2500);}
+  if(needGroup())await pollGroup();if(cur===7)await pollGroupIndiv();await pollShare();}finally{polling=false;}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollStage();pollLesson();if(needGroup())pollGroup();if(cur===7)pollGroupIndiv();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
+if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();if(cur===7)pollGroupIndiv();}pollLesson();setInterval(pollTick,6000);setInterval(pollStage,2500);}
 </script></body></html>
