@@ -74,6 +74,7 @@ a.btn{text-decoration:none;display:inline-block}
 .srcacts{display:flex;flex-wrap:wrap;gap:8px}
 @media(max-width:720px){.srcmodal{padding:0}.srcpanel{max-width:none;height:100%;border-radius:0}.srcview{padding:12px}}
 /* 미리보기 모드: 눌러서 바꿀 수 없게(스크롤만 가능), 도움 요청·상태 배지는 숨김 */
+.sumitem{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px}.sumitem b{font-size:1.15rem}.sumitem p{margin:6px 0 2px;font-size:1.05rem;line-height:1.7;white-space:pre-wrap}
 .hintbox{margin-top:6px}.hintbox summary{cursor:pointer;color:var(--sub);font-size:.92rem}
 .cref{color:var(--accent-dk);font-weight:700;margin-left:2px}
 .refs{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.92rem;color:var(--sub)}.refs b{color:var(--txt)}
@@ -120,7 +121,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
  <section class="stage card" data-i="2">
   <h2>3. 학습 목표 <span class="time">2분</span></h2>
   <div class="todo">지금 할 일: 오늘의 목표와 우리가 할 일을 함께 읽어요.</div>
-  <p style="font-size:1.15rem"><b>AI가 제공한 자료를 활용할 때 무엇을 어떻게 확인해야 하는지 스스로 찾아 기준으로 정리하고, 그 기준으로 자료를 판단해 탐구 보고서에 활용할 수 있다.</b></p>
+  <p style="font-size:1.15rem"><b>AI가 제공한 자료를 활용할 때 무엇을 어떻게 확인해야 하는지 스스로 찾아 기준으로 정리하고, 그 기준으로 자료를 판단해 다음 차시 자료 검증에 활용할 수 있다.</b></p>
   <div class="grid2">
    <div class="box"><h4>🕵️ 오늘의 임무 — 확인 포인트를 찾아라</h4><ol style="margin:6px 0;padding-left:20px"><li>내 모둠의 AI 답변 문장 1개를 <b>자료 카드와 원문으로 직접 조사</b>해요.</li><li>조사하다가 “어? 이상한데”, “이건 몰랐네” 싶은 점을 찾아요.</li><li>그 경험을 <b>“AI 자료를 쓸 때는 ○○을 확인해야겠다”</b> 한 줄로 정리해요.</li><li>다섯 모둠이 찾은 것을 모아 <b>우리 반 AI 자료 확인 체크리스트</b>를 만들어요.</li></ol></div>
    <div class="box"><h4>🏷️ 조사 결과를 말하는 법 (판정 4단계)</h4><ul style="margin:6px 0;padding-left:20px"><li><span style="color:var(--ok)">✅ 확인됨</span> — 신뢰할 수 있는 자료와 일치</li><li><span style="color:var(--part)">🟠 부분적으로 맞음</span> — 맞지만 조건·범위 설명이 빠짐</li><li><span style="color:var(--unk)">❓ 확인 불가</span> — 출처를 찾을 수 없음</li><li><span style="color:var(--bad)">❌ 사실 아님</span> — 신뢰할 수 있는 자료와 어긋남</li></ul></div>
@@ -130,7 +131,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
  </section>
 
  <section class="stage card" data-i="3">
-  <h2>4. 개인 조사: 내가 먼저 확인해 보기 <span class="time">12분</span></h2>
+  <h2>4. 개인 조사: 내가 먼저 확인해 보기 <span class="time">10분</span></h2>
   <div class="todo">지금 할 일: 혼자서 우리 모둠 문장을 <b>직접 조사</b>하고, AI 자료를 쓸 때 <b>확인해야 할 점</b>을 찾아요. 카드 요약만 보지 말고 <b>‘원문 열기 ↗’</b>를 눌러 실제 기사·자료를 직접 확인하세요. <span class="small">(이 단계는 각자 해요. 모둠 의견은 다음 단계에서 모아요.)</span></div>
   <div id="myClaim"></div>
   <h3>📚 조사에 쓸 자료 카드</h3>
@@ -151,15 +152,13 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
   </div>
   <p><b>판정 근거 한 문장</b> (내 생각)</p>
   <textarea id="i_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
-  <p><b>보고서용으로 고쳐 쓴 문장</b> — 조사한 결과에 맞게 고치고 <b>출처와 조건</b>을 함께 쓰세요. 쓸 수 없다면 “이 문장은 인용하지 않는다”와 이유를 쓰세요.</p>
-  <textarea id="i_rewrite" data-save style="min-height:110px" placeholder="예: … 로 추정된다(○○ 기관, 2019). 단, 산정 기준에 따라 …까지 차이가 있다."></textarea>
   <div style="margin-top:16px;padding:12px 14px;border:1.5px solid var(--main);border-radius:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" onclick="saveActivity(3)">💾 저장하기</button> <span class="small" id="saveState3">다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)</span></div>
   <div class="nav"><button class="btn ghost" onclick="go(2)">이전</button><button class="btn" onclick="go(7)">다음</button></div>
  </section>
 
  <section class="stage card" data-i="7">
   <h2>5. 모둠 정리: 발표할 내용 정하기 <span class="time">8분</span></h2>
-  <div class="todo">지금 할 일: 모둠원이 각자 조사한 것을 나누고, 모둠이 <b>발표할</b> 확인 포인트 한 줄과 판정·근거·고쳐 쓴 문장을 하나로 정리해요. 입력은 <b>기록자 한 명</b>만 해요.</div>
+  <div class="todo">지금 할 일: 모둠원이 각자 조사한 것을 나누고, 모둠이 <b>발표할</b> 확인 포인트 한 줄과 판정·근거를 하나로 정리해요. 입력은 <b>기록자 한 명</b>만 해요.</div>
   <div id="myClaim7"></div>
   <details><summary>📚 조사에 쓴 자료 다시 보기</summary><div class="srcgrid" id="mySrc7" style="margin-top:8px"></div></details>
   <details open><summary>내가 먼저 쓴 개인 조사 보기</summary><div class="box" id="myIndiv" style="margin-top:8px"></div></details>
@@ -176,8 +175,6 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
   </div>
   <p><b>판정 근거 한 문장</b> (발표 때 그대로 읽을 문장)</p>
   <textarea id="g_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
-  <p><b>보고서용으로 고쳐 쓴 문장</b> (발표용) — 조사한 결과에 맞게 고치고 <b>출처와 조건</b>을 함께 쓰세요. 쓸 수 없다면 “이 문장은 인용하지 않는다”와 이유를 쓰세요.</p>
-  <textarea id="g_rewrite" data-save style="min-height:110px" placeholder="예: … 로 추정된다(○○ 기관, 2019). 단, 산정 기준에 따라 …까지 차이가 있다."></textarea>
   <div class="role" style="margin-top:8px"><input type="text" data-save id="g_speaker" placeholder="발표자 코드"></div>
   <div style="margin-top:16px;padding:12px 14px;border:1.5px solid var(--main);border-radius:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="saveBtn7" onclick="saveActivity(7)">💾 저장하기</button> <span class="small" id="saveState7"></span></div>
   <div class="nav"><button class="btn ghost" onclick="go(3)">이전</button><button class="btn" data-dir="1" onclick="go(4)">다음</button></div>
@@ -216,7 +213,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
    <label><input type="checkbox" data-save id="s1"> AI 답변에서 확인이 필요한 문장을 골라낼 수 있다.</label>
    <label><input type="checkbox" data-save id="s2"> AI가 댄 출처가 실제로 있는지, 원 출처인지 직접 찾아 확인할 수 있다.</label>
    <label><input type="checkbox" data-save id="s3"> 숫자·통계가 무엇을 어떻게 센 것인지(정의·범위·조건·시점), 누가 만든 자료인지 확인할 수 있다.</label>
-   <label><input type="checkbox" data-save id="s4"> 확인한 결과에 따라 출처와 조건을 넣어 문장을 고쳐 쓰거나, 쓰지 않기로 판단할 수 있다.</label>
+   <label><input type="checkbox" data-save id="s4"> 확인한 결과에 따라 자료를 그대로 쓸지, 고치거나 출처를 달아 쓸지, 쓰지 않을지 판단할 수 있다.</label>
    <label><input type="checkbox" data-save id="s5"> 모둠 탐구와 공유에 적극적으로 참여했다.</label>
   </div>
   <div style="margin-top:16px;padding:12px 14px;border:1.5px solid var(--main);border-radius:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" onclick="saveActivity(5)">💾 저장하기</button> <span class="small" id="saveState5">다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)</span></div>
@@ -224,9 +221,10 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
  </section>
 
  <section class="stage card" data-i="6">
-  <h2>8. 마무리 <span class="time">3분</span></h2>
+  <h2>8. 마무리 <span class="time">5분</span></h2>
   <div class="todo">제출이 완료되었어요. 수고했어요 👏</div>
-  <div class="box"><h4>🧩 우리 반 AI 자료 확인 체크리스트 (내가 정리한 것)</h4><div id="finalCheck" style="white-space:pre-wrap"></div></div>
+  <div style="text-align:center;margin:10px 0 16px"><button class="btn" style="font-size:1.1rem;padding:14px 22px" onclick="openSum()">🧩 우리가 찾은 AI 자료 확인 포인트 보기</button></div>
+  <div class="box"><h4>🧩 내가 정리한 체크리스트</h4><div id="finalCheck" style="white-space:pre-wrap"></div></div>
   <div class="box" style="margin-top:12px"><h4>오늘의 한 문장</h4><p style="margin:4px 0">“AI의 답은 <b>탐구의 출발점</b>이지 <b>인용할 결론</b>이 아니다. 우리가 찾은 확인 포인트로 검증한 뒤에 쓴다.”</p></div>
   <details style="margin-top:12px"><summary>📚 전문가들도 같은 점을 확인하라고 해요 (참고 자료)</summary>
    <p class="small">우리 체크리스트와 비교해 보세요. 겹치는 것, 우리가 못 찾은 것은 무엇인가요?</p>
@@ -248,6 +246,12 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
  <div class="srcpanel">
   <div class="srchead"><div class="srctabs" id="srcTabs"></div><button type="button" class="btn small ghost" id="srcClose" onclick="closeSrc()">✕ 닫기</button></div>
   <div class="srcview" id="srcView"></div>
+ </div>
+</div>
+<div class="srcmodal" id="sumModal" role="dialog" aria-modal="true" aria-label="우리가 찾은 AI 자료 확인 포인트" hidden onclick="if(event.target===this)closeSum()">
+ <div class="srcpanel">
+  <div class="srchead"><b style="color:#fff">🧩 우리가 찾은 AI 자료 확인 포인트</b><button type="button" class="btn small ghost" id="sumClose" onclick="closeSum()">✕ 닫기</button></div>
+  <div class="srcview" id="sumView"></div>
  </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -310,14 +314,19 @@ function paintSrc(){const s=SRCS[SRC_OPEN];if(!s){closeSrc();return;}
   ?`${head}<iframe class="srcpdf" src="${escH(s.pdf)}" title="${escH(s.title)} PDF"></iframe><div class="srcacts"><a class="btn small ghost" href="${escH(s.pdf.replace('/preview','/view'))}" target="_blank" rel="noopener noreferrer">새 탭에서 크게 열기 ↗</a>${link}</div>`
   :`${head}<div class="srcfull">${s.body}</div>${link?`<div class="srcacts">${link}</div>`:''}`;
  $('srcView').scrollTop=0;}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSrc();});
+/* 마무리: 반 전체가 찾은 확인 포인트 정리본(교사가 설정 ⑥에서 만든 것) */
+function openSum(){const it=(LESSON.summary&&LESSON.summary.items)||[];
+ $('sumView').innerHTML=it.length?it.map((x,i)=>`<div class="sumitem"><span class="num">${i+1}</span><div>${x.title?`<b>${escH(x.title)}</b>`:''}<p>${escH(x.text)}</p>${x.by?`<span class="small">— ${escH(x.by)}</span>`:''}</div></div>`).join('')+'<p class="small">우리가 찾은 확인 포인트로, 다음 차시에 내가 모아 온 자료를 검증해 봐요.</p>':'<div class="box">아직 정리본이 없어요. 선생님이 정리하면 여기에 나타나요.</div>';
+ $('sumModal').hidden=false;document.body.style.overflow='hidden';$('sumClose').focus();}
+function closeSum(){if($('sumModal').hidden)return;$('sumModal').hidden=true;document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSrc();closeSum();}});
 
 function renderGroup(){
  renderRec();showPending();
  const g=+data.group||0;const c=claimOfGroup(LESSON,g);
  $('grpBadge').textContent='모둠: '+(g?g+'모둠':'-');
  document.querySelectorAll('.groups label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
- $('myIndiv').innerHTML=[['내 확인 포인트',data.i_find],['판정',data.i_verdict],['근거 한 문장',data.i_reason],['보고서용 문장',data.i_rewrite]].map(([l,v])=>`<p style="margin:4px 0"><b>${l}:</b> ${escH(v)||'<span class="small">(아직 안 썼어요)</span>'}</p>`).join('');
+ $('myIndiv').innerHTML=[['내 확인 포인트',data.i_find],['판정',data.i_verdict],['근거 한 문장',data.i_reason]].map(([l,v])=>`<p style="margin:4px 0"><b>${l}:</b> ${escH(v)||'<span class="small">(아직 안 썼어요)</span>'}</p>`).join('');
  if(!c){const none='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('myClaim').innerHTML=none;$('myClaim7').innerHTML=none;renderSrc([]);return;}
  const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p>${c.cite&&c.cite.ref?`<p class="small">📎 AI가 댄 근거: <b>${escH(c.cite.ref)}</b></p>`:''}${c.hint?`<details class="hintbox"><summary>💡 막막하면 힌트 보기</summary><p class="small">${c.hint}</p></details>`:''}</div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
  renderSrc(c.src,c.cite);
@@ -329,7 +338,7 @@ function renderGroup(){
   if(data.g_find&&!fd.value){fd.value=data.g_find.slice(0,80);data['sh_f'+g]=fd.value;}}
 }
 /* 단계 이동: 화면 표시(show) / 이동(go) / 진행 통제를 지키는 이동(tryGo·step) */
-function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i)closeSrc();cur=i;
+function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i){closeSrc();closeSum();}cur=i;
  document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('show',+s.dataset.i===i));
  const p=o.indexOf(i),lp=locked()?o.indexOf(LESSON.current):o.length-1;
  document.querySelectorAll('#steps button').forEach((b,j)=>{b.classList.toggle('active',j===p);b.classList.toggle('done',j<p);b.classList.toggle('locked',locked()&&j>lp);});
@@ -367,7 +376,7 @@ const pending=()=>SAVE_STAGES.some(stagePending)||Object.keys(gdirty).length>0; 
 function setBadge(s){$('saveBadge').textContent=data._submitted?'📤 제출 완료':pending()?'✏️ 저장 전 · 이 기기에만 임시 저장됨':s==='err'?'⚠️ 서버 저장 실패 · 다시 시도 중':s==='ok'?'☁️ 서버에 저장됨 '+hhmm():ONLINE?'☁️ 저장 중…':'💾 이 기기에 저장됨 '+hhmm();}
 function save(noSync){collect();localStorage.setItem(KEY,JSON.stringify(data));setBadge();if(ONLINE&&!noSync)queueSync();}
 /* ---- 서버 연동 ---- */
-const GROUP_FIELDS=['g_find','g_verdict','g_reason','g_rewrite','g_speaker']; // 모둠이 발표할 내용(기록자만 입력). 개인 검증 칸은 i_ 로 시작하며 각자의 응답에만 저장됨
+const GROUP_FIELDS=['g_find','g_verdict','g_reason','g_speaker']; // 모둠이 발표할 내용(기록자만 입력). 개인 검증 칸은 i_ 로 시작하며 각자의 응답에만 저장됨
 const needGroup=()=>cur===7||cur===4; // 모둠 기록이 화면에 필요한 단계(모둠 정리·모둠 공유)
 let REC=''; // 이 모둠의 기록자 코드('' = 아직 없음). 정해지면 기록자만 모둠 기록 칸을 쓸 수 있다
 const ONLINE=!!API_URL;
@@ -422,7 +431,7 @@ function autoSaveLeaving(){ // 저장하기를 누르지 않고 이 단계를 �
  if(cur===7&&Object.keys(gdirty).length){pushGroup();toast('저장하지 않은 내용을 자동으로 저장했어요');}
  else if(SAVE_STAGES.includes(cur)&&stagePending(cur)){snapStage(cur);toast('저장하지 않은 내용을 자동으로 저장했어요');}} // 떠나는 단계만 저장해 두고, 이어서 go()의 save()가 서버로 보냄
 /* 기록자: 한 명이 맡으면 나머지 모둠원은 모둠 기록 칸을 읽기만 할 수 있다(서버도 다른 사람의 쓰기를 무시) */
-const REC_INPUTS='#g_find,#g_reason,#g_rewrite,#g_speaker,input[name="g_verdict"]';
+const REC_INPUTS='#g_find,#g_reason,#g_speaker,input[name="g_verdict"]';
 function renderRec(){const box=$('recBox');if(!box)return;const me=!!REC&&REC===data.code;
  document.querySelectorAll(REC_INPUTS).forEach(e=>e.disabled=!me);const sb=$('saveBtn7');if(sb)sb.disabled=!me; // 기록자가 정해지기 전에는 아무도, 정해진 뒤에는 기록자만 입력할 수 있음
  box.innerHTML=me?`✍️ <b>내가 기록자예요.</b> 우리 모둠이 발표할 내용을 아래에 입력하세요. 다른 모둠원은 입력할 수 없어요. <button class="btn small ghost" onclick="recAct('release')">기록자 내려놓기</button>`
@@ -461,7 +470,7 @@ function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k
  if(el.type==='radio')el.checked=(el.value===data[k]);else if(el.type==='checkbox')el.checked=!!data[k];else el.value=data[k];});
  if(data.code)$('codeBadge').textContent='참여 코드: '+data.code+(data.studentName?' ('+data.studentName+')':'');}
 async function submitAll(){collect();const miss=[];
- if(order().includes(3)){if(!data.i_find)miss.push('내 확인 포인트');if(!data.i_verdict)miss.push('내 판정');if(!data.i_rewrite)miss.push('고쳐 쓴 문장');} // 개인 검증 단계를 뺀 수업이면 묻지 않음
+ if(order().includes(3)){if(!data.i_find)miss.push('내 확인 포인트');if(!data.i_verdict)miss.push('내 판정');} // 개인 검증 단계를 뺀 수업이면 묻지 않음
  if(!data.post)miss.push('지금의 판단');if(!data.reflect)miss.push('정리');
  if(miss.length&&!locked()){toast('아직 비어 있어요: '+miss.join(', '));return;} // 교사가 단계를 고정한 동안은 되돌아가 채울 수 없으니 막지 않고 제출(교사 화면에 '작성 없음'으로 보임)
  const prev=data._submitted;data._submitted=new Date().toLocaleTimeString('ko-KR');
