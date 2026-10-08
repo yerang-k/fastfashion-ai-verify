@@ -483,6 +483,8 @@ const indivDone=(s,sid)=>STAGE_FIELD[sid].every(k=>!!s.data[k]);
 const stageName=sid=>{const st=LS.stages.find(x=>x.id===sid);return st?st.name:'';};
 const groupDone=g=>{const f=DB.groups[g]||{};return !!(f.g_verdict&&f.g_verdict.v)&&!!(f.g_find&&f.g_find.v);};
 let HELP=[];
+// 기본 자료일 때 교사가 비교해 볼 ‘예상 확인 포인트’(학생 화면에는 안 보임). 자료를 직접 고친 반에서는 보여 주지 않음
+const EXPECT={1:'최초 출처 추적',2:'수치의 정의·범위',3:'수치의 조건',4:'출처의 실재(타국 통계 둔갑)',5:'원 출처를 정확히 적기'};
 function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
  const rows=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,name:s.data.studentName||'',group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
  (DB.roster||[]).forEach(r=>{if(!known[r.code])rows.push({code:r.code,name:r.name||'',group:r.group,live:false});});return rows;}
@@ -497,8 +499,19 @@ function renderLive(){
   const gcell=hasG?`<td${groupDone(g)?'':' style="font-weight:700"'}>${groupDone(g)?'✅ 완료':'⚠️ 미완료'}</td>`:'';
   h+=`<tr><td><b>${g}모둠</b></td><td class="small">${c?esc(c.t):''}</td><td>${m.length}/${gr.size}</td>${cells}${gcell}<td>${m.filter(submitted).length}/${m.length}</td><td>${f._rec?`<span class="cd">${esc(f._rec.v)}</span> <button class="btn small ghost" onclick="clearRec(${g})">해제</button>`:'<span class="small">미정</span>'}</td></tr>`;});
  h+=`</table><p class="small" style="margin-bottom:0">학생 코드·모둠을 고치려면 <a href="#" onclick="openStudentMgr();return false" style="color:var(--accent-dk);font-weight:700">⚙️ 수업 설정 › 학생 관리</a>로 가세요.</p></div>`;
- h+=currentStageCheck();
+ h+=currentStageCheck()+findsCard();
  $('live').innerHTML=h;renderStudentMgr();
+}
+// 모둠별 확인 포인트(모둠 글 + 개인이 저장한 글)를 한곳에 모아 보여 줌 — 예상 밖 발견·틀린 발견을 수업 중에 바로 알아채고 발표 순서를 정하는 용도(교사 화면 전용, 학생 코드는 표시 안 함)
+function findsCard(){
+ const any=DB.students.some(s=>s.data&&s.data.i_find)||LS.groups.some(gr=>(DB.groups[gr.n]||{}).g_find);
+ if(!any&&![3,7,4].includes(LS.current))return '';
+ const rows=LS.groups.map(gr=>{const g=gr.n,c=claimOfGroup(LS,g),f=DB.groups[g]||{},gf=(f.g_find&&f.g_find.v)||'',m=DB.students.filter(s=>+s.group===g&&s.data&&s.data.i_find);
+  const ex=!LS.claims&&c&&EXPECT[c.n]?` <span class="small">· 예상: ${esc(EXPECT[c.n])}</span>`:'';
+  return `<div class="claim"><div><b>${g}모둠</b> <span class="small">${c?esc(c.n+'. '+c.t.slice(0,36)+(c.t.length>36?'…':'')):''}</span>${ex}</div>
+   <div class="quote"><b>모둠:</b> ${gf?esc(gf):'<span class="small">(아직 없음)</span>'}</div>
+   ${m.length?m.map(s=>`<div class="quote" style="margin-left:14px"><span class="small">개인</span> ${esc(s.data.i_find)}</div>`).join(''):'<div class="small" style="margin-left:14px">저장된 개인 기록이 아직 없어요</div>'}</div>`;}).join('');
+ return `<div class="card"><h2>🔎 확인 포인트 모아 보기 <span class="small">(‘저장하기’를 누른 글만 보여요 · 학생 코드는 표시하지 않아요)</span></h2>${rows}</div>`;
 }
 // 지금 교사가 고정해 둔 단계(LS.current)를 기준으로, 저장을 안 한 학생·모둠을 바로 알려 줌 — 다음 단계로 넘기기 전에 확인하는 용도
 function currentStageCheck(){
