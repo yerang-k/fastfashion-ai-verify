@@ -202,7 +202,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
    </div>
    <div class="phrow"><span class="small" id="flowInfo"></span></div>
    <div class="phrow" style="align-items:stretch"><div class="notebox" id="noteBox"></div></div>
-   <div class="phrow"><button class="btn small" id="introBtn" onclick="playIntro()" style="display:none">▶ 생각 열기 영상 재생</button> <button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
+   <div class="phrow"><span id="introBtn" style="display:none"><button class="btn small" onclick="introCmd('play')" title="무대 화면에서 영상을 처음부터 재생해요">▶ 무대 화면에서 영상 재생</button> <button class="btn small ghost" onclick="introCmd('pause')">⏯ 일시정지/계속</button> <button class="btn small ghost" onclick="introCmd('close')">■ 영상 닫기</button></span> <button class="btn small" id="shareBtn" onclick="toggleShare()">-</button><span class="small">5단계 모둠 판정 공개 — 켜면 학생 5단계 표에 다른 모둠 판정이 채워져요. 발표가 끝난 뒤 공개하세요.</span></div>
   </div>
   </div></div>
   <div class="tabs" id="tabs"></div>
@@ -395,7 +395,7 @@ async function saveNote(){const id=NOTE_EDIT,txt=$('noteText').value;if(id==null
 let LASTRAW=0,LVT=null,stBusy=false; // LASTRAW=서버가 마지막으로 알려 준 단계(원본), LVT=수업 설정 버전
 const rcT=x=>x===null?null:(x==null?0:+x);
 async function pollStageT(){if(!DB||document.hidden||stBusy)return;stBusy=true;let slow=false;
- try{const r=await api('getStage',null,4000);if(!r.ok)return;const lv=r.lv==null?'':r.lv,held=holdStage&&Date.now()<holdStage.until;
+ try{const r=await api('getStage',null,4000);if(!r.ok)return;handleVideoCmd(r.vc);const lv=r.lv==null?'':r.lv,held=holdStage&&Date.now()<holdStage.until;
   if(!held&&(rcT(r.current)!==rcT(LASTRAW)||(LVT!==null&&lv!==LVT)))await refresh();
   LVT=lv;}catch(e){slow=!!(e&&e.name==='AbortError');}finally{stBusy=false;}
  if(slow)setTimeout(pollStageT,100);}
@@ -570,8 +570,20 @@ function keyNav(d){
 /* 생각 열기 도입 영상(media/intro-think.mp4, tools/make-intro-video.js로 제작): 무대 화면의 '영상으로 시작하기' 버튼 또는 V 키 */
 let INTRO_LOADED=false;
 function preloadIntro(){if(INTRO_LOADED)return;INTRO_LOADED=true;const v=$('introVid');v.preload='auto';v.load();} // 무대 화면을 켤 때 미리 받아 두어 재생 시 지연 없게
-function playIntro(){const v=$('introVid');$('introVideo').hidden=false;try{v.currentTime=0;}catch(e){}v.play().catch(()=>{});}
+function playIntro(){const v=$('introVid');$('introVideo').hidden=false;try{v.currentTime=0;}catch(e){}
+ v.play().catch(()=>{toast('영상을 재생하려면 이 화면을 한 번 눌러 주세요(브라우저가 소리 자동 재생을 막았어요)');});}
 function closeIntro(){const v=$('introVid');v.pause();$('introVideo').hidden=true;}
+function pauseIntro(){const v=$('introVid');if($('introVideo').hidden)return;v.paused?v.play().catch(()=>{}):v.pause();}
+/* 교사 화면의 영상 버튼 = 무대 화면 리모컨. 이 화면이 무대 화면이면 바로 실행하고, 아니면 서버에 신호를 남겨 무대 화면이 몇 초 안에 따라 하게 한다 */
+async function introCmd(cmd){
+ if(document.body.classList.contains('stagemode-on')){cmd==='play'?playIntro():cmd==='close'?closeIntro():pauseIntro();return;}
+ let r;try{r=await api('setVideo',{cmd},6000);}catch(e){r={ok:false,error:'network'};}
+ const msg={play:'무대 화면에서 영상을 재생해요(몇 초 걸려요)',pause:'일시정지/계속 신호를 보냈어요',close:'영상을 닫으라는 신호를 보냈어요'}[cmd];
+ if(r.ok)saved(msg);else toast(r.error==='unknown action'?'서버(Code.gs)를 새 버전으로 배포해야 해요':r.error==='network'?'신호를 보내지 못했어요. 인터넷 연결을 확인해 주세요':'신호를 보내지 못했어요');}
+let VC_SEEN=null; // 마지막으로 본 영상 신호. 처음 받은 값은 기준으로만 삼아서, 무대 화면을 새로 열 때 옛 신호로 영상이 켜지지 않게 함
+function handleVideoCmd(vc){vc=vc||'';if(VC_SEEN===null){VC_SEEN=vc;return;}if(vc===VC_SEEN)return;VC_SEEN=vc;
+ if(!document.body.classList.contains('stagemode-on'))return; // 무대 화면에서만 따라 함(태블릿 교사 화면에서는 재생 안 함)
+ const cmd=vc.split(':')[1];if(cmd==='play')playIntro();else if(cmd==='close')closeIntro();else if(cmd==='pause')pauseIntro();}
 $('introVid').addEventListener('error',()=>{closeIntro();toast('영상 파일을 불러오지 못했어요');});
 function toggleKeyHelp(){$('keyHelp').classList.toggle('show');}
 document.addEventListener('keydown',e=>{
@@ -579,7 +591,7 @@ document.addEventListener('keydown',e=>{
  if(!document.body.classList.contains('stagemode-on')||e.ctrlKey||e.metaKey||e.altKey||typing(document.activeElement))return;
  const k=e.key,nav={ArrowRight:1,PageDown:1,' ':1,ArrowLeft:-1,PageUp:-1};
  if(!$('introVideo').hidden){e.preventDefault();if(e.repeat)return;const v=$('introVid');
-  if(k===' '||k==='Enter'){v.paused?v.play().catch(()=>{}):v.pause();}else if(k==='v'||k==='V'||k in nav||k==='Escape')closeIntro();return;}
+  if(k===' '||k==='Enter'){pauseIntro();}else if(k==='v'||k==='V'||k in nav||k==='Escape')closeIntro();return;}
  if((k==='v'||k==='V')&&LS.current===1){e.preventDefault();playIntro();return;}
  if(k in nav){e.preventDefault();if(!e.repeat)keyNav(nav[k]);return;}
  if(k==='Home'||k==='End'){e.preventDefault();const vs=visStages(LS);if(LS.current!=null&&vs.length)setStage((k==='Home'?vs[0]:vs[vs.length-1]).id);return;}

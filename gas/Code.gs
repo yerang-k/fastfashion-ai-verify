@@ -48,7 +48,7 @@ function handle_(p) {
   var lock = null;
   try {
     // 읽기만 하는 요청은 줄을 세우지 않고 바로 처리한다(학생 수만큼 쌓여 느려지는 것을 방지). 쓰기만 잠금.
-    if (!READ_ACTIONS_[p.action] && p.action !== 'setStage') { lock = LockService.getScriptLock(); lock.waitLock(20000); }
+    if (!READ_ACTIONS_[p.action] && p.action !== 'setStage' && p.action !== 'setVideo') { lock = LockService.getScriptLock(); lock.waitLock(20000); } // setStage·setVideo는 캐시만 써서 잠금 없이 처리(학생 저장 때문에 기다리지 않게)
     switch (p.action) {
       case 'saveStudent': return out_(saveStudent_(p));
       case 'getStage': return out_(getStage_());
@@ -56,6 +56,7 @@ function handle_(p) {
       case 'getLesson': return out_(getLesson_(p));
       case 'setLesson': return out_(setLesson_(p));
       case 'setStage': return out_(setStage_(p));
+      case 'setVideo': return out_(setVideo_(p));
       case 'setRoster': return out_(setRoster_(p));
       case 'updateStudent': return out_(updateStudent_(p));
       case 'deleteStudent': return out_(deleteStudent_(p));
@@ -252,7 +253,17 @@ function lessonGet_() {
 function getStage_() {
   var st = stageOverride_(), cur;
   if (st !== undefined) cur = st; else { var l = lessonGet_() || {}; cur = ('current' in l) ? l.current : 0; }
-  return { ok: true, current: cur, lv: cfgGet_('lessonVer'), so: cfgGet_('shareOpen') === 'true' };
+  var vc = ''; try { vc = CacheService.getScriptCache().get('vid:' + CLASS_) || ''; } catch (e) {}
+  return { ok: true, current: cur, lv: cfgGet_('lessonVer'), so: cfgGet_('shareOpen') === 'true', vc: vc };
+}
+// 교사 화면 → 무대 화면 영상 리모컨: '시각:명령'을 캐시에 두면 무대 화면이 단계 조회(getStage) 때 새 값을 보고 재생·일시정지·닫기를 한다. (명령: play | pause | close)
+function setVideo_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  var cmd = String(p.cmd || '');
+  if (cmd !== 'play' && cmd !== 'pause' && cmd !== 'close') return { ok: false, error: 'bad cmd' };
+  var token = Date.now() + ':' + cmd;
+  try { CacheService.getScriptCache().put('vid:' + CLASS_, token, 21600); } catch (e) { return { ok: false, error: 'cache' }; }
+  return { ok: true, vc: token };
 }
 
 // 학생용: 수업 설정 + 이 기기(또는 코드)가 배정받은 코드·모둠
