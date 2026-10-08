@@ -484,7 +484,7 @@ const stageName=sid=>{const st=LS.stages.find(x=>x.id===sid);return st?st.name:'
 const groupDone=g=>{const f=DB.groups[g]||{};return !!(f.g_verdict&&f.g_verdict.v)&&!!(f.g_find&&f.g_find.v);};
 let HELP=[];
 // 기본 자료일 때 교사가 비교해 볼 ‘예상 확인 포인트’(학생 화면에는 안 보임). 자료를 직접 고친 반에서는 보여 주지 않음
-const EXPECT={1:'최초 출처 추적',2:'수치의 정의·범위',3:'수치의 조건',4:'출처의 실재(타국 통계 둔갑)',5:'원 출처를 정확히 적기'};
+const EXPECT={1:'최초 출처 추적',2:'수치의 정의·범위',3:'수치의 조건',4:'출처를 직접 찾아 계산, 범위·연도 확인',5:'원 출처를 정확히 적기'};
 function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
  const rows=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,name:s.data.studentName||'',group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
  (DB.roster||[]).forEach(r=>{if(!known[r.code])rows.push({code:r.code,name:r.name||'',group:r.group,live:false});});return rows;}
