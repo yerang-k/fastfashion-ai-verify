@@ -133,18 +133,19 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
   <h3>🔎 내 검증 기록지</h3>
   <div class="grid3">
    <div class="box"><h4>① 출처</h4><textarea data-save id="i_src" placeholder="AI가 말한 출처가 있나요? '원문 열기'를 눌러, 그 출처가 실제로 존재하고 이 내용을 말하는지 확인해 보세요."></textarea></div>
-   <div class="box"><h4>② 정확성</h4><textarea data-save id="i_acc" placeholder="모둠원의 설명을 들으며 자료 3개가 말하는 숫자·조건·연도를 서로 비교해 보세요. 같은 기관의 자료인데도 수치가 다르거나, 나중에 내용이 수정된 경우도 있어요."></textarea></div>
+   <div class="box"><h4>② 정확성</h4><textarea data-save id="i_acc" placeholder="내가 맡은 자료가 말하는 숫자·조건·연도를 적어보세요. 모둠원 설명을 들었다면 다른 자료와 같은지 다른지도 써보고, 아직 비교가 안 됐다면 '모둠 정리 때 비교 예정'이라고 적어도 돼요."></textarea></div>
    <div class="box"><h4>③ 신뢰성</h4><textarea data-save id="i_rel" placeholder="자료 카드 위쪽 태그를 보고, 어떤 자료가 원 출처(정부·국제기구·학술 논문)이고 어떤 자료가 그걸 옮기거나 다시 소개한 것인지 구분해 보세요. 어느 쪽이 더 믿을 만한가요?"></textarea></div>
   </div>
-  <h3>내 판정</h3>
+  <h3>내 판정 (1차)</h3>
+  <p class="small">⚠️ 아직 확신이 안 서도 괜찮아요. 내가 맡은 자료 1개만으로는 판단이 안 될 수 있어요 — 그럴 땐 <b>‘확인 불가’</b>를 고르고, 근거에 “아직 비교 못 함, 모둠 정리 때 확인 예정”이라고 써 두세요. 최종 판정은 다음 모둠 정리 단계에서 완성해요.</p>
   <div class="verdict">
    <label class="v-ok"><input type="radio" name="i_verdict" value="확인됨" data-save><span>✅ 확인됨</span></label>
    <label class="v-part"><input type="radio" name="i_verdict" value="부분적으로 맞음" data-save><span>🟠 부분적으로 맞음 (조건·범위 설명 필요)</span></label>
    <label class="v-unk"><input type="radio" name="i_verdict" value="확인 불가" data-save><span>❓ 확인 불가</span></label>
    <label class="v-bad"><input type="radio" name="i_verdict" value="사실 아님" data-save><span>❌ 사실 아님</span></label>
   </div>
-  <p><b>판정 근거 한 문장</b> (내 생각)</p>
-  <textarea id="i_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
+  <p><b>판정 근거 한 문장</b> (내 생각 — 아직 비교가 덜 됐다면 그 이유를 적어도 돼요)</p>
+  <textarea id="i_reason" data-save placeholder="예: 내가 맡은 자료 ○에서는 …를 확인함. (다른 자료는 아직 못 비교함 → 모둠 정리 때 확인)"></textarea>
   <p><b>보고서용으로 고쳐 쓴 문장</b> — 판정에 맞게 고치고 <b>출처와 조건</b>을 함께 쓰세요. 쓸 수 없다면 “이 문장은 인용하지 않는다”와 이유를 쓰세요.</p>
   <textarea id="i_rewrite" data-save style="min-height:110px" placeholder="예: … 로 추정된다(○○ 기관, 2019). 단, 산정 기준에 따라 …까지 차이가 있다."></textarea>
   <div style="margin-top:16px;padding:12px 14px;border:1.5px solid var(--main);border-radius:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" onclick="saveActivity(3)">💾 저장하기</button> <span class="small" id="saveState3">다 쓴 뒤 저장하기를 눌러 주세요. (누르기 전에는 이 기기에만 임시 저장돼요)</span></div>
