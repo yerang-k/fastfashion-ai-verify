@@ -36,7 +36,7 @@ function normLesson(raw){
   const i=st.findIndex(s=>s.id===0);if(i>0)st.unshift(st.splice(i,1)[0]); // 준비는 항상 맨 앞
   L.stages=st;}
  if(Array.isArray(raw.claims)&&raw.claims.length)
-  L.claims=raw.claims.slice(0,MAX_CLAIMS).map((c,i)=>({n:i+1,t:String(c.t||''),hint:String(c.hint||''),
+  L.claims=raw.claims.slice(0,MAX_CLAIMS).map((c,i)=>({n:i+1,t:String(c.t||''),hint:String(c.hint||''),cite:normCite(c.cite),
    src:(Array.isArray(c.src)?c.src:[]).slice(0,MAX_SRC).map(s=>({type:String(s.type||''),title:String(s.title||''),body:String(s.body||''),url:safeUrl(s.url),pdf:drivePdf(s.pdf)}))}));
  const ncl=(L.claims||CLAIMS).length;
  if(Array.isArray(raw.groups)&&raw.groups.length)
@@ -49,6 +49,8 @@ function normLesson(raw){
  else{const c=raw.current==null?0:+raw.current;L.current=vis.some(s=>s.id===c)?c:vis[0].id;} // 숨겨진 단계면 첫 단계로
  return L;
 }
+// AI 답변 아래 '근거 자료'로 보여 줄 인용(ref)과, 자료 카드 중 AI가 인용한 카드 위치(src, -1=없음), 카드 배지 문구(badge, 비우면 기본 문구)
+const normCite=c=>{c=c||{};const n=parseInt(c.src,10);return{ref:String(c.ref||'').slice(0,80),src:n>=0&&n<MAX_SRC?n:-1,badge:String(c.badge||'').slice(0,40)};};
 const claimsOf=L=>L.claims||CLAIMS;
 const visStages=L=>L.stages.filter(s=>s.on);
 const claimOfGroup=(L,g)=>{const gr=L.groups.find(x=>x.n===+g);return gr?claimsOf(L).find(c=>c.n===gr.claim)||null:null;};

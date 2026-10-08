@@ -50,7 +50,7 @@ td select,td input{padding:6px;font-size:.9rem}
 .role{display:flex;gap:8px;flex-wrap:wrap}.role input{width:auto;flex:1;min-width:120px}
 .srcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
 .srccard{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
-.srctop{display:flex;align-items:center;gap:8px}.srctop .tag{margin:0}
+.srctop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.srctop .tag{margin:0}
 .srcletter{flex:none;width:26px;height:26px;border-radius:50%;background:var(--main);color:#fff;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
 .srccard h4{margin:0;font-size:1rem;line-height:1.45}
 .srcbody{font-size:.92rem;line-height:1.6;color:#333;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
@@ -74,6 +74,9 @@ a.btn{text-decoration:none;display:inline-block}
 .srcacts{display:flex;flex-wrap:wrap;gap:8px}
 @media(max-width:720px){.srcmodal{padding:0}.srcpanel{max-width:none;height:100%;border-radius:0}.srcview{padding:12px}}
 /* 미리보기 모드: 눌러서 바꿀 수 없게(스크롤만 가능), 도움 요청·상태 배지는 숨김 */
+.cref{color:var(--accent-dk);font-weight:700;margin-left:2px}
+.refs{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.92rem;color:var(--sub)}.refs b{color:var(--txt)}
+.tag.cited{background:var(--accent);color:#111;font-weight:700}
 body.preview .help,body.preview .status{display:none}
 body.preview button,body.preview input,body.preview textarea,body.preview select,body.preview label,body.preview a,body.preview summary{pointer-events:none}
 </style></head><body>
@@ -255,7 +258,8 @@ function buildStatic(){
   sec.querySelectorAll('.nav button[onclick^="go("],.nav button[onclick^="step("]').forEach(b=>{const k=+(b.getAttribute('onclick').match(/\d+/)||[0])[0];if(b.dataset.dir==null)b.dataset.dir=k<sid?-1:1;b.setAttribute('onclick',`step(${b.dataset.dir})`);b.style.display=locked()?'none':'';});}); // 이전/다음은 보이는 단계 순서를 따르고, 교사가 단계를 지정한 동안은 숨김
  $('groups').innerHTML=LESSON.groups.map(g=>`<label><input type="radio" name="group" value="${g.n}" data-save><div>${g.n}모둠<br><span class="small">${g.size}명</span></div></label>`).join('');
  const CL=claimsOf(LESSON);
- $('aiText').innerHTML=`<p><b>지현:</b> 패스트패션이 환경에 미치는 영향을 근거 자료와 함께 알려줘.</p><p><b>AI:</b> 패스트패션의 환경 영향은 매우 심각합니다. `+CL.map(c=>`<span class="num">${c.n}</span><mark>${c.t}</mark>`).join(' ')+` 따라서 옷을 적게 사고 오래 입는 것이 중요합니다.</p>`;
+ const hasRef=CL.some(c=>c.cite&&c.cite.ref);
+ $('aiText').innerHTML=`<p><b>지현:</b> 패스트패션이 환경에 미치는 영향을 근거 자료와 함께 알려줘.</p><p><b>AI:</b> 패스트패션의 환경 영향은 매우 심각합니다. `+CL.map(c=>`<span class="num">${c.n}</span><mark>${c.t}</mark>${c.cite&&c.cite.ref?`<sup class="cref">[${c.n}]</sup>`:''}`).join(' ')+` 따라서 옷을 적게 사고 오래 입는 것이 중요합니다.</p>`+(hasRef?`<div class="refs"><b>📎 근거 자료</b>`+CL.filter(c=>c.cite&&c.cite.ref).map(c=>`<div>[${c.n}] ${escH(c.cite.ref)}</div>`).join('')+`</div>`:'');
  $('shareTable').innerHTML=LESSON.groups.map(g=>{const c=claimOfGroup(LESSON,g.n);return `<tr id="row${g.n}"><td><b>${g.n}</b></td><td class="small">${c?c.t:''}</td>
   <td><select data-save name="sh_v${g.n}"><option value="">판정</option><option>확인됨</option><option>부분적으로 맞음</option><option>확인 불가</option><option>사실 아님</option></select></td>
   <td><input type="text" data-save name="sh_r${g.n}" placeholder="근거 요약"></td></tr>`;}).join('');
@@ -269,8 +273,10 @@ function applyLesson(raw){
  buildStatic();restore();show(cur);syncStage();}
 /* 자료 카드·자세히 보기 창. renderGroup()이 입력할 때마다 불리므로, 내용이 바뀐 때만 다시 그려서 열려 있는 창이 깜빡이거나 닫히지 않게 한다. */
 let SRCS=[],SRC_HTML='',SRC_OPEN=-1,SRC_MODE='text';
-function srcCardsHtml(list){return list.map((s,i)=>`<div class="srccard"><div class="srctop"><span class="srcletter">${SRC_LETTERS[i]}</span><span class="tag">${escH(s.type)}</span></div><h4>${escH(s.title)}</h4><div class="srcbody">${s.body}</div><div class="srcbtns"><button type="button" class="btn small" onclick="openSrc(${i},'text')">📖 자세히 보기</button>${s.pdf?`<button type="button" class="btn small ghost" onclick="openSrc(${i},'pdf')">📄 PDF 보기</button>`:''}${s.url?`<a class="btn small ghost" href="${escH(s.url)}" target="_blank" rel="noopener noreferrer">🔗 원문 열기 ↗</a>`:''}</div></div>`).join('');}
-function renderSrc(list){const h=srcCardsHtml(list);if(h===SRC_HTML)return;SRC_HTML=h;SRCS=list;$('mySrc').innerHTML=h;$('mySrc7').innerHTML=h;if(SRC_OPEN>=0)paintSrc();}
+let CITE=null; // 지금 보고 있는 주장의 AI 인용 정보(어느 카드가 AI가 인용한 자료인지)
+const citeTag=i=>CITE&&CITE.src===i?`<span class="tag cited">${escH(CITE.badge||'AI가 인용한 자료')}</span>`:'';
+function srcCardsHtml(list){return list.map((s,i)=>`<div class="srccard"><div class="srctop"><span class="srcletter">${SRC_LETTERS[i]}</span><span class="tag">${escH(s.type)}</span>${citeTag(i)}</div><h4>${escH(s.title)}</h4><div class="srcbody">${s.body}</div><div class="srcbtns"><button type="button" class="btn small" onclick="openSrc(${i},'text')">📖 자세히 보기</button>${s.pdf?`<button type="button" class="btn small ghost" onclick="openSrc(${i},'pdf')">📄 PDF 보기</button>`:''}${s.url?`<a class="btn small ghost" href="${escH(s.url)}" target="_blank" rel="noopener noreferrer">🔗 원문 열기 ↗</a>`:''}</div></div>`).join('');}
+function renderSrc(list,cite){CITE=cite||null;const h=srcCardsHtml(list);if(h===SRC_HTML)return;SRC_HTML=h;SRCS=list;$('mySrc').innerHTML=h;$('mySrc7').innerHTML=h;if(SRC_OPEN>=0)paintSrc();}
 function openSrc(i,mode){if(!SRCS[i])return;SRC_OPEN=i;SRC_MODE=(mode==='pdf'&&SRCS[i].pdf)?'pdf':'text';paintSrc();$('srcModal').hidden=false;document.body.style.overflow='hidden';$('srcClose').focus();}
 function closeSrc(){if($('srcModal').hidden)return;$('srcModal').hidden=true;$('srcView').innerHTML='';document.body.style.overflow='';SRC_OPEN=-1;}
 function setSrcMode(m){SRC_MODE=m;paintSrc();}
@@ -279,7 +285,7 @@ function paintSrc(){const s=SRCS[SRC_OPEN];if(!s){closeSrc();return;}
  $('srcTabs').innerHTML=SRCS.map((x,i)=>`<button type="button" class="srctab${i===SRC_OPEN?' on':''}" onclick="openSrc(${i},'${SRC_MODE}')" aria-label="자료 ${SRC_LETTERS[i]}">${SRC_LETTERS[i]}</button>`).join('');
  const modes=s.pdf?`<div class="srcmodes"><button type="button" class="${SRC_MODE==='text'?'on':''}" onclick="setSrcMode('text')">본문</button><button type="button" class="${SRC_MODE==='pdf'?'on':''}" onclick="setSrcMode('pdf')">PDF</button></div>`:'';
  const link=s.url?`<a class="btn small ghost" href="${escH(s.url)}" target="_blank" rel="noopener noreferrer">🔗 원문 열기 ↗</a>`:'';
- const head=`<div><span class="tag">${escH(s.type)}</span><h3>자료 ${SRC_LETTERS[SRC_OPEN]} · ${escH(s.title)}</h3></div>${modes}`;
+ const head=`<div><span class="tag">${escH(s.type)}</span>${citeTag(SRC_OPEN)}<h3>자료 ${SRC_LETTERS[SRC_OPEN]} · ${escH(s.title)}</h3></div>${modes}`;
  $('srcView').innerHTML=SRC_MODE==='pdf'
   ?`${head}<iframe class="srcpdf" src="${escH(s.pdf)}" title="${escH(s.title)} PDF"></iframe><div class="srcacts"><a class="btn small ghost" href="${escH(s.pdf.replace('/preview','/view'))}" target="_blank" rel="noopener noreferrer">새 탭에서 크게 열기 ↗</a>${link}</div>`
   :`${head}<div class="srcfull">${s.body}</div>${link?`<div class="srcacts">${link}</div>`:''}`;
@@ -293,8 +299,8 @@ function renderGroup(){
  document.querySelectorAll('.groups label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
  $('myIndiv').innerHTML=[['판정',data.i_verdict],['근거 한 문장',data.i_reason],['보고서용 문장',data.i_rewrite]].map(([l,v])=>`<p style="margin:4px 0"><b>${l}:</b> ${escH(v)||'<span class="small">(아직 안 썼어요)</span>'}</p>`).join('');
  if(!c){const none='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('myClaim').innerHTML=none;$('myClaim7').innerHTML=none;renderSrc([]);return;}
- const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p><p class="small">💡 생각 열쇠: ${c.hint}</p></div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
- renderSrc(c.src);
+ const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p>${c.cite&&c.cite.ref?`<p class="small">📎 AI가 댄 근거: <b>${escH(c.cite.ref)}</b></p>`:''}<p class="small">💡 생각 열쇠: ${c.hint}</p></div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
+ renderSrc(c.src,c.cite);
  document.querySelectorAll('#shareTable tr').forEach(r=>r.classList.remove('mine'));
  const row=$('row'+g);if(row){row.classList.add('mine');
   const v=row.querySelector('select'),r=row.querySelector('input');
