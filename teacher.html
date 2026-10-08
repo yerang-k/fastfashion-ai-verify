@@ -630,6 +630,9 @@ function renderSettings(){
   h+=DR.claims.map((c,ci)=>ci!==CT?'':`<div class="claimcard"><b>주장 ${c.n}</b> <button class="btn small danger" style="float:right" onclick="delClaim(${ci})" ${DR.claims.length<=1?'disabled':''}>이 주장 삭제</button>
    <div class="lbl">검증할 AI 답변 문장</div><textarea oninput="DR.claims[${ci}].t=this.value;mark()">${esc(c.t)}</textarea>
    <div class="lbl">생각 열쇠(힌트)</div><textarea oninput="DR.claims[${ci}].hint=this.value;mark()">${esc(c.hint)}</textarea>
+   <div class="lbl">📎 AI가 댄 근거 — 생각 열기의 AI 답변 아래 ‘근거 자료’에 표시돼요 (비우면 표시 안 함)</div><input type="text" style="width:100%" placeholder="예: 유엔환경계획(UNEP) · 보도자료 · 2019" value="${esc((c.cite||{}).ref||'')}" oninput="setCite(${ci},'ref',this.value)">
+   <div class="lbl">AI가 인용한 자료 카드 — 개인 검증에서 이 카드에 배지가 붙어요</div><select onchange="setCite(${ci},'src',this.value)"><option value="-1">없음</option>${c.src.map((s,si)=>`<option value="${si}" ${((c.cite||{}).src===si)?'selected':''}>자료 ${SRC_LETTERS[si]} · ${esc(String(s.title).slice(0,34))}</option>`).join('')}</select>
+   <div class="lbl">배지 문구 (선택, 비우면 ‘AI가 인용한 자료’)</div><input type="text" style="width:100%" maxlength="40" value="${esc((c.cite||{}).badge||'')}" oninput="setCite(${ci},'badge',this.value)">
    ${c.src.map((s,si)=>`<div class="srcbox"><b>자료 ${SRC_LETTERS[si]}</b> <button class="btn small danger" style="float:right" onclick="delSrc(${ci},${si})" ${c.src.length<=1?'disabled':''}>삭제</button>
     <div class="lbl">종류 (예: 국제기구 보도자료 (2019))</div><input type="text" style="width:100%" value="${esc(s.type)}" oninput="DR.claims[${ci}].src[${si}].type=this.value;mark()">
     <div class="lbl">제목</div><input type="text" style="width:100%" value="${esc(s.title)}" oninput="DR.claims[${ci}].src[${si}].title=this.value;mark()">
@@ -662,7 +665,8 @@ function delGroup(){if(DR.groups.length<=1)return;const g=DR.groups[DR.groups.le
 function startEditClaims(){CT=0;DR.claims=clone(CLAIMS);mark();renderSettings();}
 function resetClaims(){CT=0;if(!confirm('편집한 주장·자료를 모두 지우고 기본 자료로 되돌릴까요? (저장 전까지는 학생 화면에 영향이 없어요)'))return;DR.claims=null;DR.groups.forEach(g=>{if(g.claim>CLAIMS.length)g.claim=1;});mark();renderSettings();}
 function setClaimTab(i){CT=i;renderSettings();}
-function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;CT=DR.claims.length;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',src:[{type:'',title:'',body:'',url:'',pdf:''}]});mark();renderSettings();}
+function setCite(ci,k,v){const c=DR.claims[ci];c.cite=normCite(c.cite);c.cite[k]=k==='src'?parseInt(v,10):v;mark();}
+function addClaim(){if(DR.claims.length>=MAX_CLAIMS)return;CT=DR.claims.length;DR.claims.push({n:DR.claims.length+1,t:'',hint:'',cite:{ref:'',src:-1,badge:''},src:[{type:'',title:'',body:'',url:'',pdf:''}]});mark();renderSettings();}
 function delClaim(ci){if(DR.claims.length<=1)return;if(!confirm(`주장 ${ci+1}을(를) 삭제할까요?`))return;
  DR.claims.splice(ci,1);DR.claims.forEach((c,i)=>c.n=i+1);CT=Math.max(0,ci-1);
  DR.groups.forEach(g=>{if(g.claim===ci+1)g.claim=1;else if(g.claim>ci+1)g.claim--;});mark();renderSettings();}
@@ -691,7 +695,7 @@ async function uploadSrcPdf(ci,si,inp){const f=inp.files[0];if(!f)return;
  }catch(err){refreshPdfRow(ci,si);alert('PDF를 올리지 못했어요. 인터넷 연결을 확인하고 다시 해 보세요.');}
 }
 function addSrc(ci){const c=DR.claims[ci];if(c.src.length>=MAX_SRC)return;c.src.push({type:'',title:'',body:'',url:'',pdf:''});mark();renderSettings();}
-function delSrc(ci,si){const c=DR.claims[ci];if(c.src.length<=1)return;c.src.splice(si,1);mark();renderSettings();}
+function delSrc(ci,si){const c=DR.claims[ci];if(c.src.length<=1)return;c.src.splice(si,1);if(c.cite){if(c.cite.src===si)c.cite.src=-1;else if(c.cite.src>si)c.cite.src--;}mark();renderSettings();}
 async function saveSettings(){
  const CL=claimsOf(DR);
  for(const c of CL){if(!String(c.t).trim()){toast(`주장 ${c.n}의 AI 답변 문장이 비어 있어요`);return;}}
