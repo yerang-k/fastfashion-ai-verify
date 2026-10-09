@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1C1C1C">
+<meta name="description" content="2026 AI·디지털활용 선도학교 수업나눔 · 주제탐구독서 · AI답변, 믿어도 될까?">
+<title>AI답변, 믿어도 될까?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700&display=swap">
+<style>
+/* Layout: 화면을 꽉 채우는 가로 스와이프 슬라이드. 위 얇은 막대(진행), 아래 이전/다음 버튼. 수업 웹앱과 같은 검정·베이지 체계. */
+:root {
+  --ink: #1C1C1C;
+  --accent: #C9B18B;
+  --accent-soft: #F1EADD;
+  --accent-deep: #6B5535;
+  --bg: #F4F4F2;
+  --card: #FFFFFF;
+  --mute-bg: #EEEDE9;
+  --text: #1A1A1A;
+  --sub: #6B6B68;
+  --line: #DCDCD8;
+  --v1: #1A1A1A;
+  --v2: #A8875A;
+  --v3: #8A8A86;
+  --v4: #4D4D4D;
+  --sans: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --serif: 'Noto Serif KR', 'Batang', serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: #E6E5E1;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
+ul, ol { padding: 0; }
+button { font-family: inherit; }
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* 위 막대 */
+.top { flex: none; background: var(--ink); color: #fff; padding-top: env(safe-area-inset-top, 0px); }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 16px 8px; }
+.top strong { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.top .sec { font-size: 12px; font-weight: 500; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.seg { display: flex; gap: 2px; padding: 0 16px 9px; }
+.seg i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.2); transition: background .2s; }
+.seg i.on { background: var(--accent); }
+
+/* 슬라이드 덱 */
+.deck {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.deck::-webkit-scrollbar { display: none; }
+.slide {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: 18px 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.in { margin-block: auto; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+/* 아래 이동 막대 */
+.nav {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--card);
+  border-top: 1px solid var(--line);
+}
+.nb {
+  width: 64px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.nb.next { background: var(--ink); color: #fff; }
+.nb:disabled { opacity: .3; cursor: default; }
+.nb:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 2px; }
+.count { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.count b { color: var(--text); font-weight: 700; }
+
+/* 공통 요소 */
+.h2 { font-size: 21px; font-weight: 700; line-height: 1.4; text-wrap: balance; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.tag { flex: none; font-size: 12px; color: var(--sub); }
+.card { background: var(--card); border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 18px 18px; }
+.note { font-size: 14px; color: var(--sub); line-height: 1.7; }
+.callout {
+  background: var(--accent-soft);
+  border-left: 5px solid var(--accent);
+  border-radius: 8px;
+  padding: 13px 15px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.65;
+}
+.pill {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  padding: 4px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.num {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.num.t { background: var(--accent); color: var(--ink); }
+
+/* 1 표지 */
+.s-cover { padding: 14px 16px; }
+.cover {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 22px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 14px;
+  padding: 26px 22px 22px 40px;
+}
+.cover::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 16px; background: var(--accent); }
+.eyebrow { color: var(--accent); font-size: 13px; font-weight: 500; letter-spacing: .05em; line-height: 1.6; }
+.cover h1 { font-family: var(--serif); font-weight: 700; font-size: 38px; line-height: 1.25; margin-bottom: 14px; text-wrap: balance; }
+.cover .lead { font-size: 16px; line-height: 1.75; color: #E3E0D9; }
+.meta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px 14px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.18); font-size: 14px; line-height: 1.5; }
+.meta dt { color: var(--accent); font-weight: 500; }
+.hint { display: flex; align-items: center; gap: 8px; color: var(--accent); font-size: 13px; font-weight: 500; }
+.hint span { display: inline-block; animation: nudge 1.4s ease-in-out infinite; }
+@keyframes nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(7px); } }
+
+/* 2 설계 */
+.flow4 { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.flow4 li { background: var(--mute-bg); border-radius: 10px; padding: 12px 13px; min-width: 0; }
+.flow4 .num { width: 24px; height: 24px; font-size: 12px; margin-bottom: 6px; }
+.flow4 strong { display: block; font-size: 16px; font-weight: 700; }
+.flow4 span { display: block; font-size: 13px; color: var(--sub); line-height: 1.55; margin-top: 2px; }
+.ai-box { background: #FAF9F6; border: 1.5px dashed var(--accent); border-radius: 10px; padding: 14px; font-size: 14.5px; line-height: 1.75; }
+.ai-box b { color: var(--accent-deep); }
+
+/* 3 흐름 */
+.gantt { display: flex; flex-direction: column; }
+.grow {
+  appearance: none;
+  display: grid;
+  grid-template-columns: 26px 62px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.grow:first-child { border-top: 0; }
+.grow .num { width: 24px; height: 24px; font-size: 12px; }
+.gname { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.gtime { font-size: 12.5px; color: var(--sub); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gtrack {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background-color: var(--mute-bg);
+  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(20% - 1px), rgba(0,0,0,.09) calc(20% - 1px), rgba(0,0,0,.09) 20%);
+}
+.gtrack i { position: absolute; top: 0; bottom: 0; left: calc(var(--s) * 2%); width: calc(var(--d) * 2%); border-radius: 6px; background: var(--ink); }
+.grow.core .gtrack i { background: var(--accent); }
+.gaxis { display: grid; grid-template-columns: 26px 62px minmax(0, 1fr) 46px; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.gaxis div { position: relative; height: 14px; grid-column: 3; }
+.gaxis span { position: absolute; top: 0; transform: translateX(-50%); }
+
+/* 4-9 단계 */
+.stagebox { display: flex; flex-direction: column; gap: 16px; }
+.mini { display: flex; gap: 3px; }
+.mini i { height: 6px; border-radius: 3px; background: var(--line); }
+.mini i.on { background: var(--ink); }
+.minilabel { font-size: 12px; color: var(--sub); margin-bottom: 6px; }
+.stagehead { display: flex; align-items: center; gap: 12px; }
+.stagehead .num { width: 34px; height: 34px; font-size: 16px; }
+.stagehead h2 { flex: 1; min-width: 0; font-size: 26px; font-weight: 700; line-height: 1.3; }
+.kicker { font-size: 14px; color: var(--sub); margin-top: -6px; }
+.steps { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.steps li { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 12px; font-size: 17px; line-height: 1.6; }
+.steps li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: .62em; }
+.watch { background: var(--accent-soft); border-left: 5px solid var(--accent); border-radius: 8px; padding: 12px 14px; font-size: 14.5px; line-height: 1.65; }
+.watch b { display: block; font-size: 12px; letter-spacing: .05em; color: var(--accent-deep); margin-bottom: 2px; }
+.stagecard { background: var(--card); border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 20px 18px; }
+.stagecard.core { background: var(--ink); color: #fff; }
+.stagecard.core .num { background: var(--accent); color: var(--ink); }
+.stagecard.core .pill { background: rgba(201,177,139,.18); color: var(--accent); }
+.stagecard.core .kicker { color: #B9B6AE; }
+.stagecard.core .watch { background: rgba(201,177,139,.14); }
+.stagecard.core .watch b { color: var(--accent); }
+.stagecard.core .mini i { background: rgba(255,255,255,.2); }
+.stagecard.core .mini i.on { background: var(--accent); }
+.stagecard.core .minilabel { color: #B9B6AE; }
+
+/* 판정 */
+.verdicts { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.verdicts li { display: flex; align-items: center; gap: 14px; }
+.chip { flex: none; width: 116px; text-align: center; font-size: 14px; font-weight: 700; padding: 9px 4px; border-radius: 8px; background: var(--c); color: var(--t, #fff); }
+.verdicts p { font-size: 15.5px; line-height: 1.5; min-width: 0; }
+
+/* 체크리스트 */
+.checks { list-style: none; display: flex; flex-direction: column; }
+.checks li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
+.checks li:first-child { border-top: 0; padding-top: 0; }
+.checks li:last-child { padding-bottom: 0; }
+.checks li > div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.checks strong { font-size: 16px; font-weight: 700; line-height: 1.45; }
+.checks p { font-size: 14px; color: #3E3E3C; line-height: 1.6; }
+.by { display: inline-block; width: fit-content; margin-top: 2px; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 999px; background: var(--mute-bg); color: var(--sub); }
+.by.t { background: var(--accent-soft); color: var(--accent-deep); }
+.closing { font-family: var(--serif); font-weight: 700; font-size: 16px; line-height: 1.7; padding-top: 14px; border-top: 1px solid var(--line); }
+
+/* 도구 */
+.tools { list-style: none; display: flex; flex-direction: column; }
+.tools li { padding: 13px 0; border-top: 1px solid var(--line); }
+.tools li:first-child { border-top: 0; padding-top: 0; }
+.tools strong { font-size: 16px; font-weight: 700; }
+.tools p { font-size: 14.5px; color: var(--sub); line-height: 1.6; }
+
+/* 텍스트 슬라이드 */
+.std { background: var(--mute-bg); border-radius: 8px; padding: 12px 14px; font-size: 14.5px; line-height: 1.75; }
+.std b { color: var(--accent-deep); }
+.olist { display: flex; flex-direction: column; gap: 12px; list-style: none; }
+.olist li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; font-size: 15.5px; line-height: 1.65; }
+.olist .num { margin-top: 1px; }
+.blist { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+.blist li { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 12px; font-size: 15.5px; line-height: 1.7; }
+.blist li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: .65em; }
+.end { text-align: center; font-size: 12.5px; color: var(--sub); line-height: 1.7; padding-top: 6px; }
+
+@media (min-width: 560px) {
+  .cover h1 { font-size: 46px; }
+  .cover .lead { font-size: 18px; }
+  .slide { padding: 24px 28px 26px; }
+  .h2 { font-size: 24px; }
+  .steps li { font-size: 19px; }
+}
+@media (max-height: 640px) {
+  .cover { min-height: 0; padding-block: 18px; gap: 14px; }
+  .cover h1 { font-size: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hint span { animation: none; }
+  .seg i { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="top-row">
+      <strong>AI답변, 믿어도 될까?</strong>
+      <span class="sec" id="sec">표지</span>
+    </div>
+    <div class="seg" id="seg" aria-hidden="true"></div>
+  </header>
+
+  <main class="deck" id="deck" aria-label="수업 안내 슬라이드">
+
+    <!-- 1 표지 -->
+    <section class="slide s-cover" data-sec="표지">
+      <div class="cover">
+        <p class="eyebrow">2026 AI·디지털활용 선도학교 수업나눔<br>주제탐구독서 · 2학년 선택학생</p>
+        <div>
+          <h1>AI답변,<br>믿어도 될까?</h1>
+          <p class="lead">AI의 답은 탐구의 출발점이지, 인용할 결론이 아닙니다.</p>
+        </div>
+        <div>
+          <dl class="meta">
+            <dt>일시</dt><dd>2026. 10. 15.(목)</dd>
+            <dt>장소</dt><dd>2-6</dd>
+            <dt>수업교사</dt><dd>김예랑</dd>
+            <dt>차시</dt><dd>1/3차시</dd>
+            <dt>단원</dt><dd>3. 정보를 탐색하는 눈<br>(1) 정보의 신뢰성 판단하기</dd>
+          </dl>
+          <p class="hint" style="margin-top:16px"><span aria-hidden="true">→</span> 옆으로 밀어서 넘겨 보세요</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 설계 -->
+    <section class="slide" data-sec="수업 설계">
+      <div class="in">
+        <h2 class="h2">기준을 먼저 알려 주는 대신, 학생이 찾게 합니다</h2>
+        <ol class="flow4">
+          <li><span class="num">1</span><strong>조사</strong><span>원문을 직접 열어 확인</span></li>
+          <li><span class="num">2</span><strong>발견</strong><span>이상한 점을 찾아 기록</span></li>
+          <li><span class="num">3</span><strong>공유</strong><span>모둠의 확인 포인트를 나눔</span></li>
+          <li><span class="num">4</span><strong>체크리스트</strong><span>우리 반 기준으로 정리</span></li>
+        </ol>
+        <div class="ai-box">
+          <p>가상 학생 <b>‘지현’</b>이 AI에게 받은 보고서 답변을 함께 조사합니다. 답변의 문장마다 근거 자료가 표기되어 있어서 ‘근거가 있으니 맞겠지’라고 생각하기 쉬운 상황입니다.</p>
+        </div>
+        <p class="note">5개 모둠이 답변의 문장을 하나씩 맡고, 모둠원은 자료카드 A·B·C를 나눠 원문을 조사합니다.</p>
+      </div>
+    </section>
+
+    <!-- 3 흐름 -->
+    <section class="slide" data-sec="50분 흐름">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">50분 흐름</h2>
+          <span class="tag">단계를 누르면 이동</span>
+        </div>
+        <div class="card">
+          <div class="gantt">
+            <button class="grow" type="button" data-go="3"><span class="num">1</span><span class="gname">도입</span><span class="gtrack"><i style="--s:0;--d:10"></i></span><span class="gtime">0–10분</span></button>
+            <button class="grow" type="button" data-go="4"><span class="num">2</span><span class="gname">개인 조사</span><span class="gtrack"><i style="--s:10;--d:10"></i></span><span class="gtime">10–20분</span></button>
+            <button class="grow" type="button" data-go="5"><span class="num">3</span><span class="gname">모둠 정리</span><span class="gtrack"><i style="--s:20;--d:8"></i></span><span class="gtime">20–28분</span></button>
+            <button class="grow core" type="button" data-go="6"><span class="num t">4</span><span class="gname">모둠 공유</span><span class="gtrack"><i style="--s:28;--d:13"></i></span><span class="gtime">28–41분</span></button>
+            <button class="grow" type="button" data-go="7"><span class="num">5</span><span class="gname">정리</span><span class="gtrack"><i style="--s:41;--d:5"></i></span><span class="gtime">41–46분</span></button>
+            <button class="grow" type="button" data-go="8"><span class="num">6</span><span class="gname">마무리</span><span class="gtrack"><i style="--s:46;--d:4"></i></span><span class="gtime">46–50분</span></button>
+          </div>
+          <div class="gaxis" aria-hidden="true">
+            <div><span style="left:0%">0</span><span style="left:20%">10</span><span style="left:40%">20</span><span style="left:60%">30</span><span style="left:80%">40</span><span style="left:100%">50분</span></div>
+          </div>
+        </div>
+        <p class="callout">모둠 공유에서 각 모둠의 확인 포인트가 모여 ‘우리 반 AI 자료 확인 체크리스트’가 만들어집니다.</p>
+      </div>
+    </section>
+
+    <!-- 4 도입 -->
+    <section class="slide" data-sec="1 도입">
+      <div class="in stagebox">
+        <div class="stagecard">
+          <div class="minilabel">전체 50분 중</div>
+          <div class="mini" data-i="0" aria-hidden="true"></div>
+          <div class="stagehead" style="margin-top:18px">
+            <span class="num">1</span><h2>도입</h2><span class="pill">0–10분</span>
+          </div>
+          <p class="kicker" style="margin-top:6px">준비 · 생각 열기 · 목표</p>
+          <ul class="steps" style="margin-top:16px">
+            <li>접속하고 모둠 선택</li>
+            <li>생각 열기 영상(80초) 시청</li>
+            <li>지현의 AI 답변을 읽고 첫 판단</li>
+            <li>학습 목표 확인: 확인 포인트 찾기</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 개인 조사 -->
+    <section class="slide" data-sec="2 개인 조사">
+      <div class="in stagebox">
+        <div class="stagecard">
+          <div class="minilabel">전체 50분 중</div>
+          <div class="mini" data-i="1" aria-hidden="true"></div>
+          <div class="stagehead" style="margin-top:18px">
+            <span class="num">2</span><h2>개인 조사</h2><span class="pill">10–20분</span>
+          </div>
+          <ul class="steps" style="margin-top:18px">
+            <li>자료카드 A, B, C를 나눠 맡아 내 자료 조사</li>
+            <li>원문을 열어 확인한 것과 이상한 점 기록</li>
+            <li>내 자료 기준 1차 판정과 근거 한 문장 작성</li>
+            <li>교사는 순회하며 발견한 점을 확인하고 힌트 안내</li>
+          </ul>
+          <div class="watch" style="margin-top:18px"><b>참관 포인트</b>원문을 직접 열어 읽는 모습, 막막할 때 ‘힌트 보기’를 누르는 흐름</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 모둠 정리 -->
+    <section class="slide" data-sec="3 모둠 정리">
+      <div class="in stagebox">
+        <div class="stagecard">
+          <div class="minilabel">전체 50분 중</div>
+          <div class="mini" data-i="2" aria-hidden="true"></div>
+          <div class="stagehead" style="margin-top:18px">
+            <span class="num">3</span><h2>모둠 정리</h2><span class="pill">20–28분</span>
+          </div>
+          <ul class="steps" style="margin-top:18px">
+            <li>기록자 지정, 각자 맡은 자료 설명</li>
+            <li>자료 간 비교</li>
+            <li>모둠 확인 포인트 한 줄 작성</li>
+            <li>판정 근거 합의</li>
+          </ul>
+          <div class="watch" style="margin-top:18px"><b>참관 포인트</b>다수결이 아니라 근거를 비교해 합의하고, 기록자 한 명이 입력하는 과정</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 모둠 공유 -->
+    <section class="slide" data-sec="4 모둠 공유">
+      <div class="in stagebox">
+        <div class="stagecard core">
+          <div class="minilabel">전체 50분 중</div>
+          <div class="mini" data-i="3" aria-hidden="true"></div>
+          <div class="stagehead" style="margin-top:18px">
+            <span class="num">4</span><h2>모둠 공유</h2><span class="pill">28–41분</span>
+          </div>
+          <ul class="steps" style="margin-top:18px">
+            <li>모둠별 발표</li>
+            <li>다른 모둠의 확인 포인트와 판정 기록</li>
+            <li>‘우리 반 AI 자료 확인 체크리스트’ 만들기</li>
+          </ul>
+          <div class="watch" style="margin-top:18px"><b>참관 포인트</b>모둠의 확인 포인트가 모여 체크리스트가 만들어지는 모습(전자칠판)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 정리 -->
+    <section class="slide" data-sec="5 정리">
+      <div class="in stagebox">
+        <div class="stagecard">
+          <div class="minilabel">전체 50분 중</div>
+          <div class="mini" data-i="4" aria-hidden="true"></div>
+          <div class="stagehead" style="margin-top:18px">
+            <span class="num">5</span><h2>정리</h2><span class="pill">41–46분</span>
+          </div>
+          <ul class="steps" style="margin-top:18px">
+            <li>체크리스트로 처음 판단 다시 보기</li>
+            <li>앞으로 반드시 할 확인 3가지 쓰기</li>
+            <li>자기평가 체크</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 마무리 -->
+    <section class="slide" data-sec="6 마무리">
+      <div class="in stagebox">
+        <div class="stagecard">
+          <div class="minilabel">전체 50분 중</div>
+          <div class="mini" data-i="5" aria-hidden="true"></div>
+          <div class="stagehead" style="margin-top:18px">
+            <span class="num">6</span><h2>마무리</h2><span class="pill">46–50분</span>
+          </div>
+          <ul class="steps" style="margin-top:18px">
+            <li>‘우리가 찾은 확인 포인트’ 정리본을 함께 읽기</li>
+            <li>오늘의 한 문장 쓰기</li>
+          </ul>
+          <p class="callout" style="margin-top:18px">다음 차시: 이 체크리스트로 내 자료를 검증하는 ‘AI 검증 노트 쓰기’</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 판정 -->
+    <section class="slide" data-sec="4단계 판정">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">조사 결과를 말하는 4단계 판정</h2>
+        </div>
+        <div class="card">
+          <ul class="verdicts">
+            <li><span class="chip" style="--c:var(--v1)">확인됨</span><p>원문에서 확인했다</p></li>
+            <li><span class="chip" style="--c:var(--v2);--t:#1A1A1A">부분적으로 맞음</span><p>맞지만 설명이 부족하다</p></li>
+            <li><span class="chip" style="--c:var(--v3);--t:#1A1A1A">확인 불가</span><p>확인할 수 없다</p></li>
+            <li><span class="chip" style="--c:var(--v4)">사실 아님</span><p>틀렸다</p></li>
+          </ul>
+        </div>
+        <p class="callout">‘틀렸다’, ‘확인할 수 없다’, ‘맞지만 설명이 부족하다’는 서로 다른 판정이라는 점을 함께 다룹니다.</p>
+      </div>
+    </section>
+
+    <!-- 11 체크리스트 1 -->
+    <section class="slide" data-sec="체크리스트 예시">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">우리 반 AI 자료 확인 체크리스트</h2>
+          <span class="tag">예시 1/3</span>
+        </div>
+        <p class="note">모둠의 확인 포인트를 교사가 다듬어 전자칠판에 함께 보여 줍니다. 수업 중 채워질 결과의 예시입니다.</p>
+        <div class="card">
+          <ol class="checks">
+            <li><span class="num">1</span><div><strong>원 출처를 끝까지 추적하기</strong><p>많이 인용되는 말도 처음 출처를 찾아가 보면 근거가 없을 수 있다.</p><span class="by">1모둠</span></div></li>
+            <li><span class="num">2</span><div><strong>숫자가 무엇을 센 것인지</strong><p>수치는 무엇을 포함해 계산했는지(범위·정의)에 따라 달라진다.</p><span class="by">2모둠</span></div></li>
+            <li><span class="num">3</span><div><strong>숫자가 나온 조건</strong><p>어떤 조건에서 나온 숫자인지 빼고 말하면 오해가 생긴다.</p><span class="by">3모둠</span></div></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 체크리스트 2 -->
+    <section class="slide" data-sec="체크리스트 예시">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">우리 반 AI 자료 확인 체크리스트</h2>
+          <span class="tag">예시 2/3</span>
+        </div>
+        <div class="card">
+          <ol class="checks">
+            <li><span class="num">4</span><div><strong>AI가 댄 출처를 직접 찾아 계산해 보기</strong><p>AI가 말한 기관·통계를 직접 찾아 숫자를 계산해 보고, 무엇의 몇 %인지(범위)와 연도까지 확인한다.</p><span class="by">4모둠</span></div></li>
+            <li><span class="num">5</span><div><strong>출처와 조건까지 정확히 적기</strong><p>숫자가 맞아도 원 출처와 조건을 밝혀 써야 한다.</p><span class="by">5모둠</span></div></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 체크리스트 3 -->
+    <section class="slide" data-sec="체크리스트 예시">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">우리 반 AI 자료 확인 체크리스트</h2>
+          <span class="tag">예시 3/3</span>
+        </div>
+        <div class="card">
+          <ol class="checks">
+            <li><span class="num t">6</span><div><strong>누가 만든 자료인가</strong><p>자료를 만든 사람·기관은 누구이고, 어떤 목적이나 이해관계가 있는지 확인한다.</p><span class="by t">선생님이 더한 것</span></div></li>
+            <li><span class="num t">7</span><div><strong>말투가 자신 있다고 사실은 아니다</strong><p>AI의 답이 단정적이고 구체적인 숫자를 담고 있어도, 근거를 확인하기 전에는 사실로 받아들이지 않는다.</p><span class="by t">선생님이 더한 것</span></div></li>
+          </ol>
+        </div>
+        <p class="closing">우리가 찾은 확인 포인트로, 다음 차시에 내가 모아 온 자료를 검증해 봐요.</p>
+      </div>
+    </section>
+
+    <!-- 14 도구 -->
+    <section class="slide" data-sec="수업 도구">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">수업에 쓰는 도구</h2>
+          <span class="tag">바이브코딩 제작</span>
+        </div>
+        <div class="card">
+          <ul class="tools">
+            <li><strong>학생 웹앱</strong><p>개인 조사 기록, 모둠 토의 후 기록자 입력, 모둠 공유 화면</p></li>
+            <li><strong>교사 화면</strong><p>모둠별 진행 확인</p></li>
+            <li><strong>전자칠판 무대 화면</strong><p>단계 전환, 체크리스트 함께 보기</p></li>
+          </ul>
+        </div>
+        <p class="callout">세 화면 모두 수업자가 AI와 함께 코딩해 만들었습니다. 노트북 수업에서 단계 전환과 진행 확인을 돕습니다.</p>
+        <p class="note">종이 활동지 대신 웹으로 설계한 이유: AI와의 대화가 웹과 모바일에서 이루어지므로, 학생이 웹페이지와 PDF를 직접 열어 읽고 정리하게 했습니다.</p>
+      </div>
+    </section>
+
+    <!-- 15 성취기준·목표 -->
+    <section class="slide" data-sec="성취기준·목표">
+      <div class="in">
+        <h2 class="h2">성취기준과 학습 목표</h2>
+        <p class="std"><b>[12주탐01-04]</b> 주제와 관련된 책이나 자료를 탐색하면서 신뢰할 수 있고 가치 있는 정보를 선정하여 분석하며 읽는다.</p>
+        <ol class="olist">
+          <li><span class="num">1</span><span>모둠원과 자료를 나누어 맡아 자료카드와 원문을 직접 조사한다.</span></li>
+          <li><span class="num">2</span><span>조사 결과를 모아 비교하고 판정 4단계로 말하며 근거를 한 문장으로 쓴다.</span></li>
+          <li><span class="num">3</span><span>모둠이 찾은 확인 포인트를 공유해 ‘우리 반 AI자료 확인 체크리스트’를 만든다.</span></li>
+          <li><span class="num">4</span><span>체크리스트로 처음 판단을 다시 살펴보고, 앞으로 확인할 내용을 자신의 말로 정리한다.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 16 교사 확인 기준 -->
+    <section class="slide" data-sec="교사 확인 기준">
+      <div class="in">
+        <h2 class="h2">교사가 조사해 정리한 확인 기준 5가지</h2>
+        <p class="note">AI 자료를 쓸 때 어떤 기준으로 검증해야 하는지에 대한 명확한 가이드라인이 없어, 여러 자료를 조사해 정리했습니다.</p>
+        <ol class="olist">
+          <li><span class="num">1</span><span>답변을 주장 단위로 쪼개 확인하고, AI가 댄 출처가 실제로 있는지 검색해 본다.</span></li>
+          <li><span class="num">2</span><span>AI가 제공한 링크가 작동하는지, 출처가 주장을 정말 뒷받침하는지 확인한다.</span></li>
+          <li><span class="num">3</span><span>검색으로 교차 확인하고 비판적으로 받아들인다.</span></li>
+          <li><span class="num">4</span><span>원래의 맥락까지 추적해 본다.</span></li>
+          <li><span class="num">5</span><span>AI는 그럴듯하지만 존재하지 않는 인용을 만들어 낼 수 있음을 인지한다.</span></li>
+        </ol>
+        <p class="note">학생들이 실제로 만드는 체크리스트는 다른 형태일 수 있으나, 대동소이할 것으로 예상합니다.</p>
+      </div>
+    </section>
+
+    <!-- 17 수업자의 고민 -->
+    <section class="slide" data-sec="수업자의 고민">
+      <div class="in">
+        <h2 class="h2">수업자의 고민</h2>
+        <ul class="blist">
+          <li>학생들은 개인별 탐구 주제를 정하고 자료를 모으고 있습니다. 그런데 근거 자료가 붙어 있고 숫자가 구체적이면 맞다고 받아들이기 쉽습니다.</li>
+          <li>학생이 직접 검증 자료를 찾는 일은 한 차시에 하기 어렵다고 판단했습니다. 이번 차시는 ‘AI 자료는 이런 기준으로 검증한 뒤 쓴다’를 인지하는 단계이고, 다음 차시부터 2~3차시에 걸쳐 자신이 받은 자료를 실제로 검증합니다.</li>
+          <li>모둠 정리는 다수결이 아니라 근거 비교로 합의합니다.</li>
+          <li>아쉬운 점: 조사 자료 대부분이 영어 웹페이지라 학생들이 번역한 글을 읽어야 합니다. 보고서 주제를 ‘fast fashion’으로 정할 때 예측하지 못했고, 돌이키기에는 시간이 부족했습니다. 수업에서는 번역 방법과 광고 없이 읽는 ‘읽기모드’를 안내합니다.</li>
+        </ul>
+        <p class="end">전주솔내고등학교<br>2026 AI·디지털활용 선도학교 수업나눔</p>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="nav" aria-label="슬라이드 이동">
+    <button class="nb" id="prev" type="button" aria-label="이전 슬라이드">‹</button>
+    <span class="count" id="count" aria-live="polite"><b>1</b> / 17</span>
+    <button class="nb next" id="next" type="button" aria-label="다음 슬라이드">›</button>
+  </nav>
+
+</div>
+
+<script>
+(function () {
+  var deck = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(deck.children);
+  var N = slides.length;
+  var segBox = document.getElementById('seg');
+  var secEl = document.getElementById('sec');
+  var countEl = document.getElementById('count');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cur = 0;
+
+  var i, bar;
+  for (i = 0; i < N; i++) { bar = document.createElement('i'); segBox.appendChild(bar); }
+  var segs = segBox.children;
+
+  slides.forEach(function (s, k) {
+    s.setAttribute('role', 'group');
+    s.setAttribute('aria-roledescription', 'slide');
+    s.setAttribute('aria-label', (k + 1) + ' / ' + N);
+  });
+
+  var ST = [[0, 10], [10, 20], [20, 28], [28, 41], [41, 46], [46, 50]];
+  Array.prototype.forEach.call(document.querySelectorAll('.mini'), function (m) {
+    var a = +m.getAttribute('data-i');
+    ST.forEach(function (s, k) {
+      var e = document.createElement('i');
+      e.style.flex = (s[1] - s[0]) + ' 1 0';
+      if (k === a) e.className = 'on';
+      m.appendChild(e);
+    });
+  });
+
+  function render(k) {
+    cur = k;
+    var j;
+    for (j = 0; j < N; j++) segs[j].className = j <= k ? 'on' : '';
+    secEl.textContent = slides[k].getAttribute('data-sec') || '';
+    countEl.innerHTML = '<b>' + (k + 1) + '</b> / ' + N;
+    prevBtn.disabled = k === 0;
+    nextBtn.disabled = k === N - 1;
+    try { history.replaceState(null, '', '#' + (k + 1)); } catch (e) {}
+  }
+
+  function go(k, instant) {
+    k = Math.max(0, Math.min(N - 1, k));
+    deck.scrollTo({ left: k * deck.clientWidth, behavior: (instant || reduce) ? 'auto' : 'smooth' });
+    render(k);
+  }
+
+  var ticking = false;
+  deck.addEventListener('scroll', function () {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () {
+      ticking = false;
+      var k = Math.round(deck.scrollLeft / deck.clientWidth);
+      k = Math.max(0, Math.min(N - 1, k));
+      if (k !== cur) render(k);
+    });
+  }, { passive: true });
+
+  prevBtn.addEventListener('click', function () { go(cur - 1); });
+  nextBtn.addEventListener('click', function () { go(cur + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); go(cur + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(cur - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); go(0); }
+    else if (e.key === 'End') { e.preventDefault(); go(N - 1); }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-go]'), function (b) {
+    b.addEventListener('click', function () { go(+b.getAttribute('data-go')); });
+  });
+
+  window.addEventListener('resize', function () {
+    deck.scrollTo({ left: cur * deck.clientWidth, behavior: 'auto' });
+  });
+
+  var start = parseInt((location.hash || '').replace('#', ''), 10);
+  var first = (start >= 1 && start <= N) ? start - 1 : 0;
+  render(first);
+  if (first > 0) go(first, true);
+})();
+</script>
+</body>
+</html>
