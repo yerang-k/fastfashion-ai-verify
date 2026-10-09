@@ -339,10 +339,13 @@ button { font-family: inherit; }
 .olist { display: flex; flex-direction: column; gap: 12px; list-style: none; }
 .olist li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; font-size: 15.5px; line-height: 1.65; }
 .olist .num { margin-top: 1px; }
+.points { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.points li { background: var(--card); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 12px 14px; }
+.points strong { display: block; font-size: 13px; font-weight: 700; letter-spacing: .03em; color: var(--accent-deep); margin-bottom: 3px; }
+.points p { font-size: 14px; line-height: 1.62; }
 .blist { display: flex; flex-direction: column; gap: 14px; list-style: none; }
 .blist li { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 12px; font-size: 15.5px; line-height: 1.7; }
 .blist li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: .65em; }
-.end { text-align: center; font-size: 12.5px; color: var(--sub); line-height: 1.7; padding-top: 6px; }
 
 @media (min-width: 560px) {
   .cover h1 { font-size: 46px; }
@@ -431,7 +434,7 @@ button { font-family: inherit; }
           <button class="tchip" type="button" data-go="14"><span class="tt"><strong>수업 도구</strong><em>15쪽</em></span></button>
           <button class="tchip" type="button" data-go="15"><span class="tt"><strong>성취기준·목표</strong><em>16쪽</em></span></button>
           <button class="tchip" type="button" data-go="16"><span class="tt"><strong>확인 기준 5가지</strong><em>17쪽</em></span></button>
-          <button class="tchip" type="button" data-go="17"><span class="tt"><strong>수업자의 고민</strong><em>18쪽</em></span></button>
+          <button class="tchip" type="button" data-go="17"><span class="tt"><strong>수업자의 고민</strong><em>18–21쪽</em></span></button>
           </div>
         </div>
       </div>
@@ -711,17 +714,58 @@ button { font-family: inherit; }
       </div>
     </section>
 
-    <!-- 18 수업자의 고민 -->
-    <section class="slide" data-sec="수업자의 고민">
+    <!-- 18-21 수업자의 고민 -->
+    <section class="slide" data-sec="수업자의 고민 1/4">
       <div class="in">
-        <h2 class="h2">수업자의 고민</h2>
-        <ul class="blist">
-          <li>학생들은 개인별 탐구 주제를 정하고 자료를 모으고 있습니다. 그런데 근거 자료가 붙어 있고 숫자가 구체적이면 맞다고 받아들이기 쉽습니다.</li>
-          <li>학생이 직접 검증 자료를 찾는 일은 한 차시에 하기 어렵다고 판단했습니다. 이번 차시는 ‘AI 자료는 이런 기준으로 검증한 뒤 쓴다’를 인지하는 단계이고, 다음 차시부터 2~3차시에 걸쳐 자신이 받은 자료를 실제로 검증합니다.</li>
-          <li>모둠 정리는 다수결이 아니라 근거 비교로 합의합니다.</li>
-          <li>아쉬운 점: 조사 자료 대부분이 영어 웹페이지라 학생들이 번역한 글을 읽어야 합니다. 보고서 주제를 ‘fast fashion’으로 정할 때 예측하지 못했고, 돌이키기에는 시간이 부족했습니다. 수업에서는 번역 방법과 광고 없이 읽는 ‘읽기모드’를 안내합니다.</li>
+        <div class="head">
+          <h2 class="h2">수업자의 고민</h2>
+          <span class="tag">1/4 · 왜 이 수업인가</span>
+        </div>
+        <ul class="points">
+          <li><strong>학생들의 모습</strong><p>학생들은 개인별 탐구 주제를 정하고 자료를 모으고 있습니다. 그런데 AI가 준 답변이나 인터넷 자료는 ‘근거 자료가 붙어 있고 숫자가 구체적이면 맞다’고 받아들이기 쉽습니다.</p></li>
+          <li><strong>이 수업의 자리</strong><p>자료를 활용하기 전 단계입니다. 가상 학생 ‘지현’이 AI에게 받은 답변을 함께 조사하며, AI 자료를 쓸 때 무엇을 확인해야 하는지 스스로 발견하는 연습입니다.</p></li>
+          <li><strong>한 차시의 한계</strong><p>학생이 직접 검증 자료를 찾는 과정은 한 차시에 하기 어렵다고 판단했습니다. 이번 차시는 교사가 설정한 흐름 안에서 ‘AI 자료는 이런 기준으로 검증한 뒤 쓴다’를 인지하는 단계이고, 다음 차시부터 2~3차시에 걸쳐 자신이 받은 자료를 실제로 검증합니다.</p></li>
         </ul>
-        <p class="end">전주솔내고등학교<br>2026 AI·디지털활용 선도학교 수업나눔</p>
+      </div>
+    </section>
+
+    <section class="slide" data-sec="수업자의 고민 2/4">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">수업자의 고민</h2>
+          <span class="tag">2/4 · 수업 구성의 의도</span>
+        </div>
+        <ul class="points">
+          <li><strong>기준을 먼저 알려 주지 않기</strong><p>기준을 알려 주고 적용시키는 대신 ‘조사 → 발견 → 공유 → 체크리스트 만들기’ 순서로 설계했습니다.</p></li>
+          <li><strong>개인 → 모둠 → 전체</strong><p>5개 모둠이 문장을 하나씩 맡아 조사하고, 모둠의 확인 포인트를 모아 ‘우리 반 AI 자료 확인 체크리스트’를 완성합니다. 모둠 정리는 다수결이 아니라 근거 비교로 합의하고, 기록자 한 명이 입력합니다.</p></li>
+          <li><strong>4단계 판정</strong><p>확인됨 / 부분적으로 맞음 / 확인 불가 / 사실 아님은 조사 결과를 말하는 도구입니다. ‘틀렸다’, ‘확인할 수 없다’, ‘맞지만 설명이 부족하다’는 서로 다른 판정이라는 점을 다룹니다.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide" data-sec="수업자의 고민 3/4">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">수업자의 고민</h2>
+          <span class="tag">3/4 · 설계하며 고민한 점</span>
+        </div>
+        <ul class="points">
+          <li><strong>교사의 기준은 참고용</strong><p>AI 자료를 어떤 기준으로 검증해야 하는지 명확한 가이드라인이 없어, 여러 자료를 조사해 5가지로 정리했습니다. 이는 교사가 정리한 것일 뿐, 학생들이 만드는 체크리스트는 다른 형태일 수 있습니다. 대동소이할 것으로 예상합니다.</p></li>
+          <li><strong>종이 활동지와 웹 사이에서</strong><p>종이 활동지를 쓰는 방안도 고민했습니다. 하지만 AI와의 대화가 웹이나 모바일에서 이루어지므로, 웹페이지나 PDF를 실제로 열어 읽고 정리하는 과정을 거치도록 설계했습니다. 그래서 전용 웹앱, 교사 화면, 전자칠판 무대 화면을 바이브코딩으로 직접 만들었습니다.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide" data-sec="수업자의 고민 4/4">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">수업자의 고민</h2>
+          <span class="tag">4/4 · 아쉬움</span>
+        </div>
+        <ul class="points">
+          <li><strong>가장 아쉬운 점</strong><p>수업 설계를 위해 조사한 자료 대부분이 영어 웹페이지라, 학생들이 번역한 글을 읽으며 내용을 파악해야 합니다. 지현의 보고서 주제를 ‘fast fashion’으로 정할 때 예측했으면 좋았겠지만, 이미 많이 진행된 뒤에 깨달아 돌이키기에는 시간이 부족했습니다. 수업에서는 번역 방법과 광고 없이 읽는 ‘읽기모드’를 안내합니다.</p></li>
+        </ul>
+        <p class="callout">AI의 답은 탐구의 출발점이지 인용할 결론이 아닙니다. 우리가 찾은 확인 포인트로 검증한 뒤에 씁니다.</p>
       </div>
     </section>
 
@@ -729,7 +773,7 @@ button { font-family: inherit; }
 
   <nav class="nav" aria-label="슬라이드 이동">
     <button class="nb" id="prev" type="button" aria-label="이전 슬라이드">‹</button>
-    <button class="count" id="count" type="button" data-go="1" aria-label="목차로 이동"><b>1</b> / 18 · 목차</button>
+    <button class="count" id="count" type="button" data-go="1" aria-label="목차로 이동"><b>1</b> / 21 · 목차</button>
     <button class="nb next" id="next" type="button" aria-label="다음 슬라이드">›</button>
   </nav>
 
