@@ -120,8 +120,57 @@ button { font-family: inherit; }
 .nb.next { background: var(--ink); color: #fff; }
 .nb:disabled { opacity: .3; cursor: default; }
 .nb:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 2px; }
-.count { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.count {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+  cursor: pointer;
+}
 .count b { color: var(--text); font-weight: 700; }
+.count:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 2px; }
+
+/* 목차 */
+.tgroup { display: flex; flex-direction: column; gap: 7px; }
+.tlabel { font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--accent-deep); }
+.tgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tlist { display: flex; flex-direction: column; gap: 6px; }
+.trow, .tchip {
+  appearance: none;
+  border: 0;
+  background: var(--card);
+  color: var(--text);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.trow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.trow.half { min-height: 48px; }
+.trow .p { flex: none; font-size: 12.5px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.tchip { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px; min-width: 0; }
+.tchip .num { width: 26px; height: 26px; font-size: 13px; }
+.tchip .tt { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.tchip strong { font-size: 15px; font-weight: 700; }
+.tchip em { font-style: normal; font-size: 12px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.trow:focus-visible, .tchip:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 2px; }
+.trow:active, .tchip:active { background: var(--accent-soft); }
 
 /* 공통 요소 */
 .h2 { font-size: 21px; font-weight: 700; line-height: 1.4; text-wrap: balance; }
@@ -346,7 +395,49 @@ button { font-family: inherit; }
       </div>
     </section>
 
-    <!-- 2 설계 -->
+    <!-- 2 목차 -->
+    <section class="slide" data-sec="목차">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">목차</h2>
+          <span class="tag">누르면 해당 슬라이드로 이동</span>
+        </div>
+
+        <div class="tgroup">
+          <p class="tlabel">수업 이해하기</p>
+          <div class="tgrid">
+          <button class="tchip" type="button" data-go="2"><span class="tt"><strong>수업 설계</strong><em>3쪽</em></span></button>
+          <button class="tchip" type="button" data-go="3"><span class="tt"><strong>50분 흐름</strong><em>4쪽</em></span></button>
+          </div>
+        </div>
+
+        <div class="tgroup">
+          <p class="tlabel">단계별로 보기</p>
+          <div class="tgrid">
+          <button class="tchip" type="button" data-go="4"><span class="num">1</span><span class="tt"><strong>도입</strong><em>0–10분</em></span></button>
+          <button class="tchip" type="button" data-go="5"><span class="num">2</span><span class="tt"><strong>개인 조사</strong><em>10–20분</em></span></button>
+          <button class="tchip" type="button" data-go="6"><span class="num">3</span><span class="tt"><strong>모둠 정리</strong><em>20–28분</em></span></button>
+          <button class="tchip" type="button" data-go="7"><span class="num t">4</span><span class="tt"><strong>모둠 공유</strong><em>28–41분</em></span></button>
+          <button class="tchip" type="button" data-go="8"><span class="num">5</span><span class="tt"><strong>정리</strong><em>41–46분</em></span></button>
+          <button class="tchip" type="button" data-go="9"><span class="num">6</span><span class="tt"><strong>마무리</strong><em>46–50분</em></span></button>
+          </div>
+        </div>
+
+        <div class="tgroup">
+          <p class="tlabel">자료 · 더 보기</p>
+          <div class="tgrid">
+          <button class="tchip" type="button" data-go="10"><span class="tt"><strong>4단계 판정</strong><em>11쪽</em></span></button>
+          <button class="tchip" type="button" data-go="11"><span class="tt"><strong>체크리스트 예시</strong><em>12–14쪽</em></span></button>
+          <button class="tchip" type="button" data-go="14"><span class="tt"><strong>수업 도구</strong><em>15쪽</em></span></button>
+          <button class="tchip" type="button" data-go="15"><span class="tt"><strong>성취기준·목표</strong><em>16쪽</em></span></button>
+          <button class="tchip" type="button" data-go="16"><span class="tt"><strong>확인 기준 5가지</strong><em>17쪽</em></span></button>
+          <button class="tchip" type="button" data-go="17"><span class="tt"><strong>수업자의 고민</strong><em>18쪽</em></span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 설계 -->
     <section class="slide" data-sec="수업 설계">
       <div class="in">
         <h2 class="h2">기준을 먼저 알려 주는 대신, 학생이 찾게 합니다</h2>
@@ -372,12 +463,12 @@ button { font-family: inherit; }
         </div>
         <div class="card">
           <div class="gantt">
-            <button class="grow" type="button" data-go="3"><span class="num">1</span><span class="gname">도입</span><span class="gtrack"><i style="--s:0;--d:10"></i></span><span class="gtime">0–10분</span></button>
-            <button class="grow" type="button" data-go="4"><span class="num">2</span><span class="gname">개인 조사</span><span class="gtrack"><i style="--s:10;--d:10"></i></span><span class="gtime">10–20분</span></button>
-            <button class="grow" type="button" data-go="5"><span class="num">3</span><span class="gname">모둠 정리</span><span class="gtrack"><i style="--s:20;--d:8"></i></span><span class="gtime">20–28분</span></button>
-            <button class="grow core" type="button" data-go="6"><span class="num t">4</span><span class="gname">모둠 공유</span><span class="gtrack"><i style="--s:28;--d:13"></i></span><span class="gtime">28–41분</span></button>
-            <button class="grow" type="button" data-go="7"><span class="num">5</span><span class="gname">정리</span><span class="gtrack"><i style="--s:41;--d:5"></i></span><span class="gtime">41–46분</span></button>
-            <button class="grow" type="button" data-go="8"><span class="num">6</span><span class="gname">마무리</span><span class="gtrack"><i style="--s:46;--d:4"></i></span><span class="gtime">46–50분</span></button>
+            <button class="grow" type="button" data-go="4"><span class="num">1</span><span class="gname">도입</span><span class="gtrack"><i style="--s:0;--d:10"></i></span><span class="gtime">0–10분</span></button>
+            <button class="grow" type="button" data-go="5"><span class="num">2</span><span class="gname">개인 조사</span><span class="gtrack"><i style="--s:10;--d:10"></i></span><span class="gtime">10–20분</span></button>
+            <button class="grow" type="button" data-go="6"><span class="num">3</span><span class="gname">모둠 정리</span><span class="gtrack"><i style="--s:20;--d:8"></i></span><span class="gtime">20–28분</span></button>
+            <button class="grow core" type="button" data-go="7"><span class="num t">4</span><span class="gname">모둠 공유</span><span class="gtrack"><i style="--s:28;--d:13"></i></span><span class="gtime">28–41분</span></button>
+            <button class="grow" type="button" data-go="8"><span class="num">5</span><span class="gname">정리</span><span class="gtrack"><i style="--s:41;--d:5"></i></span><span class="gtime">41–46분</span></button>
+            <button class="grow" type="button" data-go="9"><span class="num">6</span><span class="gname">마무리</span><span class="gtrack"><i style="--s:46;--d:4"></i></span><span class="gtime">46–50분</span></button>
           </div>
           <div class="gaxis" aria-hidden="true">
             <div><span style="left:0%">0</span><span style="left:20%">10</span><span style="left:40%">20</span><span style="left:60%">30</span><span style="left:80%">40</span><span style="left:100%">50분</span></div>
@@ -571,7 +662,7 @@ button { font-family: inherit; }
       </div>
     </section>
 
-    <!-- 14 도구 -->
+    <!-- 15 도구 -->
     <section class="slide" data-sec="수업 도구">
       <div class="in">
         <div class="head">
@@ -590,7 +681,7 @@ button { font-family: inherit; }
       </div>
     </section>
 
-    <!-- 15 성취기준·목표 -->
+    <!-- 16 성취기준·목표 -->
     <section class="slide" data-sec="성취기준·목표">
       <div class="in">
         <h2 class="h2">성취기준과 학습 목표</h2>
@@ -604,7 +695,7 @@ button { font-family: inherit; }
       </div>
     </section>
 
-    <!-- 16 교사 확인 기준 -->
+    <!-- 17 교사 확인 기준 -->
     <section class="slide" data-sec="교사 확인 기준">
       <div class="in">
         <h2 class="h2">교사가 조사해 정리한 확인 기준 5가지</h2>
@@ -620,7 +711,7 @@ button { font-family: inherit; }
       </div>
     </section>
 
-    <!-- 17 수업자의 고민 -->
+    <!-- 18 수업자의 고민 -->
     <section class="slide" data-sec="수업자의 고민">
       <div class="in">
         <h2 class="h2">수업자의 고민</h2>
@@ -638,7 +729,7 @@ button { font-family: inherit; }
 
   <nav class="nav" aria-label="슬라이드 이동">
     <button class="nb" id="prev" type="button" aria-label="이전 슬라이드">‹</button>
-    <span class="count" id="count" aria-live="polite"><b>1</b> / 17</span>
+    <button class="count" id="count" type="button" data-go="1" aria-label="목차로 이동"><b>1</b> / 18 · 목차</button>
     <button class="nb next" id="next" type="button" aria-label="다음 슬라이드">›</button>
   </nav>
 
@@ -683,7 +774,7 @@ button { font-family: inherit; }
     var j;
     for (j = 0; j < N; j++) segs[j].className = j <= k ? 'on' : '';
     secEl.textContent = slides[k].getAttribute('data-sec') || '';
-    countEl.innerHTML = '<b>' + (k + 1) + '</b> / ' + N;
+    countEl.innerHTML = '<b>' + (k + 1) + '</b> / ' + N + ' · 목차';
     prevBtn.disabled = k === 0;
     nextBtn.disabled = k === N - 1;
     try { history.replaceState(null, '', '#' + (k + 1)); } catch (e) {}
