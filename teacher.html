@@ -742,7 +742,7 @@ function sumSet(i,k,v){DR.summary.items[i][k]=v;mark();}
 function sumMove(i,d){const a=DR.summary.items,j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];mark();renderSettings();}
 function sumDel(i){DR.summary.items.splice(i,1);mark();renderSettings();}
 function sumAdd(){if(DR.summary.items.length>=MAX_SUM)return;DR.summary.items.push({title:'',text:'',by:''});mark();renderSettings();}
-function sumReset(){if(!confirm('정리본을 기본 샘플(전문가 가이드 ①~⑤와 이어지는 5개)로 되돌릴까요? 지금 적은 내용은 사라져요. (저장하기 전까지는 학생 화면에 영향이 없어요)'))return;DR.summary=normSummary(null);mark();renderSettings();}
+function sumReset(){if(!confirm('정리본을 기본 샘플(전문가 가이드와 이어지는 6개)로 되돌릴까요? 지금 적은 내용은 사라져요. (저장하기 전까지는 학생 화면에 영향이 없어요)'))return;DR.summary=normSummary(null);mark();renderSettings();}
 function sumImport(){const a=DR.summary.items,mine=x=>/^\d+모둠$/.test(x.by);
  const got=LS.groups.map(g=>{const f=(DB.groups[g.n]||{}).g_find;return f&&f.v&&f.v.trim()?{title:'',text:f.v.trim(),by:g.n+'모둠'}:null;}).filter(Boolean);
  if(!got.length){toast('아직 모둠 확인 포인트가 없어요. 모둠 정리에서 기록자가 저장해야 해요');return;}
