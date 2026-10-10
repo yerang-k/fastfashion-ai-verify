@@ -116,7 +116,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
 
  <section class="stage card" data-i="0">
   <h2>1. 준비하기 <span class="time">3분</span></h2>
-  <div class="todo">지금 할 일: 학번와 이름을 입력하고 내 모둠을 선택해요.</div>
+  <div class="todo">지금 할 일: 학번과 이름을 입력하고 내 모둠을 선택해요.</div>
   <input type="text" id="code" placeholder="학번 (예: 20101)" maxlength="12" data-save>
   <input type="text" id="studentName" placeholder="이름 (예: 홍길동)" maxlength="10" data-save style="margin-top:8px">
   <h3>내 모둠</h3>
@@ -428,11 +428,11 @@ function submitClassPick(){
  const u=new URL(location.href);u.searchParams.set('class',c);u.searchParams.delete('preview');u.searchParams.delete('pg');location.href=u.toString();}
 function closeClassPick(){$('classPick').style.display='none';}
 function changeClass(){$('cpCancel').style.display='';$('classPick').style.display='block';populateClassPick();}
-async function ready(){collect();if(!data.code){toast('학번를 입력해 주세요');return;}if(!data.studentName){toast('이름을 입력해 주세요');return;}if(!data.group){toast('모둠을 선택해 주세요');return;}
+async function ready(){collect();if(!data.code){toast('학번을 입력해 주세요');return;}if(!data.studentName){toast('이름을 입력해 주세요');return;}if(!data.group){toast('모둠을 선택해 주세요');return;}
  if(ONLINE){try{const r=await api('getStudent',{code:data.code,dev:DEV});
-  if(r.rosterOnly&&!r.rosterFound&&!r.found){toast('명단에 없는 학번예요. 선생님께 확인해 주세요');return;}
+  if(r.rosterOnly&&!r.rosterFound&&!r.found){toast('명단에 없는 학번이에요. 선생님께 확인해 주세요');return;}
   if(r.rosterFound&&r.rosterGroup&&+r.rosterGroup!==+data.group){setGroupRadio(r.rosterGroup);onGroupChange();toast(r.rosterGroup+'모둠으로 배정되어 있어요');}
-  if(r.found&&!r.sameDev&&!confirm('이미 이 학번로 저장된 응답이 있어요.\n내 학번이 맞다면 [확인], 다른 친구가 쓰는 코드라면 [취소] 후 다른 코드를 입력하세요.'))return;
+  if(r.found&&!r.sameDev&&!confirm('이미 이 학번으로 저장된 응답이 있어요.\n내 학번이 맞다면 [확인], 다른 친구가 쓰는 학번이라면 [취소] 후 다른 학번을 입력하세요.'))return;
  }catch(e){toast('서버에 연결하지 못했어요. 일단 이 기기에 저장돼요.');}}
  data._ready=true;$('codeBadge').textContent='학번: '+data.code+(data.studentName?' ('+data.studentName+')':'');
  if(locked()){save();toast(LESSON.current===0?'준비 완료! 선생님이 시작할 때까지 기다려 주세요':'준비 완료!');syncStage();}
