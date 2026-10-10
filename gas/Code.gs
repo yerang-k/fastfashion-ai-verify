@@ -34,7 +34,7 @@ function doPost(e) {
   return handle_(p);
 }
 
-var READ_ACTIONS_ = { getStage: 1, getStudent: 1, getLesson: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1, teacherAll: 1, uploadPdf: 1, listClasses: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
+var READ_ACTIONS_ = { getStage: 1, getStudent: 1, getLesson: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1, teacherAll: 1, teacherHelp: 1, uploadPdf: 1, listClasses: 1 }; // uploadPdf는 시트를 안 건드려서 잠금 없이 처리(오래 걸려도 다른 요청을 막지 않게)
 var STUDENT_ACTIONS_ = { getStage: 1, saveStudent: 1, getStudent: 1, getLesson: 1, help: 1, saveGroup: 1, getGroup: 1, getGroupIndiv: 1, getShare: 1, listClasses: 1 };
 var CLASS_ = ''; // 이번 요청의 반(기본 반은 빈 문자열)
 function cleanClass_(c) { return String(c || '').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20); }
@@ -48,7 +48,7 @@ function handle_(p) {
   var lock = null;
   try {
     // 읽기만 하는 요청은 줄을 세우지 않고 바로 처리한다(학생 수만큼 쌓여 느려지는 것을 방지). 쓰기만 잠금.
-    if (!READ_ACTIONS_[p.action] && p.action !== 'setStage' && p.action !== 'setVideo') { lock = LockService.getScriptLock(); lock.waitLock(20000); } // setStage·setVideo는 캐시만 써서 잠금 없이 처리(학생 저장 때문에 기다리지 않게)
+    if (!READ_ACTIONS_[p.action] && p.action !== 'setStage' && p.action !== 'setVideo' && p.action !== 'help') { lock = LockService.getScriptLock(); lock.waitLock(20000); } // setStage·setVideo는 캐시만 써서 잠금 없이 처리(학생 저장 때문에 기다리지 않게)
     switch (p.action) {
       case 'saveStudent': return out_(saveStudent_(p));
       case 'getStage': return out_(getStage_());
@@ -68,6 +68,7 @@ function handle_(p) {
       case 'listClasses': return out_(listClasses_());
       case 'getShare': return out_(getShare_());
       case 'teacherAll': return out_(teacherAll_(p));
+      case 'teacherHelp': return out_(teacherHelp_(p));
       case 'setShare': return out_(setShare_(p));
       case 'setClock': return out_(setClock_(p));
       case 'changePin': return out_(changePin_(p));
@@ -643,6 +644,18 @@ function setShare_(p) {
   if (!pinOk_(p)) return { ok: false, error: 'pin' };
   cfgSet_('shareOpen', p.open ? 'true' : 'false');
   return { ok: true, shareOpen: !!p.open };
+}
+
+// 도움 요청만 가볍게 알려 줌(교사 화면이 2초마다 불러 학생이 누르는 즉시 팝업을 띄우는 용도). 학생 시트의 코드·모둠·요청 시각 3개 열만 읽는다.
+function teacherHelp_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  var sh = sheet_(sn_(SHEET_STUDENTS), HEAD_STUDENTS);
+  var last = sh.getLastRow(), list = [];
+  if (last >= 2) {
+    var cg = sh.getRange(2, 1, last - 1, 2).getValues(), h = sh.getRange(2, 6, last - 1, 1).getValues();
+    for (var i = 0; i < cg.length; i++) if (h[i][0]) list.push({ code: cg[i][0], group: cg[i][1], helpAt: toMs_(h[i][0]) });
+  }
+  return { ok: true, help: list, now: Date.now() };
 }
 
 function helpClear_(p) {
