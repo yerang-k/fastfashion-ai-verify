@@ -442,12 +442,12 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
  if(id===1)return `<div class="sv-panel"><button class="sv-play" onclick="playIntro()">▶ 영상으로 시작하기<small>약 1분 20초 · 키보드 V</small></button></div>`;
  if(id===0){const t=joinText(),n=t.length,fs=n<=16?'min(8.6vw,17cqh)':n<=26?'min(5.4vw,11cqh)':'min(2.6vw,6cqh)';return `<div class="sv-panel sv-join"><h3>접속 주소 · 브라우저 주소창에 입력하세요</h3><div class="sv-url" style="font-size:calc(${fs}*var(--k))">${esc(t)}</div></div>`;}
  if(id===3)return `<div class="sv-panel"><h3>모둠별 담당 문장 · 개인 조사 진행</h3><div class="sv-groups">${G.map(gr=>card(gr,(f,g)=>{const m=S.filter(s=>+s.group===g.n);return `<span class="m">판정 ${m.filter(s=>s.data.i_verdict).length}/${m.length}명</span>`;})).join('')}</div></div>`;
- if(id===7)return `<div class="sv-panel"><h3>모둠 정리 · 발표할 내용</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>`<span class="m">${f._rec?'✍️ 기록자 정함':'✍️ 기록자 미정'} · 확인 포인트 ${f.g_find&&f.g_find.v?'✓':'–'}</span> `+vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
+ if(id===7)return `<div class="sv-panel"><h3>모둠 정리 · 발표할 내용</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>`<span class="m">${f._rec?'✍️ 기록자 정함':'✍️ 기록자 미정'} · 근거 ${f.g_reason&&f.g_reason.v?'✓':'–'} · 확인 포인트 ${f.g_find&&f.g_find.v?'✓':'–'}</span> `+vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
  if(id===4){
   const sp=SPOT&&G.find(x=>x.n===SPOT);
   if(sp){const c=claimOfGroup(LS,sp.n),f=DB.groups[sp.n]||{},val=k=>(f[k]&&f[k].v)||'',none='<span class="m">(아직 정리하지 않았어요)</span>';
-   return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><h3>${sp.n}모둠 발표</h3><div class="sv-focus"><div class="sv-fc">${c?esc(wj(c.n+'. '+c.t)):''}</div><div class="sv-fv">${vb(f.g_verdict&&f.g_verdict.v)}</div><div class="sv-fb"><b>🔎 우리 모둠이 찾은 확인 포인트</b><p>${val('g_find')?esc(wj(val('g_find'))):none}</p></div><div class="sv-fb"><b>판정 근거 한 문장</b><p>${val('g_reason')?esc(wj(val('g_reason'))):none}</p></div></div><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spot(${x.n})">${x.n}모둠</span>`).join('')}</div></div>`;}
-  return `<div class="sv-panel"><h3>모둠 발표 · 확인 포인트와 판정</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?vb(f.g_verdict&&f.g_verdict.v)+`<p><b>${esc(wj((f.g_find&&f.g_find.v)||''))}</b></p><p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`:'<span class="m">발표 대기</span>',true)).join('')}</div></div>`;}
+   return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><h3>${sp.n}모둠 발표</h3><div class="sv-focus"><div class="sv-fc">${c?esc(wj(c.n+'. '+c.t)):''}</div><div class="sv-fb"><b>① 판정 근거 한 문장</b><p>${val('g_reason')?esc(wj(val('g_reason'))):none}</p></div><div class="sv-fb"><b>② 모둠 판정</b></div><div class="sv-fv">${vb(f.g_verdict&&f.g_verdict.v)}</div><div class="sv-fb"><b>③ 🔎 우리 모둠이 찾은 확인 포인트</b><p>${val('g_find')?esc(wj(val('g_find'))):none}</p></div></div><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spot(${x.n})">${x.n}모둠</span>`).join('')}</div></div>`;}
+  return `<div class="sv-panel"><h3>모둠 발표 · 근거 → 판정 → 확인 포인트</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?`<p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`+vb(f.g_verdict&&f.g_verdict.v)+`<p><b>🔎 ${esc(wj((f.g_find&&f.g_find.v)||''))}</b></p>`:'<span class="m">발표 대기</span>',true)).join('')}</div></div>`;}
  if(id===6){const it=(LS.summary&&LS.summary.items)||[];
   return `<div class="sv-panel"><h3>🧩 우리가 찾은 AI 자료 확인 포인트</h3>${it.length?`<div class="sv-groups">${it.map((x,i)=>`<div class="sv-g"><b>${i+1}${x.title?'. '+esc(wj(x.title)):''}</b><p>${esc(wj(x.text))}</p>${x.by?`<span class="m">— ${esc(x.by)}</span>`:''}</div>`).join('')}</div>`:'<p class="m">정리본이 아직 없어요. ⚙ 설정 → 수업 설정 ⑥에서 만들어 주세요.</p>'}</div>`;}
  if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
@@ -579,8 +579,8 @@ function renderResults(){
  h+=`<div class="card"><h2>① 모둠별 검증 결과</h2>`;
  LS.groups.forEach(gr=>{const g=gr.n,c=claimOfGroup(LS,g)||{n:'',t:''},f=DB.groups[g]||{},v=k=>f[k]&&f[k].v||'';
   h+=`<div class="claim"><div><b>${esc(c.n)}.</b> ${esc(c.t)}</div><div style="margin:4px 0">${g}모둠 판정: ${vBadge(v('g_verdict'))}</div>
-   <div class="quote"><b>모둠 확인 포인트:</b> ${esc(v('g_find'))||'<span class="small">(작성 없음)</span>'}</div>
    <div class="quote"><b>모둠 발표 근거:</b> ${esc(v('g_reason'))||'<span class="small">(작성 없음)</span>'}</div>
+   <div class="quote"><b>모둠 확인 포인트:</b> ${esc(v('g_find'))||'<span class="small">(작성 없음)</span>'}</div>
    ${memberAnswers(g)}</div>`;});
  h+=`</div>`;
  h+=`<div class="card"><h2>② 처음 판단과 지금 판단</h2><div class="grid2"><div><h3>처음 (2단계)</h3>${bars(PRE.map(o=>[o,done.filter(s=>s.data.pre===o).length]),done.length)}</div><div><h3>지금 (7단계)</h3>${bars(POST.map(o=>[o,done.filter(s=>s.data.post===o).length]),done.length)}</div></div>
@@ -790,7 +790,7 @@ function exportCSV(kind){
   const rows=DB.students.map(s=>{const d=s.data;return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':''),d.i_verdict,d.i_reason,d.i_did,d.i_odd,d.checklist];});
   download('학생응답.csv',csv([head,...rows]),'text/csv;charset=utf-8');
  }else{
-  const K=[['g_find','확인 포인트'],['g_verdict','판정'],['g_reason','근거 한 문장'],['g_speaker','발표자'],['_rec','기록자']];
+  const K=[['g_reason','근거 한 문장'],['g_verdict','판정'],['g_find','확인 포인트'],['g_speaker','발표자'],['_rec','기록자']];
   const rows=LS.groups.map(gr=>[gr.n+'모둠',(claimOfGroup(LS,gr.n)||{}).t||'',...K.map(([k])=>((DB.groups[gr.n]||{})[k]||{}).v||'')]);
   download('모둠기록지.csv',csv([['모둠','담당 주장',...K.map(k=>k[1])],...rows]),'text/csv;charset=utf-8');
  }
