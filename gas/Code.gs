@@ -505,11 +505,16 @@ function getGroupIndiv_(p) {
 function getConfig_() { return { shareOpen: cfgGet_('shareOpen') === 'true' }; }
 
 function getShare_() {
-  if (!getConfig_().shareOpen) return { ok: true, open: false, groups: {} };
+  var open = !!getConfig_().shareOpen, cur, st = stageOverride_();
+  if (st !== undefined) cur = st; else { var l = lessonGet_() || {}; cur = ('current' in l) ? l.current : 0; }
+  // 판정 공개 전이라도 정리(5)·마무리(6) 단계나 자유 진행(null)에서는 ‘모둠 확인 포인트’만 알려 줌(마무리 정리본에 자동으로 보이게). 판정·근거는 공개 전에 주지 않는다.
+  var finds = open || cur === 5 || cur === 6 || cur === null;
+  if (!open && !finds) return { ok: true, open: false, groups: {} };
   var sh = sheet_(sn_(SHEET_GROUPS), HEAD_GROUPS);
-  var groups = {};
+  var groups = {}, findsOnly = {};
   for (var g = 1; g <= MAXG; g++) {
     var f = loadGroup_(sh, g).fields;
+    if (!open) { if (f.g_find && f.g_find.v) findsOnly[g] = f.g_find.v; continue; }
     if (f.g_verdict || f.g_reason || f.g_find) {
       groups[g] = {
         g_find: f.g_find ? f.g_find.v : '',
@@ -519,6 +524,7 @@ function getShare_() {
       };
     }
   }
+  if (!open) return { ok: true, open: false, groups: {}, finds: findsOnly };
   return { ok: true, open: true, groups: groups };
 }
 

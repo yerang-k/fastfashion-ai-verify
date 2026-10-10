@@ -361,9 +361,18 @@ function paintSrc(){const s=SRCS[SRC_OPEN];if(!s){closeSrc();return;}
   :`${head}<div class="srcfull">${s.body}</div>${link?`<div class="srcacts">${link}</div>`:''}`;
  $('srcView').scrollTop=0;}
 /* 마무리: 반 전체가 찾은 확인 포인트 정리본(교사가 설정 ⑥에서 만든 것) */
-function openSum(){const it=(LESSON.summary&&LESSON.summary.items)||[];
- $('sumView').innerHTML=it.length?it.map((x,i)=>`<div class="sumitem"><span class="num">${i+1}</span><div>${x.title?`<b>${escH(x.title)}</b>`:''}<p>${escH(x.text)}</p>${x.by?`<span class="small">— ${escH(x.by)}</span>`:''}</div></div>`).join('')+'<p class="small">우리가 찾은 확인 포인트로, 다음 차시에 내가 모아 온 자료를 검증해 봐요.</p>':'<div class="box">아직 정리본이 없어요. 선생님이 정리하면 여기에 나타나요.</div>';
- $('sumModal').hidden=false;document.body.style.overflow='hidden';$('sumClose').focus();}
+const mergeSum=(a,b)=>typeof mergeSummary==='function'?mergeSummary(a,b):a;
+let SUM_FINDS={}; // 모둠이 저장한 확인 포인트(서버에서 받음)
+function renderSum(){const it=mergeSum((LESSON.summary&&LESSON.summary.items)||[],SUM_FINDS);
+ $('sumView').innerHTML=it.length?it.map((x,i)=>`<div class="sumitem"><span class="num">${i+1}</span><div>${x.title?`<b>${escH(x.title)}</b>`:''}<p>${escH(x.text)}</p>${x.by?`<span class="small">— ${escH(x.by)}</span>`:''}</div></div>`).join('')+'<p class="small">우리가 찾은 확인 포인트로, 다음 차시에 내가 모아 온 자료를 검증해 봐요.</p>':'<div class="box">아직 정리본이 없어요. 모둠이 확인 포인트를 저장하거나 선생님이 정리하면 여기에 나타나요.</div>';
+}
+async function openSum(){renderSum();
+ $('sumModal').hidden=false;document.body.style.overflow='hidden';$('sumClose').focus();
+ if(!ONLINE)return;
+ try{const r=await api('getShare'),f={};
+  for(const n in (r.groups||{})){const t=(r.groups[n].g_find||'').trim();if(t)f[n]=t;}
+  for(const n in (r.finds||{})){const t=String(r.finds[n]||'').trim();if(t)f[n]=t;}
+  SUM_FINDS=f;if(!$('sumModal').hidden)renderSum();}catch(e){}} // 교사가 가져오기를 누르지 않아도 모둠이 저장한 확인 포인트가 정리본에 나옴
 function closeSum(){if($('sumModal').hidden)return;$('sumModal').hidden=true;document.body.style.overflow='';}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSrc();closeSum();}});
 

@@ -61,6 +61,15 @@ function normLesson(raw){
 // AI 답변 아래 '근거 자료'로 보여 줄 인용(ref)과, 자료 카드 중 AI가 인용한 카드 위치(src, -1=없음), 카드 배지 문구(badge, 비우면 기본 문구)
 const normCite=c=>{c=c||{};const n=parseInt(c.src,10);return{ref:String(c.ref||'').slice(0,80),src:n>=0&&n<MAX_SRC?n:-1,badge:String(c.badge||'').slice(0,40)};};
 const MAX_SUM=10;
+/* 마무리 정리본 = 모둠이 저장한 확인 포인트(모둠 순서) + 교사 정리본의 나머지 항목. finds: {모둠번호: 확인 포인트 글}.
+   교사가 가져와 다듬어 저장한 ‘N모둠’ 항목이 있으면 그 글을 우선 쓰고, 기본 샘플 그대로이면 모둠 글이 있을 때 샘플은 숨긴다. */
+const mergeSummary=(items,finds)=>{items=items||[];const out=[];
+ Object.keys(finds||{}).map(Number).sort((a,b)=>a-b).forEach(n=>{const t=String(finds[n]||'').trim();const mine=items.find(x=>x.by===n+'모둠');
+  if(mine)out.push(mine);else if(t)out.push({title:'',text:t,by:n+'모둠'});});
+ if(!out.length)return items;
+ const key=a=>JSON.stringify(a.map(x=>[x.title,x.text,x.by]));
+ if(key(items)===key(DEFAULT_LESSON.summary.items))return out; // 기본 샘플 그대로면 모둠 글만 보여 줌
+ items.forEach(x=>{if(!out.includes(x))out.push(x);});return out;};
 const normSummary=s=>{const a=s&&Array.isArray(s.items)?s.items:DEFAULT_LESSON.summary.items;return{items:a.slice(0,MAX_SUM).map(x=>({title:String((x&&x.title)||'').slice(0,30),text:String((x&&x.text)||'').slice(0,240),by:String((x&&x.by)||'').slice(0,20)}))};};
 const claimsOf=L=>L.claims||CLAIMS;
 const visStages=L=>L.stages.filter(s=>s.on);
