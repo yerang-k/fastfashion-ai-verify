@@ -107,7 +107,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
 </div>
 <header>
  <h1>AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서 · <b id="clsTag"></b></span></h1>
- <div class="status"><span class="badge" id="codeBadge">참여 코드: -</span><span class="badge" id="grpBadge">모둠: -</span><span class="badge" id="saveBadge">💾 저장 대기</span><button class="badge" style="border:0;font:inherit;cursor:pointer;color:inherit" onclick="changeClass()">🔁 반 변경</button></div>
+ <div class="status"><span class="badge" id="codeBadge">학번: -</span><span class="badge" id="grpBadge">모둠: -</span><span class="badge" id="saveBadge">💾 저장 대기</span><button class="badge" style="border:0;font:inherit;cursor:pointer;color:inherit" onclick="changeClass()">🔁 반 변경</button></div>
 </header>
 <div class="wrap">
 
@@ -116,8 +116,8 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
 
  <section class="stage card" data-i="0">
   <h2>1. 준비하기 <span class="time">3분</span></h2>
-  <div class="todo">지금 할 일: 참여 코드와 이름을 입력하고 내 모둠을 선택해요.</div>
-  <input type="text" id="code" placeholder="참여 코드 (예: 2-3-07)" maxlength="12" data-save>
+  <div class="todo">지금 할 일: 학번와 이름을 입력하고 내 모둠을 선택해요.</div>
+  <input type="text" id="code" placeholder="학번 (예: 2-3-07)" maxlength="12" data-save>
   <input type="text" id="studentName" placeholder="이름 (예: 홍길동)" maxlength="10" data-save style="margin-top:8px">
   <h3>내 모둠</h3>
   <div class="groups" id="groups"></div>
@@ -289,6 +289,8 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
    서버에는 아무것도 저장하지 않으며(api에서 쓰기 요청 차단), 교사가 정한 단계를 그대로 따라간다. */
 const QP=new URLSearchParams(location.search),PREVIEW=QP.get('preview')==='1',PG=parseInt(QP.get('pg'),10)||1;
 (function(){const c=(typeof CLASS_ID!=='undefined'&&CLASS_ID)||'';const t=document.getElementById('clsTag');if(t)t.textContent=c?(/반$/.test(c)?c:c+'반'):'기본 반';})();
+if(QP.get('reset')==='1'){try{Object.keys(localStorage).filter(k=>k.indexOf('aiverify_fashion_v1')===0).forEach(k=>localStorage.removeItem(k));}catch(e){}
+ const u=new URL(location.href);u.searchParams.delete('reset');location.replace(u.toString());} // 시험 입력 지우기: ?reset=1 로 열면 이 기기의 임시 저장 기록을 지우고 처음 상태로 시작
 const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'')+(PREVIEW?'_preview':'');let data=JSON.parse(localStorage.getItem(KEY)||'{}');
 if(PREVIEW){document.body.classList.add('preview');data.code='미리보기';data.group=PG;data._ready=true;delete data._submitted;}
 if(data.code&&(data.code.length>12||/\s/.test(data.code)))delete data.code; // 서버에서 잘못 내려온 코드(날짜 문자열 등)는 버림
@@ -405,7 +407,7 @@ function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i){closeSrc()
 function go(i){if(i!==cur)autoSaveLeaving();show(i);data._stage=cur;save();if(cur===4)pollShare();if(needGroup())pollGroup();if(cur===7)pollGroupIndiv();window.scrollTo({top:0,behavior:'smooth'});}
 function tryGo(id){if(locked())return;const p=order().indexOf(id);if(p<0)return;go(id);}
 function step(d){if(locked())return false;const o=order(),p=o.indexOf(cur),t=(p<0?0:p)+d;if(t<0||t>=o.length)return false;go(o[t]);return true;}
-/* 교사가 지정한 현재 단계를 따라감. 준비(코드·모둠 입력)를 마치지 않은 학생은 준비 단계에 머문다. */
+/* 교사가 지정한 현재 단계를 따라감. 준비(학번·모둠 입력)를 마치지 않은 학생은 준비 단계에 머문다. */
 function syncStage(){const c=LESSON.current;if(c==null)return;
  const target=(data._ready||c===0)?c:0;
  if(target===cur)return;
@@ -426,13 +428,13 @@ function submitClassPick(){
  const u=new URL(location.href);u.searchParams.set('class',c);u.searchParams.delete('preview');u.searchParams.delete('pg');location.href=u.toString();}
 function closeClassPick(){$('classPick').style.display='none';}
 function changeClass(){$('cpCancel').style.display='';$('classPick').style.display='block';populateClassPick();}
-async function ready(){collect();if(!data.code){toast('참여 코드를 입력해 주세요');return;}if(!data.studentName){toast('이름을 입력해 주세요');return;}if(!data.group){toast('모둠을 선택해 주세요');return;}
+async function ready(){collect();if(!data.code){toast('학번를 입력해 주세요');return;}if(!data.studentName){toast('이름을 입력해 주세요');return;}if(!data.group){toast('모둠을 선택해 주세요');return;}
  if(ONLINE){try{const r=await api('getStudent',{code:data.code,dev:DEV});
-  if(r.rosterOnly&&!r.rosterFound&&!r.found){toast('명단에 없는 참여 코드예요. 선생님께 확인해 주세요');return;}
+  if(r.rosterOnly&&!r.rosterFound&&!r.found){toast('명단에 없는 학번예요. 선생님께 확인해 주세요');return;}
   if(r.rosterFound&&r.rosterGroup&&+r.rosterGroup!==+data.group){setGroupRadio(r.rosterGroup);onGroupChange();toast(r.rosterGroup+'모둠으로 배정되어 있어요');}
-  if(r.found&&!r.sameDev&&!confirm('이미 이 참여 코드로 저장된 응답이 있어요.\n내 코드가 맞다면 [확인], 다른 친구가 쓰는 코드라면 [취소] 후 다른 코드를 입력하세요.'))return;
+  if(r.found&&!r.sameDev&&!confirm('이미 이 학번로 저장된 응답이 있어요.\n내 학번이 맞다면 [확인], 다른 친구가 쓰는 코드라면 [취소] 후 다른 코드를 입력하세요.'))return;
  }catch(e){toast('서버에 연결하지 못했어요. 일단 이 기기에 저장돼요.');}}
- data._ready=true;$('codeBadge').textContent='참여 코드: '+data.code+(data.studentName?' ('+data.studentName+')':'');
+ data._ready=true;$('codeBadge').textContent='학번: '+data.code+(data.studentName?' ('+data.studentName+')':'');
  if(locked()){save();toast(LESSON.current===0?'준비 완료! 선생님이 시작할 때까지 기다려 주세요':'준비 완료!');syncStage();}
  else{toast('준비 완료!');if(!step(1))save();}}
 function collect(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!k)return;
@@ -488,7 +490,7 @@ function showPending(){const p7=Object.keys(gdirty).length>0,t7=$('saveState7'),
  if(pending())setBadge();}
 async function saveActivity(n){collect();
  if(!ONLINE){toast('서버에 연결되지 않아 이 기기에만 저장돼요');return;}
- if(!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
+ if(!data.code||!data.group){toast('준비 단계에서 학번과 모둠을 먼저 입력해 주세요');return;}
  let ok;
  if(n!==7){snapStage(n);ok=await pushStudent();if(ok){if(!data._sv||typeof data._sv!=='object')data._sv={};data._sv[n]=hhmm();}} // 이 단계에서 쓴 것만 저장(다른 단계의 저장 전 내용은 그대로 이 기기에만 남음)
  else{if(REC!==data.code){toast('기록자만 저장할 수 있어요');return;}ok=await pushGroup();if(ok&&!Object.keys(gdirty).length)data._sv7=hhmm();}
@@ -504,7 +506,7 @@ function renderRec(){const box=$('recBox');if(!box)return;const me=!!REC&&REC===
  box.innerHTML=me?`✍️ <b>내가 기록자예요.</b> 우리 모둠이 발표할 내용을 아래에 입력하세요. 다른 모둠원은 입력할 수 없어요. <button class="btn small ghost" onclick="recAct('release')">기록자 내려놓기</button>`
   :REC?`✍️ <b>기록자: ${escH(REC)}</b> — 발표할 내용은 기록자만 입력할 수 있어요. 나는 토의에 참여하고, 아래에 채워지는 내용을 확인해 주세요.`
   :`✍️ <b>먼저 기록자를 정해 주세요.</b> 기록자가 정해지기 전에는 아무도 입력할 수 없어요. 우리 모둠 기록자가 되었다면 <button class="btn small" onclick="recAct('claim')">내가 기록자예요</button> 를 누르세요.`;}
-async function recAct(kind){if(!ONLINE||!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
+async function recAct(kind){if(!ONLINE||!data.code||!data.group){toast('준비 단계에서 학번과 모둠을 먼저 입력해 주세요');return;}
  if(kind==='claim'&&!confirm('내가 기록자가 되면 다른 모둠원은 이 모둠 기록을 입력할 수 없어요. 기록자가 맞나요?'))return;
  try{await pushStudent();const r=await api('saveGroup',{group:+data.group,code:data.code,dev:DEV,fields:{},rec:kind},true);applyGroup(r.fields);
   if(kind==='claim')toast(REC===data.code?'기록자가 되었어요 ✍️':'이미 다른 친구가 기록자예요');}
@@ -544,12 +546,12 @@ function onGroupChange(){collect();
  if(data._grpApplied&&data._grpApplied!==data.group){GROUP_FIELDS.forEach(k=>{document.querySelectorAll(`[id="${k}"],[name="${k}"]`).forEach(e=>{if(e.type==='radio')e.checked=false;else e.value='';});delete data[k];});data._gt={};gdirty={};REC='';}
  data._grpApplied=data.group;pollGroup();}
 async function askHelp(){if(!ONLINE){toast('선생님께 손을 들어 알려 주세요');return;}
- if(!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
+ if(!data.code||!data.group){toast('준비 단계에서 학번과 모둠을 먼저 입력해 주세요');return;}
  try{let r=await api('help',{code:data.code,dev:DEV},true);if(!r||!r.ok){await pushStudent();r=await api('help',{code:data.code,dev:DEV},true);}
   if(!r||!r.ok)throw new Error('help');toast('선생님께 도움 요청을 보냈어요 🙋');}catch(e){toast('요청을 보내지 못했어요. 손을 들어 알려 주세요');}}
 function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!(k in data))return;
  if(el.type==='radio')el.checked=(el.value===data[k]);else if(el.type==='checkbox')el.checked=!!data[k];else el.value=data[k];});
- if(data.code)$('codeBadge').textContent='참여 코드: '+data.code+(data.studentName?' ('+data.studentName+')':'');}
+ if(data.code)$('codeBadge').textContent='학번: '+data.code+(data.studentName?' ('+data.studentName+')':'');}
 async function submitAll(){collect();const miss=[];
  if(order().includes(3)){if(!data.i_verdict)miss.push('내 판정');} // 개인 검증 단계를 뺀 수업이면 묻지 않음
  if(!data.post)miss.push('지금의 판단');if(!data.reflect)miss.push('정리');
@@ -562,9 +564,9 @@ async function submitAll(){collect();const miss=[];
 function resetAll(){if(confirm('이 기기의 응답을 모두 지울까요?\n(서버에 이미 저장된 응답은 그대로 남아요)')){localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_dev');location.reload();}}
 /* 교사가 바꾼 수업 설정·내 코드/모둠을 주기적으로 받아 반영 */
 function applyMe(me){if(!me||!data._ready)return;let ch=false;
- if(me.code&&me.code!==data.code&&me.code.length<=12&&!/\s/.test(me.code)){data.code=me.code;$('code').value=me.code;$('codeBadge').textContent='참여 코드: '+me.code;ch=true;}
+ if(me.code&&me.code!==data.code&&me.code.length<=12&&!/\s/.test(me.code)){data.code=me.code;$('code').value=me.code;$('codeBadge').textContent='학번: '+me.code;ch=true;}
  if(me.group&&+me.group!==+data.group&&LESSON.groups.some(g=>g.n===+me.group)){setGroupRadio(me.group);onGroupChange();ch=true;}
- if(ch){toast('선생님이 참여 코드/모둠을 바꿨어요');save();renderGroup();}}
+ if(ch){toast('선생님이 학번/모둠을 바꿨어요');save();renderGroup();}}
 async function pollLesson(){if(!ONLINE||document.hidden)return;
  try{const r=await api('getLesson',{dev:DEV,code:data._ready?data.code:''});applyLesson(r.lesson);applyMe(r.me);if(r.lv!==undefined)LV=r.lv||'';}catch(e){}}
 let toastT;
