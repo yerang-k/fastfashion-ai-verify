@@ -50,7 +50,6 @@ td select,td input{padding:6px;font-size:.9rem}
 .shtabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
 .shtabs button{flex:1 1 0;min-width:86px;padding:10px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-weight:600;cursor:pointer}
 .shtabs button.on{background:var(--main);color:#fff;border-color:var(--main)}
-.shtabs button .dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--ok);margin-left:5px;vertical-align:middle}
 .shtabs button small{display:block;font-weight:400;font-size:.75rem;min-height:1.1em}
 .shpanel{border:1.5px solid var(--line);border-radius:12px;padding:6px 16px 16px;background:#fff}
 .shpanel h4{margin:16px 0 6px;font-size:1.05rem}
@@ -533,10 +532,7 @@ function shTab(n,quiet){const gs=LESSON.groups.map(g=>g.n);if(!gs.includes(n))re
  document.querySelectorAll('#shTabs button').forEach(b=>b.classList.toggle('on',+b.id.slice(5)===n));
  if(cur===4&&!quiet)window.scrollTo({top:Math.max(0,$('shTabs').getBoundingClientRect().top+scrollY-12)});}
 function setSh(row,v){row.querySelectorAll('input[type=radio]').forEach(x=>x.checked=(x.value===v));}
-function markSh(){LESSON.groups.forEach(g=>{const p=$('row'+g.n),b=$('shTab'+g.n);if(!p||!b)return;
- const has=!!(p.querySelector('textarea[name^="sh_r"]').value.trim()||p.querySelector('textarea[name^="sh_f"]').value.trim()||p.querySelector('input[type=radio]:checked'));
- b.querySelector('small').textContent=(+data.group===g.n?'우리 모둠':'');
- const d=b.querySelector('.dot');if(has&&!d)b.insertAdjacentHTML('afterbegin','<span class="dot"></span>');else if(!has&&d)d.remove();});}
+function markSh(){LESSON.groups.forEach(g=>{const b=$('shTab'+g.n);if(b)b.querySelector('small').textContent=(+data.group===g.n?'우리 모둠':'');});}
 function onGroupChange(){collect();
  if(data._grpApplied&&data._grpApplied!==data.group){GROUP_FIELDS.forEach(k=>{document.querySelectorAll(`[id="${k}"],[name="${k}"]`).forEach(e=>{if(e.type==='radio')e.checked=false;else e.value='';});delete data[k];});data._gt={};gdirty={};REC='';}
  data._grpApplied=data.group;pollGroup();}
