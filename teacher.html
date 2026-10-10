@@ -587,6 +587,14 @@ function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.ac
 function showSPane(i){document.querySelectorAll('.spane').forEach((p,j)=>p.classList.toggle('show',i===j));document.querySelectorAll('#stabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
 function openSettings(i){if(!DB){toast('먼저 PIN으로 들어가 주세요');return;}$('stabs').innerHTML=SPANES.map((n,j)=>`<button onclick="showSPane(${j})">${n}</button>`).join('');showSPane(i||0);$('settingsModal').hidden=false;}
 function closeSettings(){$('settingsModal').hidden=true;}
+async function clearAllResponses(){
+ const cls=CLASS_ID?CLASS_ID+'반':'기본 반';
+ if(!confirm('「'+cls+'」의 학생 응답과 모둠 기록을 모두 지울까요?\n접속한 학생 '+DB.students.length+'명의 기록이 사라지고 되돌릴 수 없어요.\n(수업 설정·학생 명단·자료는 그대로 남아요)'))return;
+ if(prompt('정말 지우려면 「지우기」라고 입력하세요.')!=='지우기'){toast('취소했어요');return;}
+ try{const r=await api('clearResponses');
+  if(r&&r.ok){toast('「'+cls+'」의 학생 응답을 모두 지웠어요',true);await refresh(true);}
+  else toast(r&&r.error==='unknown action'?'서버(Code.gs)를 새 버전으로 배포해야 해요':'지우지 못했어요'+(r&&r.error?' ('+r.error+')':''));
+ }catch(e){toast('서버에 연결하지 못했어요');}}
 function openStudentMgr(){openSettings(0);const d=$('a5');if(d){d.open=true;OPEN.a5=true;d.scrollIntoView({behavior:'smooth'});}}
 async function saveRow(i){const r=ROWS[i],nc=$('rc'+i).value.trim(),ng=+$('rg'+i).value,nn=$('rn'+i).value.trim();if(!nc){toast('코드를 입력해 주세요');return;}
  let res;try{res=await api('updateStudent',{code:r.code,newCode:nc,group:ng,name:nn});}catch(e){res={ok:false,error:'network'};}
@@ -705,15 +713,16 @@ function renderSettings(){
  h+=`</div></details>`;
 
  h+=`<details class="acc" id="a4" ${OPEN.a4?'open':''}><summary>④ 학생 명단 · 입장 방식 <span class="small">등록 ${(DB.roster||[]).length}명${DR.rosterOnly?' · 명단만 입장':''}</span></summary><div class="accbody">
-  <p class="small">엑셀에서 <b>학번, 모둠, 이름</b> 칸을 복사해 그대로 붙여 넣으세요. 한 줄에 <b>참여코드</b>만, <b>참여코드+모둠</b>, <b>참여코드+이름</b>, <b>참여코드+모둠+이름</b> 중 편한 형식으로 적어도 됩니다. (예: <code>2-3-07</code> / <code>2-3-07, 2</code> / <code>2-3-07, 홍길동</code> / <code>2-3-07, 2, 홍길동</code>) 모둠을 안 적으면 학생이 입장할 때 스스로 고르고, 적으면 그 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠·이름도 함께 바뀝니다. 한 명씩 고치려면 아래 ‘⑤ 학생 관리’에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
+  <p class="small">엑셀에서 <b>학번, 모둠, 이름</b> 칸을 복사해 그대로 붙여 넣으세요. 한 줄에 <b>학번</b>만, <b>학번+모둠</b>, <b>학번+이름</b>, <b>학번+모둠+이름</b> 중 편한 형식으로 적어도 됩니다. (예: <code>2-3-07</code> / <code>2-3-07, 2</code> / <code>2-3-07, 홍길동</code> / <code>2-3-07, 2, 홍길동</code>) 모둠을 안 적으면 학생이 입장할 때 스스로 고르고, 적으면 그 코드는 <b>항상 그 모둠</b>으로 배정돼요. 이미 접속한 학생의 모둠·이름도 함께 바뀝니다. 한 명씩 고치려면 아래 ‘⑤ 학생 관리’에서 할 수 있어요. 현재 등록: <b>${(DB.roster||[]).length}명</b></p>
   <textarea id="rosterText" style="min-height:120px" placeholder="2-3-01, 1, 김도윤&#10;2-3-02, 1, 박서연&#10;2-3-03, 2, 이하준"></textarea>
   <div style="margin:8px 0"><button class="btn small" onclick="saveRoster('merge')">추가·수정 (기존 명단 유지)</button> <button class="btn small danger" onclick="saveRoster('replace')">전체 교체</button></div>
-  <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 참여 코드만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label>
+  <label><input type="checkbox" ${DR.rosterOnly?'checked':''} onchange="DR.rosterOnly=this.checked;mark()"> 명단에 등록된 학번만 입장 허용 (아래 ‘저장’을 눌러야 적용)</label>
   <div class="lbl" style="margin-top:14px">학생 접속 주소 (짧은 주소) — 수업 시작(준비 단계)에 무대 화면에 크게 보여 줘요</div>
   <input type="text" style="width:100%" value="${esc(DR.joinUrl||'')}" placeholder="예: https://tinyurl.com/22satzqq (비워 두면 긴 학생 링크가 나와요)" oninput="DR.joinUrl=this.value;mark()">
   <p class="small" style="margin:4px 0 0">짧은 주소는 tinyurl.com 같은 곳에서 만들 수 있어요. 학생이 주소창에 직접 칠 수 있게 짧을수록 좋아요. ‘학생 링크 복사’ 버튼도 이 주소를 복사해요.</p></div></details>`;
 
- h+=`<details class="acc" id="a5" ${OPEN.a5?'open':''}><summary>⑤ 학생 관리 <span class="small">접속 ${DB.students.length}명 · 코드/모둠 수정·삭제</span></summary><div class="accbody"><div id="studentMgr"></div></div></details>`;
+ h+=`<details class="acc" id="a5" ${OPEN.a5?'open':''}><summary>⑤ 학생 관리 <span class="small">접속 ${DB.students.length}명 · 코드/모둠 수정·삭제</span></summary><div class="accbody"><div id="studentMgr"></div>
+  <div style="margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)"><div class="lbl">수업 전 시험 입력 지우기</div><p class="small" style="margin:4px 0 8px">이 반의 <b>학생 응답과 모둠 기록을 모두</b> 지워요(접속한 학생, 시험으로 낸 제출 포함). 수업 설정·학생 명단·자료는 그대로 남고, 판정 공개는 닫혀요. 되돌릴 수 없어요.</p><button class="btn small danger" onclick="clearAllResponses()">🧹 이 반의 학생 응답 모두 지우기</button></div></div></details>`;
 
  DR.summary=normSummary(DR.summary);
  h+=`<details class="acc" id="a6" ${OPEN.a6?'open':''}><summary>⑥ 마무리 정리본 <span class="small">${DR.summary.items.length}개 · 마무리 단계에서 학생·무대 화면에 보여요</span></summary><div class="accbody">

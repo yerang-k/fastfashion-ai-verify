@@ -60,6 +60,7 @@ function handle_(p) {
       case 'setRoster': return out_(setRoster_(p));
       case 'updateStudent': return out_(updateStudent_(p));
       case 'deleteStudent': return out_(deleteStudent_(p));
+      case 'clearResponses': return out_(clearResponses_(p));
       case 'help': return out_(help_(p));
       case 'saveGroup': return out_(saveGroup_(p));
       case 'clearRecorder': return out_(clearRecorder_(p));
@@ -389,6 +390,19 @@ function deleteStudent_(p) {
   if (row > 0) ssh.deleteRow(row);
   rosterDelete_(code);
   return { ok: true };
+}
+
+// 이 반의 학생 응답(학생응답 시트)과 모둠 기록(모둠기록지 시트)을 모두 지운다. 수업 설정·학생 명단·자료·메모는 그대로 두고, 판정 공개만 닫는다. (수업 전 시험 입력을 지우는 용도)
+function clearResponses_(p) {
+  if (!pinOk_(p)) return { ok: false, error: 'pin' };
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), cleared = {};
+  [SHEET_STUDENTS, SHEET_GROUPS].forEach(function (base) {
+    var sh = ss.getSheetByName(sn_(base)), n = sh ? sh.getLastRow() - 1 : 0;
+    if (n > 0) sh.deleteRows(2, n);
+    cleared[base] = Math.max(n, 0);
+  });
+  cfgSet_('shareOpen', 'false');
+  return { ok: true, cleared: cleared };
 }
 
 function help_(p) {
