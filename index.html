@@ -201,9 +201,9 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
 
  <section class="stage card" data-i="4">
   <h2>6. 모둠 공유: 다섯 조각 맞추기 <span class="time">13분</span></h2>
-  <div class="todo">지금 할 일: 각 모둠이 1분 30초씩 발표합니다. 다른 모둠의 확인 포인트와 판정을 기록하고, 다섯 조각을 모아 <b>우리 반 AI 자료 확인 체크리스트</b>를 만들어요.</div>
+  <div class="todo">지금 할 일: 각 모둠이 1분 30초씩 발표합니다. 다른 모둠의 근거·판정·확인 포인트를 기록하고, 다섯 조각을 모아 <b>우리 반 AI 자료 확인 체크리스트</b>를 만들어요.</div>
   <p class="small">우리 모둠 줄은 자동으로 채워져요. 발표를 들으며 나머지 줄을 기록하세요.<span id="shareNote"></span></p>
-  <table><thead><tr><th style="width:36px">#</th><th>AI 답변 문장</th><th style="width:150px">판정</th><th>🔎 확인 포인트</th><th>근거 요약</th></tr></thead><tbody id="shareTable"></tbody></table>
+  <table><thead><tr><th style="width:36px">#</th><th>AI 답변 문장</th><th>근거 요약</th><th style="width:150px">판정</th><th>🔎 확인 포인트</th></tr></thead><tbody id="shareTable"></tbody></table>
   <h3>🧩 우리 반 ‘AI 자료 확인 체크리스트’ 만들기</h3>
   <p>위 표의 <b>확인 포인트</b>를 모아 보세요. 비슷한 것끼리 묶고, <b>AI가 준 자료를 보고서에 쓰기 전에 꼭 확인할 것</b>을 3~5개로 정리해요. 선생님과 함께 칠판에서 묶어 본 뒤, 내 말로 써 보세요.</p>
   <textarea id="checklist" data-save style="min-height:140px" placeholder="1. ______을(를) 확인한다&#10;2. ______&#10;3. ______"></textarea>
@@ -303,9 +303,9 @@ function buildStatic(){
  const hasRef=CL.some(c=>c.cite&&c.cite.ref);
  $('aiText').innerHTML=`<p><b>지현:</b> 패스트패션이 환경에 미치는 영향을 근거 자료와 함께 알려줘.</p><p><b>AI:</b> 패스트패션의 환경 영향은 매우 심각합니다. `+CL.map(c=>`<span class="num">${c.n}</span><mark>${c.t}</mark>${c.cite&&c.cite.ref?`<sup class="cref">[${c.n}]</sup>`:''}`).join(' ')+` 따라서 옷을 적게 사고 오래 입는 것이 중요합니다.</p>`+(hasRef?`<div class="refs"><b>📎 근거 자료</b>`+CL.filter(c=>c.cite&&c.cite.ref).map(c=>`<div>[${c.n}] ${escH(c.cite.ref)}</div>`).join('')+`</div>`:'');
  $('shareTable').innerHTML=LESSON.groups.map(g=>{const c=claimOfGroup(LESSON,g.n);return `<tr id="row${g.n}"><td><b>${g.n}</b></td><td class="small">${c?c.t:''}</td>
+  <td><input type="text" data-save name="sh_r${g.n}" placeholder="근거 요약"></td>
   <td><select data-save name="sh_v${g.n}"><option value="">판정</option><option>확인됨</option><option>부분적으로 맞음</option><option>확인 불가</option><option>사실 아님</option></select></td>
-  <td><input type="text" data-save name="sh_f${g.n}" placeholder="확인 포인트"></td>
-  <td><input type="text" data-save name="sh_r${g.n}" placeholder="근거 요약"></td></tr>`;}).join('');
+  <td><input type="text" data-save name="sh_f${g.n}" placeholder="확인 포인트"></td></tr>`;}).join('');
  built=true;
 }
 function applyLesson(raw){
