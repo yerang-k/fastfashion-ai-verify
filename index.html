@@ -170,7 +170,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
 
  <section class="stage card" data-i="7">
   <h2>5. 모둠 정리: 발표할 내용 정하기 <span class="time">8분</span></h2>
-  <div class="todo">지금 할 일: 모둠원이 각자 조사한 것을 나누고, 모둠이 <b>발표할</b> 확인 포인트 한 줄과 판정·근거를 하나로 정리해요. 입력은 <b>기록자 한 명</b>만 해요.</div>
+  <div class="todo">지금 할 일: 모둠원이 각자 조사한 것을 나누고, 모둠이 <b>발표할</b> 판정 근거 한 문장 → 모둠 판정 → 확인 포인트 한 줄 순서로 정리해요. 입력은 <b>기록자 한 명</b>만 해요.</div>
   <div id="myClaim7"></div>
   <details><summary>📚 조사에 쓴 자료 다시 보기</summary><div class="srcgrid" id="mySrc7" style="margin-top:8px"></div></details>
   <details open><summary>내가 먼저 쓴 개인 조사 보기</summary><div class="box" id="myIndiv" style="margin-top:8px"></div></details>
@@ -180,18 +180,20 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
    <div id="groupIndiv" style="margin-top:10px"><p class="small">(불러오는 중…)</p></div>
   </div>
   <div class="box" id="recBox" style="margin-top:14px"></div>
-  <h3>🔎 우리 모둠이 찾은 확인 포인트 (발표의 중심)</h3>
-  <p>모둠원이 찾은 확인 포인트 중에서, 또는 함께 이야기하며 <b>“AI 자료를 쓸 때는 ○○을 확인해야 한다”</b> 한 줄로 정해요.</p>
-  <textarea id="g_find" data-save placeholder="예: AI가 댄 ________이(가) 실제로 있는지, ________인지 확인해야 한다."></textarea>
-  <h3>모둠 판정 (발표용)</h3>
+  <h3>① 판정 근거 한 문장 <span class="small" style="font-weight:400">(발표 때 그대로 읽을 문장)</span></h3>
+  <p>모둠원이 조사한 것을 비교해서, 이 문장이 <b>왜 그렇게 판정되는지</b> 한 문장으로 써요.</p>
+  <textarea id="g_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
+  <h3>② 모둠 판정 (발표용)</h3>
+  <p class="small" style="margin-top:0">위 근거에 맞는 판정을 골라요.</p>
   <div class="verdict">
    <label class="v-ok"><input type="radio" name="g_verdict" value="확인됨" data-save><span>✅ 확인됨</span></label>
    <label class="v-part"><input type="radio" name="g_verdict" value="부분적으로 맞음" data-save><span>🟠 부분적으로 맞음 (조건·범위 설명 필요)</span></label>
    <label class="v-unk"><input type="radio" name="g_verdict" value="확인 불가" data-save><span>❓ 확인 불가</span></label>
    <label class="v-bad"><input type="radio" name="g_verdict" value="사실 아님" data-save><span>❌ 사실 아님</span></label>
   </div>
-  <p><b>판정 근거 한 문장</b> (발표 때 그대로 읽을 문장)</p>
-  <textarea id="g_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
+  <h3>③ 🔎 우리 모둠이 찾은 확인 포인트 (발표의 중심)</h3>
+  <p>위 근거와 판정에서 얻은 것을, 또는 모둠원이 찾은 확인 포인트 중에서 골라 <b>“AI 자료를 쓸 때는 ○○을 확인해야 한다”</b> 한 줄로 정해요.</p>
+  <textarea id="g_find" data-save placeholder="예: AI가 댄 ________이(가) 실제로 있는지, ________인지 확인해야 한다."></textarea>
   <div class="role" style="margin-top:8px"><input type="text" data-save id="g_speaker" placeholder="발표자 코드"></div>
   <div style="margin-top:16px;padding:12px 14px;border:1.5px solid var(--main);border-radius:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="saveBtn7" onclick="saveActivity(7)">💾 저장하기</button> <span class="small" id="saveState7"></span></div>
   <div class="nav"><button class="btn ghost" onclick="go(3)">이전</button><button class="btn" data-dir="1" onclick="go(4)">다음</button></div>
