@@ -616,7 +616,7 @@ function renderResults(){
  const list=(k)=>done.map(s=>s.data[k]).filter(Boolean).map(t=>`<div class="quote">${esc(t)}</div>`).join('')||'<p class="small">(없음)</p>';
  h+=`<div class="card"><h2>④ 앞으로 내가 할 확인 절차</h2>${list('reflect')}</div>
   <div class="card"><h2>⑤ 학생이 만든 AI 자료 확인 체크리스트</h2>${list('checklist')}</div>
-  <div class="card"><h2>⑥ 전체 토의 · 피드백</h2><details><summary>전체 토의 답변 보기</summary>${list('discuss')}</details><details><summary>친구 모둠에 대한 피드백 보기</summary>${list('feedback')}</details></div>`;
+  <div class="card"><h2>⑥ 전체 토의</h2><details><summary>전체 토의 답변 보기</summary>${list('discuss')}</details></div>`;
  $('results').innerHTML=h;
 }
 // Esc는 발표용 결과 보기만 닫는다. 무대 화면은 브라우저 전체화면이 실제로 풀릴 때만(또는 '나가기' 버튼) 닫혀서, 실수로 누른 키 하나에 교사용 화면이 프로젝터에 뜨지 않음
@@ -813,8 +813,8 @@ const csvCell=v=>{v=String(v==null?'':v);if(/^[=+\-@]/.test(v))v="'"+v;return '"
 const csv=rows=>'﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
 function exportCSV(kind){
  if(kind==='students'){
-  const head=['코드','모둠','제출시각','처음 판단','처음 이유','지금 판단','다짐(확인 절차)','전체 토의','피드백',...SELF.map((_,i)=>'자기평가'+(i+1)),'개인 판정','개인 근거','개인 확인한 것','개인 이상한 점','체크리스트'];
-  const rows=DB.students.map(s=>{const d=s.data;return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,d.feedback,...SELF.map((_,i)=>d['s'+(i+1)]?'O':''),d.i_verdict,d.i_reason,d.i_did,d.i_odd,d.checklist];});
+  const head=['코드','모둠','제출시각','처음 판단','처음 이유','지금 판단','다짐(확인 절차)','전체 토의',...SELF.map((_,i)=>'자기평가'+(i+1)),'개인 판정','개인 근거','개인 확인한 것','개인 이상한 점','체크리스트'];
+  const rows=DB.students.map(s=>{const d=s.data;return [s.code,s.group,s.submittedAt?new Date(s.submittedAt).toLocaleString('ko-KR'):'',d.pre,d.preWhy,d.post,d.reflect,d.discuss,...SELF.map((_,i)=>d['s'+(i+1)]?'O':''),d.i_verdict,d.i_reason,d.i_did,d.i_odd,d.checklist];});
   download('학생응답.csv',csv([head,...rows]),'text/csv;charset=utf-8');
  }else{
   const K=[['g_reason','근거 한 문장'],['g_verdict','판정'],['g_find','확인 포인트'],['g_speaker','발표자'],['_rec','기록자']];
