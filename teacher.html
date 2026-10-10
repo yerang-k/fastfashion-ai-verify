@@ -515,9 +515,11 @@ function helpScan(list){ // list: [{code,group,helpAt}] — 서버가 알려 준
  HELP_POP=HELP_POP.filter(x=>x.code in cur);
  if(fresh&&!document.body.classList.contains('stagemode-on')&&!document.body.classList.contains('present'))helpBeep();
  helpPopRender();}
+let HELP_HTML='';
 function helpPopRender(){const box=$('helpPop');if(!box)return;
- box.innerHTML=HELP_POP.map(h=>{const s=DB&&DB.students.find(x=>x.code===h.code),nm=s&&s.data&&s.data.studentName?' '+esc(s.data.studentName):'';
+ const html=HELP_POP.map(h=>{const s=DB&&DB.students.find(x=>x.code===h.code),nm=s&&s.data&&s.data.studentName?' '+esc(s.data.studentName):'';
   return `<div class="hp"><div class="hpt"><b>🙋 도움 요청</b> <span>${esc(h.group)}모둠 · <span class="cd">${esc(h.code)}${nm}</span> · ${hms(h.helpAt)}</span></div><div class="hpb"><button class="btn small" onclick="helpOk('${esc(h.code)}')">확인함</button> <button class="btn small ghost" onclick="helpClose('${esc(h.code)}')">닫기</button></div></div>`;}).join('');
+ if(html!==HELP_HTML){HELP_HTML=html;box.innerHTML=html;}
  document.title=(HELP_POP.length?'🙋 ('+HELP_POP.length+') 도움 요청! ':'')+BASE_TITLE;}
 function helpClose(code){HELP_POP=HELP_POP.filter(x=>x.code!==code);helpPopRender();} // 팝업만 닫음(현황의 도움 요청 카드에는 남음)
 async function helpOk(code){HELP_POP=HELP_POP.filter(x=>x.code!==code);helpPopRender();try{await api('helpClear',{code});}catch(e){}try{await refresh();}catch(e){}} // 확인함: 서버의 요청도 지움
