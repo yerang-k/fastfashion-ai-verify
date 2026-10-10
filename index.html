@@ -351,8 +351,8 @@ function renderGroup(){
  const row=$('row'+g);if(row){row.classList.add('mine');
   const v=row.querySelector('select'),r=row.querySelector('input[name^="sh_r"]'),fd=row.querySelector('input[name^="sh_f"]');
   if(data.g_verdict){v.value=data.g_verdict;data['sh_v'+g]=data.g_verdict;}
-  if(data.g_reason){r.value=data.g_reason.slice(0,80);data['sh_r'+g]=r.value;}
-  if(data.g_find){fd.value=data.g_find.slice(0,80);data['sh_f'+g]=fd.value;}}
+  if(data.g_reason){r.value=data.g_reason;data['sh_r'+g]=r.value;}
+  if(data.g_find){fd.value=data.g_find;data['sh_f'+g]=fd.value;}}
 }
 /* 단계 이동: 화면 표시(show) / 이동(go) / 진행 통제를 지키는 이동(tryGo·step) */
 function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i){closeSrc();closeSum();}cur=i;
@@ -493,7 +493,7 @@ async function pollShare(){if(!ONLINE||cur!==4||document.hidden)return;
   if(!r.open)return;data._shA=data._shA||{};let ch=false;
   for(const n in r.groups){if(+n===+data.group)continue;const g=r.groups[n],row=$('row'+n);if(!row)continue;
    const key=g.g_verdict+'|'+g.g_reason+'|'+(g.g_find||'');if(data._shA[n]===key)continue;
-   row.querySelector('select').value=g.g_verdict;row.querySelector('input[name^="sh_r"]').value=g.g_reason.slice(0,80);row.querySelector('input[name^="sh_f"]').value=(g.g_find||'').slice(0,80);data._shA[n]=key;ch=true;}
+   row.querySelector('select').value=g.g_verdict;row.querySelector('input[name^="sh_r"]').value=g.g_reason||'';row.querySelector('input[name^="sh_f"]').value=g.g_find||'';data._shA[n]=key;ch=true;}
   if(ch)save();}catch(e){}}
 function onGroupChange(){collect();
  if(data._grpApplied&&data._grpApplied!==data.group){GROUP_FIELDS.forEach(k=>{document.querySelectorAll(`[id="${k}"],[name="${k}"]`).forEach(e=>{if(e.type==='radio')e.checked=false;else e.value='';});delete data[k];});data._gt={};gdirty={};REC='';}
