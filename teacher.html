@@ -337,11 +337,12 @@ async function refresh(force){
 /* 미리보기: 학생 화면(index.html?preview=1)을 iframe으로 끼워 넣고 화면 폭에 맞게 축소. 서버에는 쓰지 않는 읽기 전용 모드 */
 let PVG=1,PVSRC='';
 function fitPreview(){const b=$('pvBox'),f=$('pvFrame');if(!b||!f||!b.clientWidth)return;const k=b.clientWidth/1100;f.style.transform='scale('+k+')';b.style.height=Math.round(760*k)+'px';}
+const PV_T=Date.now(); // 미리보기가 옛 학생 화면(브라우저 캐시)을 보여 주지 않도록, 교사 화면을 열 때마다 새 주소로 불러옴
 function pvGroup(g){PVG=g;renderBoard();}
 function renderBoard(){
  const gs=LS.groups.map(x=>x.n);if(!gs.includes(PVG))PVG=gs[0]||1;
  $('pvChips').innerHTML=gs.map(g=>`<button class="btn small ${g===PVG?'':'ghost'}" onclick="pvGroup(${g})">${g}모둠</button>`).join(' ');
- const src=BASE+'index.html?preview=1&pg='+PVG+(CLASS_ID?'&class='+encodeURIComponent(CLASS_ID):'');
+ const src=BASE+'index.html?preview=1&pg='+PVG+(CLASS_ID?'&class='+encodeURIComponent(CLASS_ID):'')+'&_='+PV_T;
  if(src!==PVSRC&&!document.body.classList.contains('stagemode-on')){PVSRC=src;$('pvFrame').src=src;}
  fitPreview();
 }
