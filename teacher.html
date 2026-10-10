@@ -284,7 +284,8 @@ const VCLS={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'un
 const PRE=['그대로 인용해도 된다','일부는 확인이 필요하다','인용하면 안 된다'];
 const POST=['그대로 인용해도 된다','수정·출처 표시 후 부분 인용','인용하지 않는다'];
 const SELF=['AI 답변에서 확인이 필요한 문장을 골라낼 수 있다.','AI가 댄 출처가 실제로 있는지, 원 출처인지 직접 찾아 확인할 수 있다.','숫자·통계가 무엇을 어떻게 센 것인지(정의·범위·조건·시점), 누가 만든 자료인지 확인할 수 있다.','확인한 결과에 따라 출처와 조건을 넣어 문장을 고쳐 쓰거나, 쓰지 않기로 판단할 수 있다.','모둠 탐구와 공유에 적극적으로 참여했다.'];
-const vBadge=v=>`<span class="v ${VCLS[v]||'none'}">${esc(v||'미판정')}</span>`;
+const VEMO={'확인됨':'✅','부분적으로 맞음':'🟠','확인 불가':'❓','사실 아님':'❌'};
+const vBadge=v=>`<span class="v ${VCLS[v]||'none'}">${VEMO[v]?VEMO[v]+' ':''}${esc(v||'미판정')}</span>`;
 const hms=t=>t?new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'-';
 const CLN=()=>claimsOf(LS);
 let toastT;
@@ -435,7 +436,7 @@ function spot(n){SPOT=(n==null||SPOT===n)?null:n;renderStageView();}
 /* 무대 화면에 크게 보여 줄 접속 주소: 설정에 적은 짧은 주소가 있으면 그것, 없으면 학생 링크(https:// 는 뺌) */
 function joinText(){return (LS.joinUrl||studentLink()).replace(/^https?:\/\//,'').replace(/\/$/,'');}
 function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
- const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${esc(v||'미판정')}</span>`;
+ const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${VEMO[v]?VEMO[v]+' ':''}${esc(v||'미판정')}</span>`;
  const card=(gr,extra,click)=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},m=S.filter(s=>+s.group===gr.n).length;
   return `<div class="sv-g${click?' click':''}"${click?` onclick="spot(${gr.n})" title="눌러서 발표 내용을 크게 보기"`:''}><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(wj(c.n+'. '+c.t)):''}</p>${extra(f,gr)}</div>`;};
  if(id===1)return `<div class="sv-panel"><button class="sv-play" onclick="playIntro()">▶ 영상으로 시작하기<small>약 1분 20초 · 키보드 V</small></button></div>`;

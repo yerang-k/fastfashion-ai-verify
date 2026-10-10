@@ -351,8 +351,8 @@ function renderGroup(){
  const row=$('row'+g);if(row){row.classList.add('mine');
   const v=row.querySelector('select'),r=row.querySelector('input[name^="sh_r"]'),fd=row.querySelector('input[name^="sh_f"]');
   if(data.g_verdict){v.value=data.g_verdict;data['sh_v'+g]=data.g_verdict;}
-  if(data.g_reason&&!r.value){r.value=data.g_reason.slice(0,80);data['sh_r'+g]=r.value;}
-  if(data.g_find&&!fd.value){fd.value=data.g_find.slice(0,80);data['sh_f'+g]=fd.value;}}
+  if(data.g_reason){r.value=data.g_reason.slice(0,80);data['sh_r'+g]=r.value;}
+  if(data.g_find){fd.value=data.g_find.slice(0,80);data['sh_f'+g]=fd.value;}}
 }
 /* 단계 이동: 화면 표시(show) / 이동(go) / 진행 통제를 지키는 이동(tryGo·step) */
 function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i){closeSrc();closeSum();}cur=i;
