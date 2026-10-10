@@ -538,7 +538,8 @@ function onGroupChange(){collect();
  data._grpApplied=data.group;pollGroup();}
 async function askHelp(){if(!ONLINE){toast('선생님께 손을 들어 알려 주세요');return;}
  if(!data.code||!data.group){toast('준비 단계에서 코드와 모둠을 먼저 입력해 주세요');return;}
- try{await pushStudent();await api('help',{code:data.code,dev:DEV},true);toast('선생님께 도움 요청을 보냈어요 🙋');}catch(e){toast('요청을 보내지 못했어요. 손을 들어 알려 주세요');}}
+ try{let r=await api('help',{code:data.code,dev:DEV},true);if(!r||!r.ok){await pushStudent();r=await api('help',{code:data.code,dev:DEV},true);}
+  if(!r||!r.ok)throw new Error('help');toast('선생님께 도움 요청을 보냈어요 🙋');}catch(e){toast('요청을 보내지 못했어요. 손을 들어 알려 주세요');}}
 function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!(k in data))return;
  if(el.type==='radio')el.checked=(el.value===data[k]);else if(el.type==='checkbox')el.checked=!!data[k];else el.value=data[k];});
  if(data.code)$('codeBadge').textContent='참여 코드: '+data.code+(data.studentName?' ('+data.studentName+')':'');}

@@ -158,8 +158,12 @@ body.stagemode-on .sv-help.show{display:flex}
 .sv-helpbox small{color:#a8a8a4}
 .sv-helpbox p{margin:1.6vh 0 0;color:#8a8a86;font-size:clamp(.8rem,1.8vh,1rem)}
 #stageView .sv-ctl button{background:#2a2a28;color:#f4f4f2;border:1px solid #444;padding:.6vh .9vw;border-radius:8px;cursor:pointer;font:inherit;font-size:clamp(.75rem,1.7vh,.9rem)}
-/* 학생 코드(학년-반-번호)는 기본으로 흐리게 — 프로젝터에 비쳐도 읽히지 않고, 마우스를 올리거나 클릭하면 보임 */
-body.hide-codes .cd{filter:blur(7px);transition:filter .15s}body.hide-codes .cd:hover,body.hide-codes .cd:focus{filter:none}
+.helpPop{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;width:min(580px,94vw)}
+.helpPop .hp{background:#fff7e0;color:#222;border:3px solid #e0a000;border-radius:14px;padding:14px 16px;box-shadow:0 6px 24px rgba(0,0,0,.3);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;animation:hpin .25s ease-out}
+.helpPop .hpt{font-size:1.05rem;line-height:1.5}.helpPop .hpt b{display:block;font-size:1.2rem}
+.helpPop .hpb{display:flex;gap:6px}
+@keyframes hpin{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
+body.stagemode-on .helpPop,body.present .helpPop{display:none}
 body.present{font-size:20px}body.present header,body.present .tabs,body.present .nopresent{display:none}
 /* 학생 화면 미리보기 + 사이드 보드 */
 .board{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:14px;align-items:start}
@@ -173,7 +177,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 .prog .row:last-child{border:0}
 .prog .row b{min-width:3.6em}
 @media(max-width:1000px){.board{grid-template-columns:1fr}.board .pvcol{order:2}}
-</style></head><body class="hide-codes">
+</style></head><body>
 <header>
  <h1>교사 화면 · AI 답변, 믿어도 될까? <span class="small" style="color:#c9b18b">주제탐구독서</span></h1>
  <div class="status"><span class="badge" id="clsBadge" title="지금 보고 있는 반 (바꾸려면 ⚙ 설정 › 반·계정)">-</span><button class="badge btnlike" onclick="copyLink()">학생 링크 복사</button><button class="badge btnlike" onclick="stageMode(true)">무대 화면</button></div>
@@ -230,11 +234,6 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
      <div class="phrow"><span class="small">반 전환</span> <select id="classSel" onchange="switchClass(this.value)" title="반 전환"></select> <button class="btn small" onclick="newClass()">＋ 새 반 만들기</button> <button class="btn small danger" id="delClsBtn" onclick="delClass()">🗑 이 반 삭제</button></div>
     </div>
     <div class="card">
-     <h2>화면 보호</h2>
-     <p class="small">켜 두면 수업 중 화면에 보일 수 있는 곳(현황·도움 요청 등)의 학생 코드·이름이 흐리게 보여요(마우스를 올리면 잠깐 보임). 이 설정 창의 학생 관리 표는 항상 선명해요.</p>
-     <button class="btn" id="hideBtn" onclick="toggleHide()">🙈 코드 가림 켜짐</button>
-    </div>
-    <div class="card">
      <h2>계정</h2>
      <p class="small">교사 PIN은 모든 반이 같아요. 바꾸면 다른 기기(무대 화면 등)는 새 PIN으로 다시 로그인해야 해요.</p>
      <button class="btn" onclick="changePin()">PIN 변경</button> <button class="btn ghost" onclick="logout()" title="이 기기에 기억된 PIN을 지우고 PIN 입력 화면으로 돌아가요">🔒 로그아웃</button>
@@ -266,6 +265,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
  <dt>?</dt><dd>이 안내 열기·닫기</dd></dl>
  <p>아무 곳이나 누르면 닫혀요</p></div></div>
 <div class="toast" id="toast"></div>
+<div class="helpPop" id="helpPop"></div>
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -324,6 +324,7 @@ async function login(){
  $('login').style.display='none';$('app').style.display='block';buildTabs();showTab(0);fitPreview();if(QS.get('view')==='stage')stageMode(true);
  poll=setInterval(()=>{if(!document.hidden)refresh().catch(()=>{});},6000);
  setInterval(pollStageT,2500);
+ setInterval(pollHelp,2000);
 }
 const typing=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
 async function refresh(force){
@@ -468,7 +469,7 @@ function renderStageView(){
    ${st?svPanel(st.id):''}
   </div></div>
   <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}" onclick="stepClick(${s.id})" title="이 단계로 이동">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
-  <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div>${help?`<div><b>${help}</b>도움 요청</div>`:''}</div>
+  <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div></div>
   <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="toggleClock()">${CLOCK?'시계 초기화':'▶ 수업 시작'}</button><button onclick="toggleKeyHelp()">? 키 안내</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
  fitStage();
 }
@@ -501,6 +502,30 @@ const STAGE_FIELD={1:['pre'],3:['i_verdict'],4:['checklist'],5:['post','reflect'
 const indivDone=(s,sid)=>STAGE_FIELD[sid].every(k=>!!s.data[k]);
 const stageName=sid=>{const st=LS.stages.find(x=>x.id===sid);return st?st.name:'';};
 const groupDone=g=>{const f=DB.groups[g]||{};return !!(f.g_verdict&&f.g_verdict.v)&&!!(f.g_find&&f.g_find.v);};
+/* ---- 도움 요청 팝업(교사 화면 전용, 무대 화면·발표 화면에서는 숨김) ---- */
+const BASE_TITLE=document.title;
+let HELP_SEEN=null,HELP_POP=[],helpBusy=false,HELP_FAST=true,AC=null; // HELP_SEEN: 코드→이미 본 요청 시각(처음 조회 전 null), HELP_POP: 팝업에 떠 있는 요청
+function helpBeep(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.connect(g);g.connect(AC.destination);o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.25,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.5);o.start(t);o.stop(t+.5);}catch(e){}}
+function helpScan(list){ // list: [{code,group,helpAt}] — 서버가 알려 준 현재 도움 요청 전체
+ const cur={};list.forEach(h=>{cur[h.code]=h.helpAt;});
+ if(HELP_SEEN===null){HELP_SEEN=cur;return;} // 교사 화면을 열 때 이미 있던 요청은 현황의 카드로만 보여 줌
+ let fresh=false;
+ list.forEach(h=>{if(!(HELP_SEEN[h.code]>=h.helpAt)){HELP_SEEN[h.code]=h.helpAt;HELP_POP=HELP_POP.filter(x=>x.code!==h.code);HELP_POP.push(h);fresh=true;}});
+ Object.keys(HELP_SEEN).forEach(c=>{if(!(c in cur))delete HELP_SEEN[c];});
+ HELP_POP=HELP_POP.filter(x=>x.code in cur);
+ if(fresh&&!document.body.classList.contains('stagemode-on')&&!document.body.classList.contains('present'))helpBeep();
+ helpPopRender();}
+function helpPopRender(){const box=$('helpPop');if(!box)return;
+ box.innerHTML=HELP_POP.map(h=>{const s=DB&&DB.students.find(x=>x.code===h.code),nm=s&&s.data&&s.data.studentName?' '+esc(s.data.studentName):'';
+  return `<div class="hp"><div class="hpt"><b>🙋 도움 요청</b> <span>${esc(h.group)}모둠 · <span class="cd">${esc(h.code)}${nm}</span> · ${hms(h.helpAt)}</span></div><div class="hpb"><button class="btn small" onclick="helpOk('${esc(h.code)}')">확인함</button> <button class="btn small ghost" onclick="helpClose('${esc(h.code)}')">닫기</button></div></div>`;}).join('');
+ document.title=(HELP_POP.length?'🙋 ('+HELP_POP.length+') 도움 요청! ':'')+BASE_TITLE;}
+function helpClose(code){HELP_POP=HELP_POP.filter(x=>x.code!==code);helpPopRender();} // 팝업만 닫음(현황의 도움 요청 카드에는 남음)
+async function helpOk(code){HELP_POP=HELP_POP.filter(x=>x.code!==code);helpPopRender();try{await api('helpClear',{code});}catch(e){}try{await refresh();}catch(e){}} // 확인함: 서버의 요청도 지움
+async function pollHelp(){if(!DB||!HELP_FAST||helpBusy)return;helpBusy=true;
+ try{const r=await api('teacherHelp',null,4000);
+  if(r&&r.ok)helpScan(r.help||[]);
+  else if(r&&r.error==='unknown action')HELP_FAST=false; // 서버(Code.gs)를 아직 새로 배포하지 않았으면 기존 방식(6초마다 전체 갱신)으로만 받음
+ }catch(e){}finally{helpBusy=false;}}
 let HELP=[];
 // 기본 자료일 때 교사가 비교해 볼 ‘예상 확인 포인트’(학생 화면에는 안 보임). 자료를 직접 고친 반에서는 보여 주지 않음
 const EXPECT={1:'최초 출처 추적',2:'수치의 정의·범위',3:'수치의 조건',4:'출처를 직접 찾아 계산, 범위·연도 확인',5:'원 출처를 정확히 적기'};
@@ -508,7 +533,7 @@ function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
  const rows=S.slice().sort((a,b)=>a.group-b.group||String(a.code).localeCompare(String(b.code))).map(s=>({code:s.code,name:s.data.studentName||'',group:s.group,stage:(s.data._stage||0),sub:submitted(s),upd:s.updatedAt,helpAt:s.helpAt,live:true}));
  (DB.roster||[]).forEach(r=>{if(!known[r.code])rows.push({code:r.code,name:r.name||'',group:r.group,live:false});});return rows;}
 function renderLive(){
- const S=DB.students;HELP=S.filter(s=>s.helpAt);
+ const S=DB.students;HELP=S.filter(s=>s.helpAt);helpScan(HELP.map(s=>({code:s.code,group:s.group,helpAt:s.helpAt})));
  let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
  if(HELP.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+HELP.map((r,i)=>`<div>${esc(r.group)}모둠 · <span class="cd">${esc(r.code)}${r.data.studentName?' '+esc(r.data.studentName):''}</span> · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`).join('')+`</div>`;
  const saveIds=[1,3,4,5].filter(id=>visStages(LS).some(s=>s.id===id)),hasG=visStages(LS).some(s=>s.id===7);
@@ -556,7 +581,6 @@ function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.ac
   <td><select id="rg${i}">${!r.group?'<option value="0" selected>미정</option>':''}${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${r.group&&!LS.groups.some(g=>g.n===+r.group)?`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`:''}</select></td>
   <td>${r.live?posOf(r.stage)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
   <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
-function toggleHide(){const on=document.body.classList.toggle('hide-codes');$('hideBtn').textContent=on?'🙈 코드 가림 켜짐':'👁 코드 보임';}
 /* 설정 창: 수업 설정(0) · 반·계정(1) · 데이터 내보내기(2). 닫아도 고치던 내용은 그대로 남는다(저장해야 학생 화면에 적용) */
 function showSPane(i){document.querySelectorAll('.spane').forEach((p,j)=>p.classList.toggle('show',i===j));document.querySelectorAll('#stabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
 function openSettings(i){if(!DB){toast('먼저 PIN으로 들어가 주세요');return;}$('stabs').innerHTML=SPANES.map((n,j)=>`<button onclick="showSPane(${j})">${n}</button>`).join('');showSPane(i||0);$('settingsModal').hidden=false;}
