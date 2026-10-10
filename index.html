@@ -47,6 +47,18 @@ td select,td input{padding:6px;font-size:.9rem}
 .savestat{font-weight:700}.savestat.okk{color:#1b5e20;background:var(--accent-soft);padding:3px 10px;border-radius:12px}.savestat.warn{color:#a8875a}
 .help{position:fixed;right:18px;bottom:18px;background:#fff;color:var(--main);border:2px solid var(--main);border-radius:30px;padding:10px 16px;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .mine{outline:3px solid var(--main);outline-offset:2px}
+.shtabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.shtabs button{flex:1 1 0;min-width:86px;padding:10px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-weight:600;cursor:pointer}
+.shtabs button.on{background:var(--main);color:#fff;border-color:var(--main)}
+.shtabs button .dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--ok);margin-left:5px;vertical-align:middle}
+.shtabs button small{display:block;font-weight:400;font-size:.75rem;min-height:1.1em}
+.shpanel{border:1.5px solid var(--line);border-radius:12px;padding:6px 16px 16px;background:#fff}
+.shpanel h4{margin:16px 0 6px;font-size:1.05rem}
+.shpanel textarea{min-height:104px;font-size:1.05rem}
+.shpanel .shv{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.shpanel .shv label{margin:4px 0}
+.shpanel .shnav{display:flex;justify-content:space-between;gap:10px;margin-top:16px}
+@media(max-width:520px){.shpanel .shv{grid-template-columns:1fr}}
 .role{display:flex;gap:8px;flex-wrap:wrap}.role input{width:auto;flex:1;min-width:120px}
 .srcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
 .srccard{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
@@ -202,8 +214,9 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
  <section class="stage card" data-i="4">
   <h2>6. 모둠 공유: 다섯 조각 맞추기 <span class="time">13분</span></h2>
   <div class="todo">지금 할 일: 각 모둠이 1분 30초씩 발표합니다. 다른 모둠의 근거·판정·확인 포인트를 기록하고, 다섯 조각을 모아 <b>우리 반 AI 자료 확인 체크리스트</b>를 만들어요.</div>
-  <p class="small">우리 모둠 줄은 자동으로 채워져요. 발표를 들으며 나머지 줄을 기록하세요.<span id="shareNote"></span></p>
-  <table><thead><tr><th style="width:36px">#</th><th>AI 답변 문장</th><th>근거 요약</th><th style="width:150px">판정</th><th>🔎 확인 포인트</th></tr></thead><tbody id="shareTable"></tbody></table>
+  <p class="small">발표하는 모둠의 탭을 눌러 근거·판정·확인 포인트를 기록하세요. 우리 모둠 탭은 자동으로 채워져요.<span id="shareNote"></span></p>
+  <div class="shtabs" id="shTabs"></div>
+  <div id="shPanels"></div>
   <h3>🧩 우리 반 ‘AI 자료 확인 체크리스트’ 만들기</h3>
   <p>위 표의 <b>확인 포인트</b>를 모아 보세요. 비슷한 것끼리 묶고, <b>AI가 준 자료를 보고서에 쓰기 전에 꼭 확인할 것</b>을 3~5개로 정리해요. 선생님과 함께 칠판에서 묶어 본 뒤, 내 말로 써 보세요.</p>
   <textarea id="checklist" data-save style="min-height:140px" placeholder="1. ______을(를) 확인한다&#10;2. ______&#10;3. ______"></textarea>
@@ -302,10 +315,25 @@ function buildStatic(){
  const CL=claimsOf(LESSON);
  const hasRef=CL.some(c=>c.cite&&c.cite.ref);
  $('aiText').innerHTML=`<p><b>지현:</b> 패스트패션이 환경에 미치는 영향을 근거 자료와 함께 알려줘.</p><p><b>AI:</b> 패스트패션의 환경 영향은 매우 심각합니다. `+CL.map(c=>`<span class="num">${c.n}</span><mark>${c.t}</mark>${c.cite&&c.cite.ref?`<sup class="cref">[${c.n}]</sup>`:''}`).join(' ')+` 따라서 옷을 적게 사고 오래 입는 것이 중요합니다.</p>`+(hasRef?`<div class="refs"><b>📎 근거 자료</b>`+CL.filter(c=>c.cite&&c.cite.ref).map(c=>`<div>[${c.n}] ${escH(c.cite.ref)}</div>`).join('')+`</div>`:'');
- $('shareTable').innerHTML=LESSON.groups.map(g=>{const c=claimOfGroup(LESSON,g.n);return `<tr id="row${g.n}"><td><b>${g.n}</b></td><td class="small">${c?c.t:''}</td>
-  <td><input type="text" data-save name="sh_r${g.n}" placeholder="근거 요약"></td>
-  <td><select data-save name="sh_v${g.n}"><option value="">판정</option><option>확인됨</option><option>부분적으로 맞음</option><option>확인 불가</option><option>사실 아님</option></select></td>
-  <td><input type="text" data-save name="sh_f${g.n}" placeholder="확인 포인트"></td></tr>`;}).join('');
+ /* 모둠 공유: 모둠별 탭(발표 순서대로 한 모둠씩 크게 보며 기록). 입력 칸 이름(sh_r/sh_v/sh_f + 모둠번호)은 예전 표와 같아 저장된 기록이 그대로 열림 */
+ $('shTabs').innerHTML=LESSON.groups.map(g=>`<button type="button" id="shTab${g.n}" onclick="shTab(${g.n})">${g.n}모둠<small></small></button>`).join('');
+ $('shPanels').innerHTML=LESSON.groups.map((g,i)=>{const c=claimOfGroup(LESSON,g.n),n=g.n;return `<div class="shpanel" id="row${n}" hidden>
+  <div class="ai-box"><p><span class="num">${n}</span> <b>${c?c.t:''}</b></p></div>
+  <p class="small" id="shMine${n}" hidden>✅ 우리 모둠이에요. 모둠 정리에서 쓴 내용이 자동으로 채워져요.</p>
+  <h4>① 근거 요약</h4>
+  <textarea data-save name="sh_r${n}" placeholder="발표를 들으며, 이 모둠이 그렇게 판정한 근거를 적어요"></textarea>
+  <h4>② 판정</h4>
+  <div class="verdict shv">
+   <label class="v-ok"><input type="radio" name="sh_v${n}" value="확인됨" data-save><span>✅ 확인됨</span></label>
+   <label class="v-part"><input type="radio" name="sh_v${n}" value="부분적으로 맞음" data-save><span>🟠 부분적으로 맞음</span></label>
+   <label class="v-unk"><input type="radio" name="sh_v${n}" value="확인 불가" data-save><span>❓ 확인 불가</span></label>
+   <label class="v-bad"><input type="radio" name="sh_v${n}" value="사실 아님" data-save><span>❌ 사실 아님</span></label>
+  </div>
+  <h4>③ 🔎 확인 포인트</h4>
+  <textarea data-save name="sh_f${n}" placeholder="이 모둠이 찾은 ‘AI 자료를 쓸 때는 ○○을 확인해야 한다’를 적어요"></textarea>
+  <div class="shnav"><button type="button" class="btn ghost" onclick="shTab(${n}-1)" ${i===0?'disabled':''}>◀ 이전 모둠</button><button type="button" class="btn" onclick="shTab(${n}+1)" ${i===LESSON.groups.length-1?'disabled':''}>다음 모둠 ▶</button></div>
+ </div>`;}).join('');
+ if(!LESSON.groups.some(g=>g.n===SHT))SHT=(LESSON.groups[0]||{}).n||1;shTab(SHT,1);
  built=true;
 }
 function applyLesson(raw){
@@ -349,12 +377,14 @@ function renderGroup(){
  if(!c){const none='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('myClaim').innerHTML=none;$('myClaim7').innerHTML=none;renderSrc([]);return;}
  const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p>${c.cite&&c.cite.ref?`<p class="small">📎 AI가 댄 근거: <b>${escH(c.cite.ref)}</b></p>`:''}${c.hint?`<details class="hintbox"><summary>💡 막막하면 힌트 보기</summary><p class="small">${c.hint}</p></details>`:''}</div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
  renderSrc(c.src,c.cite);
- document.querySelectorAll('#shareTable tr').forEach(r=>r.classList.remove('mine'));
- const row=$('row'+g);if(row){row.classList.add('mine');
-  const v=row.querySelector('select'),r=row.querySelector('input[name^="sh_r"]'),fd=row.querySelector('input[name^="sh_f"]');
-  if(data.g_verdict){v.value=data.g_verdict;data['sh_v'+g]=data.g_verdict;}
+ document.querySelectorAll('.shpanel').forEach(r=>{r.classList.remove('mine');r.querySelectorAll('textarea,input').forEach(e=>e.disabled=false);const m=$('shMine'+r.id.slice(3));if(m)m.hidden=true;});
+ const row=$('row'+g);if(row){row.classList.add('mine');$('shMine'+g).hidden=false;
+  const r=row.querySelector('textarea[name^="sh_r"]'),fd=row.querySelector('textarea[name^="sh_f"]');
+  row.querySelectorAll('textarea,input').forEach(e=>e.disabled=true); // 우리 모둠 줄은 모둠 정리 내용이 자동으로 들어오므로 여기서는 고치지 않음
+  if(data.g_verdict){setSh(row,data.g_verdict);data['sh_v'+g]=data.g_verdict;}
   if(data.g_reason){r.value=data.g_reason;data['sh_r'+g]=r.value;}
   if(data.g_find){fd.value=data.g_find;data['sh_f'+g]=fd.value;}}
+ markSh();
 }
 /* 단계 이동: 화면 표시(show) / 이동(go) / 진행 통제를 지키는 이동(tryGo·step) */
 function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i){closeSrc();closeSum();}cur=i;
@@ -495,8 +525,18 @@ async function pollShare(){if(!ONLINE||cur!==4||document.hidden)return;
   if(!r.open)return;data._shA=data._shA||{};let ch=false;
   for(const n in r.groups){if(+n===+data.group)continue;const g=r.groups[n],row=$('row'+n);if(!row)continue;
    const key=g.g_verdict+'|'+g.g_reason+'|'+(g.g_find||'');if(data._shA[n]===key)continue;
-   row.querySelector('select').value=g.g_verdict;row.querySelector('input[name^="sh_r"]').value=g.g_reason||'';row.querySelector('input[name^="sh_f"]').value=g.g_find||'';data._shA[n]=key;ch=true;}
-  if(ch)save();}catch(e){}}
+   setSh(row,g.g_verdict);row.querySelector('textarea[name^="sh_r"]').value=g.g_reason||'';row.querySelector('textarea[name^="sh_f"]').value=g.g_find||'';data._shA[n]=key;ch=true;}
+  if(ch){save();markSh();}}catch(e){}}
+var SHT=1; // 모둠 공유에서 지금 보고 있는 모둠 탭
+function shTab(n,quiet){const gs=LESSON.groups.map(g=>g.n);if(!gs.includes(n))return;SHT=n;
+ document.querySelectorAll('.shpanel').forEach(p=>p.hidden=+p.id.slice(3)!==n);
+ document.querySelectorAll('#shTabs button').forEach(b=>b.classList.toggle('on',+b.id.slice(5)===n));
+ if(cur===4&&!quiet)window.scrollTo({top:Math.max(0,$('shTabs').getBoundingClientRect().top+scrollY-12)});}
+function setSh(row,v){row.querySelectorAll('input[type=radio]').forEach(x=>x.checked=(x.value===v));}
+function markSh(){LESSON.groups.forEach(g=>{const p=$('row'+g.n),b=$('shTab'+g.n);if(!p||!b)return;
+ const has=!!(p.querySelector('textarea[name^="sh_r"]').value.trim()||p.querySelector('textarea[name^="sh_f"]').value.trim()||p.querySelector('input[type=radio]:checked'));
+ b.querySelector('small').textContent=(+data.group===g.n?'우리 모둠':'');
+ const d=b.querySelector('.dot');if(has&&!d)b.insertAdjacentHTML('afterbegin','<span class="dot"></span>');else if(!has&&d)d.remove();});}
 function onGroupChange(){collect();
  if(data._grpApplied&&data._grpApplied!==data.group){GROUP_FIELDS.forEach(k=>{document.querySelectorAll(`[id="${k}"],[name="${k}"]`).forEach(e=>{if(e.type==='radio')e.checked=false;else e.value='';});delete data[k];});data._gt={};gdirty={};REC='';}
  data._grpApplied=data.group;pollGroup();}
