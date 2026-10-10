@@ -434,7 +434,7 @@ async function ready(){collect();if(!data.code){toast('학번을 입력해 주�
   if(r.rosterFound&&r.rosterGroup&&+r.rosterGroup!==+data.group){setGroupRadio(r.rosterGroup);onGroupChange();toast(r.rosterGroup+'모둠으로 배정되어 있어요');}
   if(r.found&&!r.sameDev&&!confirm('이미 이 학번으로 저장된 응답이 있어요.\n내 학번이 맞다면 [확인], 다른 친구가 쓰는 학번이라면 [취소] 후 다른 학번을 입력하세요.'))return;
  }catch(e){toast('서버에 연결하지 못했어요. 일단 이 기기에 저장돼요.');}}
- data._ready=true;$('codeBadge').textContent='학번: '+data.code+(data.studentName?' ('+data.studentName+')':'');
+ QS_FAST=true;data._ready=true;$('codeBadge').textContent='학번: '+data.code+(data.studentName?' ('+data.studentName+')':'');
  if(locked()){save();toast(LESSON.current===0?'준비 완료! 선생님이 시작할 때까지 기다려 주세요':'준비 완료!');syncStage();}
  else{toast('준비 완료!');if(!step(1))save();}}
 function collect(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!k)return;
@@ -462,26 +462,38 @@ async function api(action,payload,post,tmo){if(PREVIEW&&(post||/^(save|help)/.te
 function noClass(){if(document.getElementById('noCls'))return;const d=document.createElement('div');d.id='noCls';d.style.cssText='position:fixed;inset:0;z-index:99999;background:#111;color:#f4f4f2;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:1.2rem;line-height:1.7';d.innerHTML='<div><div style="font-size:2rem;font-weight:800;color:#e0c9a3;margin-bottom:10px">이 반은 없어요</div>삭제됐거나 주소가 잘못됐어요.<br>선생님께 새 학생 링크를 받아 다시 들어오세요.</div>';document.body.appendChild(d);}
 let sTimer=null,gTimer=null,gdirty={},snapSeq=0;
 (data._gpend||[]).forEach(k=>{gdirty[k]={v:data[k]==null?'':data[k],t:(data._gt&&data._gt[k])||Date.now()};}); // 새로고침해도 저장 전인 모둠 기록을 이어서 저장할 수 있게 복원
-function queueSync(){clearTimeout(sTimer);sTimer=setTimeout(pushStudent,1500);}
+/* 저장 요청 조절(19명이 한꺼번에 저장해도 서버 줄이 막히지 않게):
+   ① 서버에 마지막으로 올린 내용과 같으면 보내지 않음 ② 자동 저장은 학생마다 1.5~7.5초 어긋나게 보냄 ③ 한 번에 하나만 보내고, 보내는 중에 또 부르면 끝난 뒤 한 번만 더 보냄 ④ 실패하면 1.5→3→6→…→20초로 간격을 늘림 */
+let LASTPUSH='',PUSH_BACKOFF=1500,pushRunning=null,pushQueued=null;
+let QS_FAST=false; // 입장(준비 완료) 직후 첫 저장은 바로(입장은 학생마다 시간이 달라 몰리지 않음)
+function queueSync(){clearTimeout(sTimer);const d=QS_FAST?600:PUSH_BACKOFF+Math.random()*6000;QS_FAST=false;sTimer=setTimeout(pushStudent,d);}
 /* 개인 응답은 단계별로 따로 저장한다. 서버에는 '저장하기(또는 자동 저장)로 저장해 둔 값(_snap)'만 보내고, 아직 저장하지 않은 입력은 이 기기에만 남는다. */
 const stageKeys=sid=>{const ks=[],sec=document.querySelector('.stage[data-i="'+sid+'"]');if(sec)sec.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(k&&!ks.includes(k))ks.push(k);});return ks;};
 function snapStage(sid){collect();data._snap=data._snap||{};stageKeys(sid).forEach(k=>{data._snap[k]=data[k];});(data._pend=data._pend||{})[sid]=false;(data._unsent=data._unsent||{})[sid]=++snapSeq;}
 function serverData(){const d=Object.assign({},data),snap=data._snap||{};
  SAVE_STAGES.forEach(sid=>stageKeys(sid).forEach(k=>{delete d[k];}));Object.assign(d,snap);
  delete d._snap;delete d._pend;delete d._unsent;delete d._sv;delete d._ipend;return d;}
-async function pushStudent(){if(!ONLINE||!data.code||!data.group)return true;
- const sent=Object.assign({},data._unsent||{});
- try{await api('saveStudent',{code:data.code,group:+data.group,dev:DEV,data:serverData(),submitted:!!data._submitted},true);
+function pushStudent(){
+ if(!pushRunning){pushRunning=pushStudent0().finally(()=>{pushRunning=null;});return pushRunning;}
+ if(!pushQueued)pushQueued=pushRunning.then(()=>{pushQueued=null;return pushStudent();});
+ return pushQueued;}
+async function pushStudent0(){if(!ONLINE||!data.code||!data.group)return true;
+ const sent=Object.assign({},data._unsent||{}),body=serverData(),sb=Object.assign({},body);
+ if(locked())delete sb._stage; // 선생님이 단계를 정해 주는 동안은 단계 이동만으로 저장하지 않음(교사 화면의 ‘학생 단계’ 표시만 늦어짐)
+ const sig=JSON.stringify([sb,!!data._submitted]);
+ try{if(sig!==LASTPUSH)await api('saveStudent',{code:data.code,group:+data.group,dev:DEV,data:body,submitted:!!data._submitted},true);
+  LASTPUSH=sig;PUSH_BACKOFF=1500;
   for(const k in sent)if(data._unsent&&data._unsent[k]===sent[k]){delete data._unsent[k];if(!data._sv||typeof data._sv!=='object')data._sv={};data._sv[k]=hhmm();} // 서버에 올라간 단계마다 저장 시각 기록(저장하기·자동 저장 모두)
   localStorage.setItem(KEY,JSON.stringify(data));showPending();if(!pending())setBadge('ok');return true;}
- catch(e){setBadge('err');queueSync();return false;}}
+ catch(e){setBadge('err');PUSH_BACKOFF=Math.min(PUSH_BACKOFF*2,20000);queueSync();return false;}}
 function markGroup(k){data._gt=data._gt||{};const t=Date.now();data._gt[k]=t;gdirty[k]={v:data[k]==null?'':data[k],t};data._gpend=Object.keys(gdirty);} // 저장하기를 누를 때까지 서버로 보내지 않음
+let GROUP_BACKOFF=2500;
 async function pushGroup(){clearTimeout(gTimer);if(!ONLINE||!data.group||!Object.keys(gdirty).length)return true;
  const f=gdirty;gdirty={};
  try{const r=await api('saveGroup',{group:+data.group,code:data.code,dev:DEV,fields:f},true);
   if(r.locked&&data._gt)for(const k in f)delete data._gt[k]; // 기록자가 따로 있어 내 입력이 반영되지 않았으면 화면을 모둠 기록으로 되돌림
-  applyGroup(r.fields);data._gpend=Object.keys(gdirty);localStorage.setItem(KEY,JSON.stringify(data));showPending();if(!pending())setBadge('ok');return true;}
- catch(e){for(const k in f)if(!gdirty[k])gdirty[k]=f[k];showPending();gTimer=setTimeout(pushGroup,5000);return false;}}
+  GROUP_BACKOFF=2500;applyGroup(r.fields);data._gpend=Object.keys(gdirty);localStorage.setItem(KEY,JSON.stringify(data));showPending();if(!pending())setBadge('ok');return true;}
+ catch(e){for(const k in f)if(!gdirty[k])gdirty[k]=f[k];showPending();GROUP_BACKOFF=Math.min(GROUP_BACKOFF*2,30000);gTimer=setTimeout(pushGroup,GROUP_BACKOFF+Math.random()*3000);return false;}}
 /* ---- 저장하기 버튼: 개인 검증(단계 3)·모둠 정리(단계 7)는 다 쓴 뒤 버튼을 눌러야 서버에 저장 ---- */
 const SAVE_STAGES=[1,3,4,5]; // 학생이 직접 응답을 쓰는 단계(저장하기 버튼이 있는 단계). 7(모둠 정리)은 기록자 전용 별도 저장
 function showPending(){const p7=Object.keys(gdirty).length>0,t7=$('saveState7'),sv=(data._sv&&typeof data._sv==='object')?data._sv:{};
@@ -491,6 +503,7 @@ function showPending(){const p7=Object.keys(gdirty).length>0,t7=$('saveState7'),
 async function saveActivity(n){collect();
  if(!ONLINE){toast('서버에 연결되지 않아 이 기기에만 저장돼요');return;}
  if(!data.code||!data.group){toast('준비 단계에서 학번과 모둠을 먼저 입력해 주세요');return;}
+ toast('저장하는 중이에요… (여럿이 함께 저장하면 몇 초 걸려요)');
  let ok;
  if(n!==7){snapStage(n);ok=await pushStudent();if(ok){if(!data._sv||typeof data._sv!=='object')data._sv={};data._sv[n]=hhmm();}} // 이 단계에서 쓴 것만 저장(다른 단계의 저장 전 내용은 그대로 이 기기에만 남음)
  else{if(REC!==data.code){toast('기록자만 저장할 수 있어요');return;}ok=await pushGroup();if(ok&&!Object.keys(gdirty).length)data._sv7=hhmm();}
@@ -583,11 +596,12 @@ let polling=false; // 서버가 느릴 때 요청이 쌓이지 않게, 이전 �
 /* 단계 변경을 빨리 알아채기: 가벼운 getStage(캐시만 읽음)를 2.5초마다 물어, 단계만 바뀌었으면 설정을 다시 받지 않고 바로 적용한다.
    서버가 아직 옛 버전이면 getStage가 실패하므로(STAGE_OK가 갱신되지 않음) 예전처럼 4초 간격 전체 조회로 자동으로 돌아간다. */
 const rc=x=>x===null?null:(x==null?0:+x); // 단계 값 비교용(null=자유 이동, 없음=0)
-async function pollStage(){if(!ONLINE||document.hidden||stageBusy)return;stageBusy=true;let slow=false;
+let stageSkip=0;
+async function pollStage(){if(!ONLINE||document.hidden||stageBusy)return;if(stageSkip>0){stageSkip--;return;}stageBusy=true;let slow=false;
  try{const r=await api('getStage',null,false,4000);STAGE_OK=Date.now();SHARE_OPEN=!!r.so;const lv=r.lv==null?'':r.lv;
   if(LV!==null&&lv!==LV){await pollLesson();} // 단계 구성·모둠·자료 같은 설정이 바뀜 → 전체를 다시 받음
   else{const base=RAWL||{};if(rc(r.current)!==rc(base.current))applyLesson(Object.assign({},base,{current:r.current}));} // 단계만 바뀜 → 바로 적용
- }catch(e){slow=!!(e&&e.name==='AbortError');}finally{stageBusy=false;}
+ }catch(e){slow=!!(e&&e.name==='AbortError');if(!slow)stageSkip=2;}finally{stageBusy=false;}
  if(slow)setTimeout(pollStage,100);} // 4초 넘게 답이 없으면 포기하고 바로 다시 물음(기다리지 않음)
 async function pollTick(){if(polling)return;polling=true;
  try{tickN++;if(Date.now()-STAGE_OK>10000||tickN%3===1)await pollLesson(); // 빠른 조회가 잘 되는 동안은 전체 설정 조회를 드물게(내 코드·모둠 변경 확인용)
