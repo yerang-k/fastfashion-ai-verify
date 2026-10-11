@@ -42,6 +42,10 @@ details{margin-top:14px}summary{cursor:pointer;font-weight:600;color:var(--main)
 table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border:1px solid var(--line);padding:8px;vertical-align:top}th{background:var(--soft)}
 td select,td input{padding:6px;font-size:.9rem}
 .checklist label{display:block;padding:8px 10px;border-radius:8px;cursor:pointer}.checklist label:hover{background:var(--soft)}
+.readycard{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:60;background:rgba(24,24,22,.82);color:#f4f4f2;border:2px solid var(--accent);border-radius:20px;padding:22px 30px;text-align:center;min-width:min(300px,84vw);max-width:90vw;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .25s}
+.readycard.on{opacity:1;visibility:visible}
+.readycard .rc1{font-size:1.6rem;font-weight:800;white-space:nowrap}.readycard .rc2{margin-top:6px;font-size:1.05rem;color:#e0c9a3}.readycard .rc3{margin-top:10px;font-size:.95rem;opacity:.85;word-break:keep-all;text-wrap:balance}
+body.preview .readycard{display:none}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;pointer-events:none;z-index:9}.toast.on{opacity:1}
 .toast.ok{background:var(--accent);color:#111;font-weight:800;font-size:1.2rem;padding:14px 30px;bottom:14vh;border:2px solid #111;box-shadow:0 8px 28px rgba(0,0,0,.4)}
 .savestat{font-weight:700}.savestat.okk{color:#1b5e20;background:var(--accent-soft);padding:3px 10px;border-radius:12px}.savestat.warn{color:#a8875a}
@@ -284,6 +288,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
  </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="readycard" id="readyCard"><div class="rc1">✅ 준비 완료</div><div class="rc2" id="rcWho"></div><div class="rc3">선생님이 시작할 때까지 기다려 주세요</div></div>
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script><script>
 /* 미리보기 모드(?preview=1&pg=모둠번호): 교사 화면에 끼워 넣는 읽기 전용 학생 화면. 진짜 학생 기록과 섞이지 않게 저장소를 따로 쓰고,
    서버에는 아무것도 저장하지 않으며(api에서 쓰기 요청 차단), 교사가 정한 단계를 그대로 따라간다. */
@@ -395,7 +400,8 @@ function renderGroup(){
  markSh();
 }
 /* 단계 이동: 화면 표시(show) / 이동(go) / 진행 통제를 지키는 이동(tryGo·step) */
-function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i){closeSrc();closeSum();}cur=i;
+function updateReadyCard(){const c=$('readyCard');if(!c)return;const on=!!data._ready&&cur===0;c.classList.toggle('on',on);if(on)$('rcWho').textContent=(data.code||'')+(data.studentName?' '+data.studentName:'');} // 준비 단계에서 준비 완료한 학생에게만, 선생님이 다음 단계로 넘기면 사라짐
+function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i){closeSrc();closeSum();}cur=i;updateReadyCard();
  document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('show',+s.dataset.i===i));
  const p=o.indexOf(i),lp=locked()?o.indexOf(LESSON.current):o.length-1;
  document.querySelectorAll('#steps button').forEach((b,j)=>{b.classList.toggle('active',j===p);b.classList.toggle('done',j<p);b.classList.toggle('locked',locked()&&j>lp);});
@@ -434,7 +440,7 @@ async function ready(){collect();if(!data.code){toast('학번을 입력해 주�
   if(r.rosterFound&&r.rosterGroup&&+r.rosterGroup!==+data.group){setGroupRadio(r.rosterGroup);onGroupChange();toast(r.rosterGroup+'모둠으로 배정되어 있어요');}
   if(r.found&&!r.sameDev&&!confirm('이미 이 학번으로 저장된 응답이 있어요.\n내 학번이 맞다면 [확인], 다른 친구가 쓰는 학번이라면 [취소] 후 다른 학번을 입력하세요.'))return;
  }catch(e){toast('서버에 연결하지 못했어요. 일단 이 기기에 저장돼요.');}}
- QS_FAST=true;data._ready=true;$('codeBadge').textContent='학번: '+data.code+(data.studentName?' ('+data.studentName+')':'');
+ QS_FAST=true;data._ready=true;updateReadyCard();$('codeBadge').textContent='학번: '+data.code+(data.studentName?' ('+data.studentName+')':'');
  if(locked()){save();toast(LESSON.current===0?'준비 완료! 선생님이 시작할 때까지 기다려 주세요':'준비 완료!');syncStage();}
  else{toast('준비 완료!');if(!step(1))save();}}
 function collect(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!k)return;

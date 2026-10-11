@@ -536,7 +536,7 @@ function buildRows(){const S=DB.students,known={};S.forEach(s=>known[s.code]=1);
  (DB.roster||[]).forEach(r=>{if(!known[r.code])rows.push({code:r.code,name:r.name||'',group:r.group,live:false});});return rows;}
 function renderLive(){
  const S=DB.students;HELP=S.filter(s=>s.helpAt);helpScan(HELP.map(s=>({code:s.code,group:s.group,helpAt:s.helpAt})));
- let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
+ let h=`<div class="chips"><div class="chip"><b>${S.length}</b>참여</div><div class="chip"><b>${readyInfo().ready}/${readyInfo().total}</b>준비 완료</div><div class="chip"><b>${S.filter(submitted).length}</b>제출</div><div class="chip ${HELP.length?'warn':''}"><b>${HELP.length}</b>도움 요청</div></div>`;
  if(HELP.length)h+=`<div class="card help"><h2>🙋 도움 요청</h2>`+HELP.map((r,i)=>`<div>${esc(r.group)}모둠 · <span class="cd">${esc(r.code)}${r.data.studentName?' '+esc(r.data.studentName):''}</span> · ${hms(r.helpAt)} <button class="btn small ghost" onclick="clearHelp(${i})">확인함</button></div>`).join('')+`</div>`;
  const saveIds=[1,3,4,5].filter(id=>visStages(LS).some(s=>s.id===id)),hasG=visStages(LS).some(s=>s.id===7);
  h+=`<div class="card"><h2>모둠별 진행 <span class="small">(단계별 칸은 학생이 그 단계에서 '저장하기'를 눌렀는지를 보여줘요 — 제출과는 별개예요)</span></h2><table><tr><th>모둠</th><th>맡은 주장</th><th>참여/정원</th>${saveIds.map(id=>`<th>${esc(stageName(id))}</th>`).join('')}${hasG?'<th>모둠 정리</th>':''}<th>최종 제출</th><th>기록자</th></tr>`;
@@ -559,9 +559,21 @@ function findsCard(){
  return `<div class="card"><h2>🔎 확인 포인트 모아 보기 <span class="small">(모둠 정리에서 정한 내용 · ‘저장하기’를 누른 글만 보여요 · 학생 코드는 표시하지 않아요)</span></h2>${rows}</div>`;
 }
 // 지금 교사가 고정해 둔 단계(LS.current)를 기준으로, 저장을 안 한 학생·모둠을 바로 알려 줌 — 다음 단계로 넘기기 전에 확인하는 용도
+/* 준비 완료 현황: 명단이 있으면 명단 기준(미접속 포함), 없으면 접속한 학생 기준. 학생이 ‘준비 완료’를 눌러야 완료로 셈 */
+function readyInfo(){
+ const S=DB.students,R=DB.roster||[],by={};S.forEach(s=>{by[s.code]=s;});
+ const nm=s=>(s&&s.data&&s.data.studentName)||'';
+ const base=R.length?R.map(r=>({code:r.code,group:r.group,name:r.name||nm(by[r.code]),s:by[r.code]})):S.map(s=>({code:s.code,group:s.group,name:nm(s),s}));
+ if(R.length){const inR=new Set(R.map(r=>r.code));S.filter(s=>!inR.has(s.code)).forEach(s=>base.push({code:s.code,group:s.group,name:nm(s),s}));}
+ const isReady=b=>!!(b.s&&b.s.data&&b.s.data._ready);
+ return {total:base.length,ready:base.filter(isReady).length,wait:base.filter(b=>!isReady(b))};}
+function prepCheck(){const r=readyInfo();if(!r.total)return '';
+ if(!r.wait.length)return `<div class="card"><h2>✅ 지금 단계 — 「${esc(stageName(0))}」</h2><p class="small" style="margin:0">${r.total}명 모두 준비 완료예요. 시작해도 좋아요.</p></div>`;
+ return `<div class="card help"><h2>⏳ 준비 완료 전 ${r.wait.length}명 <span class="small">(${r.ready}/${r.total}명 완료)</span></h2>`+r.wait.slice().sort((a,b)=>(a.group||99)-(b.group||99)||String(a.code).localeCompare(String(b.code))).map(b=>`<div>${b.group?esc(b.group)+'모둠 · ':''}<span class="cd">${esc(b.code)}${b.name?' '+esc(b.name):''}</span> · <span class="small">${b.s?'입력 중 (‘준비 완료’를 아직 안 눌렀어요)':'미접속'}</span></div>`).join('')+`</div>`;}
 function currentStageCheck(){
  const sid=LS.current;
  if(sid==null)return '';
+ if(sid===0)return prepCheck();
  if(STAGE_FIELD[sid]){
   const S=DB.students,missing=S.filter(s=>!indivDone(s,sid));
   if(!S.length)return '';
