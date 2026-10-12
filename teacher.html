@@ -683,9 +683,20 @@ document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement
 /* ---- 수업 설정 (초안 DR을 편집한 뒤 저장) ---- */
 const mark=()=>{dirty=true;paintSaveStat();};
 document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('acc'))OPEN[d.id]=d.open;},true);
+/* 다른 반의 수업 설정 가져오기: 그 반에 저장된 단계 시간·모둠·자료 카드(PDF 연결 포함)·마무리 정리본을 지금 편집 중인 설정(초안)에 옮긴다. 학생 접속 주소·명단·명단만 입장 여부·현재 단계는 이 반 것을 그대로 둔다. 저장을 눌러야 학생 화면에 적용됨 */
+function importBox(){const others=(DB.classes||[]).filter(c=>c!==CLASS_ID);if(!others.length)return '';
+ return `<div class="card" style="margin-bottom:10px"><h2 style="margin-top:0">다른 반 설정 가져오기</h2><p class="small" style="margin:0 0 8px">다른 반에 저장된 <b>단계 시간 · 모둠 · 자료 카드(PDF 포함) · 마무리 정리본</b>을 지금 이 반(<b>${esc(clsLabel(CLASS_ID))}</b>)의 편집 내용으로 가져와요. 학생 접속 주소·명단·현재 단계는 바뀌지 않아요. 가져온 뒤 아래 <b>저장</b>을 눌러야 학생 화면에 적용돼요.</p>
+  <select id="impSrc" style="width:auto;display:inline-block">${others.map(c=>`<option value="${esc(c)}">${esc(clsLabel(c))}</option>`).join('')}</select> <button class="btn small" onclick="importLessonFrom()">가져오기</button></div>`;}
+async function importLessonFrom(){const src=($('impSrc')||{}).value;if(src==null)return;
+ if(!confirm('「'+clsLabel(src)+'」의 수업 설정(단계 시간·모둠·자료 카드·정리본)을 지금 편집 중인 「'+clsLabel(CLASS_ID)+'」 설정에 가져올까요?\n지금 편집 중인 같은 항목은 바뀌어요. (저장을 눌러야 학생 화면에 적용돼요)'))return;
+ let r;try{r=await api('getLesson',{class:src});}catch(e){toast('서버에 연결하지 못했어요');return;}
+ if(!r||!r.ok){toast('설정을 불러오지 못했어요'+(r&&r.error?' ('+r.error+')':''));return;}
+ const L=normLesson(r.lesson); // 그 반에 저장된 설정이 없으면 기본값
+ DR.stages=clone(L.stages);DR.groups=clone(L.groups);DR.claims=L.claims?clone(L.claims):null;DR.summary=clone(L.summary);
+ mark();renderSettings();toast('「'+clsLabel(src)+'」 설정을 가져왔어요. 확인한 뒤 저장을 눌러 주세요');}
 function renderSettings(){
  if(!DR)return;const CL=claimsOf(DR);
- let h=`<details class="acc" id="a1" ${OPEN.a1?'open':''}><summary>① 단계 구성 <span class="small">${DR.stages.filter(s=>s.on).length}단계 사용</span></summary><div class="accbody"><p class="small">이름·시간을 고치고, 순서를 바꾸고, 단계를 숨길 수 있어요. ‘준비’(코드·모둠 입력)와 ‘정리’(제출)는 숨길 수 없고, ‘준비’는 항상 맨 앞입니다.</p>
+ let h=importBox()+`<details class="acc" id="a1" ${OPEN.a1?'open':''}><summary>① 단계 구성 <span class="small">${DR.stages.filter(s=>s.on).length}단계 사용</span></summary><div class="accbody"><p class="small">이름·시간을 고치고, 순서를 바꾸고, 단계를 숨길 수 있어요. ‘준비’(코드·모둠 입력)와 ‘정리’(제출)는 숨길 수 없고, ‘준비’는 항상 맨 앞입니다.</p>
   <table><tr><th style="width:90px">순서</th><th>단계 이름(학생 화면 버튼)</th><th style="width:110px">시간</th><th style="width:70px">표시</th></tr>`;
  h+=DR.stages.map((s,i)=>{const req=REQUIRED_STAGES.includes(s.id);const fixed=s.id===0;
   return `<tr><td><button class="btn small ghost" onclick="moveStage(${i},-1)" ${fixed||i===0||DR.stages[i-1].id===0?'disabled':''}>▲</button> <button class="btn small ghost" onclick="moveStage(${i},1)" ${fixed||i===DR.stages.length-1?'disabled':''}>▼</button></td>
