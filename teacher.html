@@ -165,6 +165,15 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv2bar{display:flex;gap:1vw;align-items:center;flex:0 0 auto;margin-top:calc(1cqh*var(--k));flex-wrap:wrap;font-size:calc(clamp(.8rem,2.3cqh,1.15rem)*var(--k));color:#8a8a86}
 #stageView .sv2bar button{font:inherit;font-weight:700;color:#f4f4f2;background:#2a2a28;border:1.5px solid #4a4a48;border-radius:22px;padding:.35em 1.1em;cursor:pointer}
 #stageView .sv2bar button.go{background:var(--accent);color:#111;border-color:var(--accent)}#stageView .sv2bar .sv-mini{margin-top:0}#stageView .sv2bar .hint{margin-left:auto}#stageView .sv2bar .rt{display:flex;gap:.7vw;flex:0 0 auto}
+tr.edited td{background:#fff3cf}
+#stageView .cmpb{display:grid;gap:calc(.9cqh*var(--k));flex:1}
+#stageView .bhead,#stageView .brow{display:grid;grid-template-columns:2.2em minmax(0,1.1fr) 15vw minmax(0,1.7fr);gap:calc(.9vw*var(--k));align-items:center}
+#stageView .bhead{font-size:calc(clamp(.75rem,2cqh,1rem)*var(--k));color:#8a8a86;padding:0 calc(1vw*var(--k))}
+#stageView .brow{border:1.5px solid #3a3a38;border-radius:14px;padding:calc(1.1cqh*var(--k)) calc(1vw*var(--k));background:#1e1e1c;cursor:pointer;min-height:0}
+#stageView .brow:hover{border-color:var(--accent)}
+#stageView .bno{width:2em;height:2em;border-radius:50%;background:var(--accent);color:#111;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-size:calc(clamp(.9rem,2.5cqh,1.4rem)*var(--k))}
+#stageView .bcl{font-size:calc(clamp(.8rem,2.3cqh,1.3rem)*var(--k));color:#c8c8c4;line-height:1.35;word-break:keep-all;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#stageView .bf{font-size:calc(clamp(1rem,3cqh,1.9rem)*var(--k));font-weight:700;line-height:1.4;word-break:keep-all;overflow-wrap:break-word}
 #stageView .sv-mini{display:flex;gap:.6vw;flex-wrap:wrap;margin-top:calc(1.4cqh*var(--k));flex:0 0 auto}
 #stageView .sv-mini span{padding:.3vh .9vw;border:1.5px solid #3a3a38;border-radius:22px;font-size:calc(clamp(.8rem,2cqh,1.1rem)*var(--k));color:#8a8a86;cursor:pointer}
 #stageView .sv-mini span.on{background:var(--accent);color:#111;border-color:var(--accent);font-weight:800}
@@ -313,7 +322,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const wj=s=>String(s==null?'':s).split(/(\s+)/).map(t=>/\s/.test(t)||t.length>16?t:[...t].join('\u2060')).join(''); // 어절 안에서 줄이 바뀌지 않게(무대 화면 카드용)
 const PIN_KEY='aiverify_teacher_pin';
 const BASE=location.origin+location.pathname.replace(/[^/]*$/,'');
-let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[];
+let pin='',DB=null,LS=normLesson(null),DR=null,dirty=false,poll=null,ROWS=[],ROW_EDITS={};
 const TABS=['📊 현황','📝 결과 정리'];
 const SPANES=['⚙️ 수업 설정','🏫 반·계정','📁 데이터 내보내기'];
 let CT=0; // 수업 설정 ③에서 지금 보고 있는 주장 탭
@@ -511,7 +520,9 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
      <div class="sv2g b"><div class="vcard ${hid(3)?'hid':VC[vv]||'none'}${nw(3)}" onclick="${hid(3)?'event.stopPropagation();spotReveal(3)':''}"><div class="lb">3 · 모둠 판정</div><div class="vv">${VEMO[vv]?VEMO[vv]+' ':''}${esc(vv||'미판정')}</div><div class="vr">${val('g_reason')?esc(wj(val('g_reason'))):none}</div></div>
       <div class="quote${hid(4)?' hid':''}${nw(4)}" onclick="${hid(4)?'event.stopPropagation();spotReveal(4)':''}"><div class="lb">4 · 🔎 우리 모둠이 찾은 확인 포인트</div><div class="qq">${val('g_find')?`“${esc(wj(val('g_find')))}”`:none}</div></div></div></div>
     <div class="sv2bar"><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spotGo(${x.n})">${x.n}모둠</span>`).join('')}</div><span class="hint">${T===0?'화면을 눌러 시작':T<SPOT_MAX?'눌러서 다음 공개':'발표 끝'} · ${T}/${SPOT_MAX}</span><div class="rt"><button onclick="event.stopPropagation();spotStep(-1)">◀ 이전</button><button class="go" onclick="event.stopPropagation();spotStep(1)">${nextLabel}</button><button onclick="event.stopPropagation();spot(null)">✕ 모든 모둠</button></div></div></div>`;}
-  return `<div class="sv-panel"><h3>모둠 발표 · 근거 → 판정 → 확인 포인트</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?`<p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`+vb(f.g_verdict&&f.g_verdict.v)+`<p><b>🔎 ${esc(wj((f.g_find&&f.g_find.v)||''))}</b></p>`:'<span class="m">발표 대기</span>',true)).join('')}</div></div>`;}
+  /* 한눈에 보기(비교 보드): 모둠마다 한 줄 — 번호 · AI가 한 말 · 판정 · 확인 포인트. 줄을 누르면 그 모둠 발표 화면으로. 판정 공개 전에는 ‘발표 대기’ */
+  return `<div class="sv-panel"><h3>모둠 발표 · 한눈에 보기 <small style="font-weight:400;color:#8a8a86">눌러서 그 모둠 발표 화면으로</small></h3><div class="cmpb"><div class="bhead"><span></span><span>AI가 한 말</span><span>모둠 판정</span><span>우리가 찾은 확인 포인트</span></div>${G.map(gr=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},v=f.g_verdict&&f.g_verdict.v,fd=f.g_find&&f.g_find.v,op=DB.shareOpen;
+   return `<div class="brow" onclick="spot(${gr.n})" title="눌러서 ${gr.n}모둠 발표 화면 열기"><span class="bno">${gr.n}</span><span class="bcl">${c?esc(wj(c.t)):''}</span><span>${op?vb(v):'<span class="m">발표 대기</span>'}</span><span class="bf">${op?(fd?esc(wj(fd)):'<span class="m">(아직 정리하지 않았어요)</span>'):''}</span></div>`;}).join('')}</div></div>`;}
  if(id===6){const fin={};LS.groups.forEach(g=>{const f=(DB.groups[g.n]||{}).g_find;if(f&&f.v&&f.v.trim())fin[g.n]=f.v.trim();});const it=(typeof mergeSummary==='function'?mergeSummary:(a)=>a)((LS.summary&&LS.summary.items)||[],fin);
   return `<div class="sv-panel"><h3>🧩 우리가 찾은 AI 자료 확인 포인트</h3>${it.length?`<div class="sv-groups">${it.map((x,i)=>`<div class="sv-g"><b>${i+1}${x.title?'. '+esc(wj(x.title)):''}</b><p>${esc(wj(x.text))}</p>${x.by?`<span class="m">— ${esc(x.by)}</span>`:''}</div>`).join('')}</div>`:'<p class="m">정리본이 아직 없어요. 모둠이 확인 포인트를 저장하면 자동으로 나타나요(⚙ 설정 ⑥에서 따로 만들 수도 있어요).</p>'}</div>`;}
  if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
@@ -648,14 +659,27 @@ function currentStageCheck(){
  }
  return '';
 }
+/* 학생 관리 표의 저장 전 수정(코드·이름·모둠): 화면이 6초마다 새로 그려져도 저장하기 전까지 지워지지 않게 코드별로 기억해 두고 다시 채운다 */
+function captureRowEdits(){(ROWS||[]).forEach((r,i)=>{const c=$('rc'+i),n=$('rn'+i),g=$('rg'+i);if(!c||!n||!g)return;
+ const diff=c.value!==r.code||n.value!==(r.name||'')||String(g.value)!==String(+r.group||0);
+ if(diff)ROW_EDITS[r.code]={c:c.value,n:n.value,g:String(g.value)};else delete ROW_EDITS[r.code];});}
+function applyRowEdits(){(ROWS||[]).forEach((r,i)=>{const e=ROW_EDITS[r.code];if(!e)return;const c=$('rc'+i),n=$('rn'+i),g=$('rg'+i);if(!c||!n||!g)return;
+ c.value=e.c;n.value=e.n;if([...g.options].some(o=>o.value===e.g))g.value=e.g;const tr=c.closest('tr');if(tr)tr.classList.add('edited');});}
+async function saveAllRows(){captureRowEdits();const codes=Object.keys(ROW_EDITS);if(!codes.length){toast('바꾼 행이 없어요');return;}
+ let ok=0,fail=0;
+ for(const code of codes){const e=ROW_EDITS[code],nc=e.c.trim();if(!nc){fail++;continue;}
+  let res;try{res=await api('updateStudent',{code,newCode:nc,group:+e.g,name:e.n.trim()});}catch(x){res={ok:false};}
+  if(res.ok){ok++;delete ROW_EDITS[code];}else fail++;}
+ toast(ok+'명 저장했어요'+(fail?' · '+fail+'명은 저장하지 못했어요(코드 중복 등)':''),!fail);refresh(true);}
 function renderStudentMgr(){const el=$('studentMgr');if(!el||(typing(document.activeElement)&&el.contains(document.activeElement)))return;
+ captureRowEdits();
  ROWS=buildRows();
- el.innerHTML=`<p class="small">코드·이름·모둠을 고친 뒤 [저장]을 누르면 학생 기기에도 곧 반영돼요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
+ el.innerHTML=`<p class="small">코드·이름·모둠을 고친 뒤 [저장](한 명씩) 또는 <button class="btn small" onclick="saveAllRows()">바뀐 행 모두 저장</button>을 누르면 학생 기기에도 곧 반영돼요. 노란 줄은 아직 저장하지 않은 수정이에요. 명단에만 있고 아직 접속하지 않은 학생도 함께 보입니다.</p>
   <table><tr><th>코드</th><th>이름</th><th style="width:110px">모둠</th><th>단계</th><th>상태</th><th>마지막 저장</th><th style="width:130px"></th></tr>`+ROWS.map((r,i)=>`<tr><td><input type="text" id="rc${i}" value="${esc(r.code)}" maxlength="30"></td>
   <td><input type="text" id="rn${i}" value="${esc(r.name)}" maxlength="10" placeholder="이름"></td>
   <td><select id="rg${i}">${!r.group?'<option value="0" selected>미정</option>':''}${LS.groups.map(g=>`<option value="${g.n}" ${+r.group===g.n?'selected':''}>${g.n}모둠</option>`).join('')}${r.group&&!LS.groups.some(g=>g.n===+r.group)?`<option value="${esc(r.group)}" selected>${esc(r.group)}모둠(없음)</option>`:''}</select></td>
   <td>${r.live?posOf(r.stage)+'단계':'-'}</td><td>${r.live?(r.sub?'✅ 제출':'작성 중'):'<span class="small">미접속</span>'}</td><td>${r.live?hms(r.upd):'-'}</td>
-  <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;}
+  <td><button class="btn small" onclick="saveRow(${i})">저장</button> <button class="btn small danger" onclick="delRow(${i})">삭제</button></td></tr>`).join('')+`</table>`;applyRowEdits();}
 /* 설정 창: 수업 설정(0) · 반·계정(1) · 데이터 내보내기(2). 닫아도 고치던 내용은 그대로 남는다(저장해야 학생 화면에 적용) */
 function showSPane(i){document.querySelectorAll('.spane').forEach((p,j)=>p.classList.toggle('show',i===j));document.querySelectorAll('#stabs button').forEach((b,j)=>b.classList.toggle('active',i===j));}
 function openSettings(i){if(!DB){toast('먼저 PIN으로 들어가 주세요');return;}$('stabs').innerHTML=SPANES.map((n,j)=>`<button onclick="showSPane(${j})">${n}</button>`).join('');showSPane(i||0);$('settingsModal').hidden=false;}
@@ -671,9 +695,9 @@ async function clearAllResponses(){
 function openStudentMgr(){openSettings(0);const d=$('a5');if(d){d.open=true;OPEN.a5=true;d.scrollIntoView({behavior:'smooth'});}}
 async function saveRow(i){const r=ROWS[i],nc=$('rc'+i).value.trim(),ng=+$('rg'+i).value,nn=$('rn'+i).value.trim();if(!nc){toast('코드를 입력해 주세요');return;}
  let res;try{res=await api('updateStudent',{code:r.code,newCode:nc,group:ng,name:nn});}catch(e){res={ok:false,error:'network'};}
- if(res.ok){saved((nn||nc)+' 학생 정보가 저장됐어요');refresh(true);}else toast(res.error==='dup'?'이미 사용 중인 코드예요':res.error==='network'?'저장하지 못했어요. 인터넷 연결을 확인해 주세요':'저장하지 못했어요');}
+ if(res.ok){delete ROW_EDITS[r.code];saved((nn||nc)+' 학생 정보가 저장됐어요');refresh(true);}else toast(res.error==='dup'?'이미 사용 중인 코드예요':res.error==='network'?'저장하지 못했어요. 인터넷 연결을 확인해 주세요':'저장하지 못했어요');}
 async function delRow(i){const r=ROWS[i];if(!confirm(`${r.code} 학생의 응답과 명단 등록을 삭제할까요? 되돌릴 수 없어요.`))return;
- const res=await api('deleteStudent',{code:r.code});if(res.ok){toast('삭제했어요');refresh(true);}else toast('삭제하지 못했어요');}
+ const res=await api('deleteStudent',{code:r.code});if(res.ok){delete ROW_EDITS[r.code];toast('삭제했어요');refresh(true);}else toast('삭제하지 못했어요');}
 
 /* ---- 결과 정리 (마무리 단계용) ---- */
 function bars(rows,total){return rows.map(([l,n])=>`<div class="bar"><div class="l">${esc(l)}</div><div class="t"><div class="f" style="width:${total?Math.round(n/total*100):0}%"></div></div><div class="n">${n}명 (${total?Math.round(n/total*100):0}%)</div></div>`).join('');}
@@ -756,7 +780,7 @@ async function importLessonFrom(){const src=($('impSrc')||{}).value;if(src==null
  DR.stages=clone(L.stages);DR.groups=clone(L.groups);DR.claims=L.claims?clone(L.claims):null;DR.summary=clone(L.summary);
  mark();renderSettings();toast('「'+clsLabel(src)+'」 설정을 가져왔어요. 확인한 뒤 저장을 눌러 주세요');}
 function renderSettings(){
- if(!DR)return;const CL=claimsOf(DR);
+ if(!DR)return;captureRowEdits();const CL=claimsOf(DR); /* 설정 창을 새로 그리기 전에, 학생 관리 표에서 저장 전에 고친 값부터 기억해 둠 */
  let h=importBox()+`<details class="acc" id="a1" ${OPEN.a1?'open':''}><summary>① 단계 구성 <span class="small">${DR.stages.filter(s=>s.on).length}단계 사용</span></summary><div class="accbody"><p class="small">이름·시간을 고치고, 순서를 바꾸고, 단계를 숨길 수 있어요. ‘준비’(코드·모둠 입력)와 ‘정리’(제출)는 숨길 수 없고, ‘준비’는 항상 맨 앞입니다.</p>
   <table><tr><th style="width:90px">순서</th><th>단계 이름(학생 화면 버튼)</th><th style="width:110px">시간</th><th style="width:70px">표시</th></tr>`;
  h+=DR.stages.map((s,i)=>{const req=REQUIRED_STAGES.includes(s.id);const fixed=s.id===0;
