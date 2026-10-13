@@ -162,9 +162,9 @@ body.stagemode-on #stageView{display:flex}
 #stageView .quote .qq{font-size:calc(clamp(1.2rem,4.2cqh,2.6rem)*var(--k));font-weight:700;line-height:1.5;word-break:keep-all;overflow-wrap:break-word}
 #stageView .quote.hid{border:1.5px dashed #3a3a38;cursor:pointer}#stageView .quote.hid>*{visibility:hidden}#stageView .quote.hid>.lb{visibility:visible;color:#a8a8a4}
 #stageView .quote.hid::after{content:"눌러서 보기";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8a8a86;font-size:calc(clamp(.9rem,2.6cqh,1.4rem)*var(--k))}
-#stageView .sv2bar{display:flex;gap:1vw;align-items:center;flex:0 0 auto;margin-top:calc(1.4cqh*var(--k));font-size:calc(clamp(.8rem,2.3cqh,1.15rem)*var(--k));color:#8a8a86}
+#stageView .sv2bar{display:flex;gap:1vw;align-items:center;flex:0 0 auto;margin-top:calc(1cqh*var(--k));flex-wrap:wrap;font-size:calc(clamp(.8rem,2.3cqh,1.15rem)*var(--k));color:#8a8a86}
 #stageView .sv2bar button{font:inherit;font-weight:700;color:#f4f4f2;background:#2a2a28;border:1.5px solid #4a4a48;border-radius:22px;padding:.35em 1.1em;cursor:pointer}
-#stageView .sv2bar button.go{background:var(--accent);color:#111;border-color:var(--accent)}#stageView .sv2bar .sp{margin-left:auto}
+#stageView .sv2bar button.go{background:var(--accent);color:#111;border-color:var(--accent)}#stageView .sv2bar .sv-mini{margin-top:0}#stageView .sv2bar .hint{margin-left:auto}#stageView .sv2bar .rt{display:flex;gap:.7vw;flex:0 0 auto}
 #stageView .sv-mini{display:flex;gap:.6vw;flex-wrap:wrap;margin-top:calc(1.4cqh*var(--k));flex:0 0 auto}
 #stageView .sv-mini span{padding:.3vh .9vw;border:1.5px solid #3a3a38;border-radius:22px;font-size:calc(clamp(.8rem,2cqh,1.1rem)*var(--k));color:#8a8a86;cursor:pointer}
 #stageView .sv-mini span.on{background:var(--accent);color:#111;border-color:var(--accent);font-weight:800}
@@ -510,8 +510,7 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
      <div class="blk${hid(2)?' hid':''}${nw(2)}" onclick="${hid(2)?'event.stopPropagation();spotReveal(2)':''}"><div class="lb">2 · 우리가 자료에서 확인한 것</div>${members.length?members.map((m,i)=>`<div class="sv2m"><span>모둠원 ${i+1}</span>${vb(m.data.i_verdict)}<span class="tx">${esc(wj(m.data.i_reason||m.data.i_did||''))}</span></div>`).join(''):'<div class="sv2m"><span class="tx">(저장한 모둠원 기록이 없어요)</span></div>'}</div></div>
      <div class="sv2g b"><div class="vcard ${hid(3)?'hid':VC[vv]||'none'}${nw(3)}" onclick="${hid(3)?'event.stopPropagation();spotReveal(3)':''}"><div class="lb">3 · 모둠 판정</div><div class="vv">${VEMO[vv]?VEMO[vv]+' ':''}${esc(vv||'미판정')}</div><div class="vr">${val('g_reason')?esc(wj(val('g_reason'))):none}</div></div>
       <div class="quote${hid(4)?' hid':''}${nw(4)}" onclick="${hid(4)?'event.stopPropagation();spotReveal(4)':''}"><div class="lb">4 · 🔎 우리 모둠이 찾은 확인 포인트</div><div class="qq">${val('g_find')?`“${esc(wj(val('g_find')))}”`:none}</div></div></div></div>
-    <div class="sv2bar"><button onclick="event.stopPropagation();spotStep(-1)">◀ 이전</button><button class="go" onclick="event.stopPropagation();spotStep(1)">${nextLabel}</button><span>${T===0?'화면을 눌러 시작':T<SPOT_MAX?'눌러서 다음 공개':'발표 끝'} · ${T}/${SPOT_MAX}</span><button class="sp" onclick="event.stopPropagation();spot(null)">✕ 모든 모둠</button></div>
-    <div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spotGo(${x.n})">${x.n}모둠</span>`).join('')}</div></div>`;}
+    <div class="sv2bar"><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spotGo(${x.n})">${x.n}모둠</span>`).join('')}</div><span class="hint">${T===0?'화면을 눌러 시작':T<SPOT_MAX?'눌러서 다음 공개':'발표 끝'} · ${T}/${SPOT_MAX}</span><div class="rt"><button onclick="event.stopPropagation();spotStep(-1)">◀ 이전</button><button class="go" onclick="event.stopPropagation();spotStep(1)">${nextLabel}</button><button onclick="event.stopPropagation();spot(null)">✕ 모든 모둠</button></div></div></div>`;}
   return `<div class="sv-panel"><h3>모둠 발표 · 근거 → 판정 → 확인 포인트</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>DB.shareOpen?`<p>${esc(wj((f.g_reason&&f.g_reason.v)||''))}</p>`+vb(f.g_verdict&&f.g_verdict.v)+`<p><b>🔎 ${esc(wj((f.g_find&&f.g_find.v)||''))}</b></p>`:'<span class="m">발표 대기</span>',true)).join('')}</div></div>`;}
  if(id===6){const fin={};LS.groups.forEach(g=>{const f=(DB.groups[g.n]||{}).g_find;if(f&&f.v&&f.v.trim())fin[g.n]=f.v.trim();});const it=(typeof mergeSummary==='function'?mergeSummary:(a)=>a)((LS.summary&&LS.summary.items)||[],fin);
   return `<div class="sv-panel"><h3>🧩 우리가 찾은 AI 자료 확인 포인트</h3>${it.length?`<div class="sv-groups">${it.map((x,i)=>`<div class="sv-g"><b>${i+1}${x.title?'. '+esc(wj(x.title)):''}</b><p>${esc(wj(x.text))}</p>${x.by?`<span class="m">— ${esc(x.by)}</span>`:''}</div>`).join('')}</div>`:'<p class="m">정리본이 아직 없어요. 모둠이 확인 포인트를 저장하면 자동으로 나타나요(⚙ 설정 ⑥에서 따로 만들 수도 있어요).</p>'}</div>`;}
@@ -532,7 +531,6 @@ function renderStageView(){
    ${st?svPanel(st.id):''}
   </div></div>
   <div class="sv-steps">${vs.map((s,p)=>`<span class="${p===pos?'on':p<pos?'past':''}" onclick="stepClick(${s.id})" title="이 단계로 이동">${p+1}. ${esc(s.name)}</span>`).join('')}</div>
-  <div class="sv-stat"><div><b>${S.length}</b>참여</div><div><b>${S.filter(submitted).length}</b>제출</div></div>
   <div class="sv-ctl"><button onclick="stepStage(-1)" ${cur==null||pos<=0?'disabled':''}>◀ 이전</button><button onclick="stepStage(1)" ${cur==null||pos>=vs.length-1?'disabled':''}>다음 ▶</button><button onclick="toggleClock()">${CLOCK?'시계 초기화':'▶ 수업 시작'}</button><button onclick="toggleKeyHelp()">? 키 안내</button><button onclick="stageMode(false)">나가기 (Esc)</button></div>`;
  SPOT_NEW=0;fitStage();
 }
