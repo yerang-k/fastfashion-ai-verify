@@ -104,9 +104,6 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-panel{background:#181816;border:1.5px solid #3a3a38;border-radius:16px;padding:calc(1.8cqh*var(--k)) 1.4vw}
 #stageView .sv-panel h3{margin:0 0 calc(1.2cqh*var(--k));font-size:calc(clamp(.85rem,2.6cqh,1.2rem)*var(--k));color:var(--accent);letter-spacing:.04em}
 #stageView .sv-join{text-align:center}
-#stageView .sv-jrow{display:flex;align-items:center;justify-content:center;gap:3vw}
-#stageView .sv-qr{flex:0 0 auto;width:min(26vw,48cqh);aspect-ratio:1;background:#fff;padding:1.2vw;border-radius:14px}#stageView .sv-qr svg{display:block;width:100%;height:100%}
-#stageView .sv-jrow .sv-url{min-width:0;text-align:left}
 #stageView .sv-url{font-weight:800;color:var(--accent);letter-spacing:.03em;line-height:1.25;word-break:break-all;font-family:Consolas,"Malgun Gothic",monospace}
 #stageView .sv-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(13vw,1fr));gap:calc(.8vw*var(--k))}
 #stageView .sv-g{border:1.5px solid #3a3a38;border-radius:12px;padding:calc(1.2cqh*var(--k)) calc(.8vw*var(--k));background:#1e1e1c;min-width:0}
@@ -116,7 +113,7 @@ body.stagemode-on #stageView{display:flex}
 #stageView[data-clamp="2"] .sv-g p{-webkit-line-clamp:2}
 #stageView[data-clamp="1"] .sv-g p{-webkit-line-clamp:1}
 #stageView .sv-g .m{font-size:calc(clamp(.75rem,2.3cqh,1rem)*var(--k));color:#8a8a86}
-#stageView .sv-v{display:inline-block;padding:1px 10px;border-radius:14px;font-size:calc(clamp(.75rem,2.3cqh,1rem)*var(--k));font-weight:700;border:1.5px solid #5a5a58;color:#a8a8a4}
+#stageView .sv-v{display:inline-block;white-space:nowrap;padding:1px 10px;border-radius:14px;font-size:calc(clamp(.75rem,2.3cqh,1rem)*var(--k));font-weight:700;border:1.5px solid #5a5a58;color:#a8a8a4}
 #stageView .sv-v.ok{background:#f4f4f2;border-color:#f4f4f2;color:#111}#stageView .sv-v.part{background:var(--accent);border-color:var(--accent);color:#111}
 #stageView .sv-v.unk{border-style:dashed;color:#e8e8e4}#stageView .sv-v.bad{border-color:#f4f4f2;color:#f4f4f2}
 #stageView .sv-g.click{cursor:pointer;transition:border-color .15s}
@@ -321,7 +318,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
  <p>아무 곳이나 누르면 닫혀요</p></div></div>
 <div class="toast" id="toast"></div>
 <div class="helpPop" id="helpPop"></div>
-<script src="qrcode.js"></script><script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script>
+<script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -505,15 +502,13 @@ function spotTimerReset(e){if(e)e.stopPropagation();SPOT_T0=SPOT_STEP>0?Date.now
 function paintSpotTimer(){const el=$('spTimer');if(!el)return;const left=SPOT_T0?Math.max(0,SPOT_LIMIT-Math.floor((Date.now()-SPOT_T0)/1000)):SPOT_LIMIT;
  el.textContent=Math.floor(left/60)+':'+String(left%60).padStart(2,'0');el.classList.toggle('warn',!!SPOT_T0&&left<=15);}
 /* 무대 화면에 크게 보여 줄 접속 주소: 설정에 적은 짧은 주소가 있으면 그것, 없으면 학생 링크(https:// 는 뺌) */
-/* 접속 QR: 학교 Wi-Fi가 짧은 주소 서비스(tinyurl 등)를 막는 경우가 있어, QR에는 짧은 주소 대신 학생 링크(반 포함)를 그대로 담는다 */
-function qrSvg(){try{const q=qrcode(0,'M');q.addData(studentLink());q.make();return q.createSvgTag({scalable:true,margin:0});}catch(e){return '';}}
 function joinText(){return (LS.joinUrl||studentLink()).replace(/^https?:\/\//,'').replace(/\/$/,'');}
 function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 주는 패널
  const S=DB.students,G=LS.groups,vb=v=>`<span class="sv-v ${VCLS[v]||''}">${VEMO[v]?VEMO[v]+' ':''}${esc(v||'미판정')}</span>`;
  const card=(gr,extra,click)=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},m=S.filter(s=>+s.group===gr.n).length;
   return `<div class="sv-g${click?' click':''}"${click?` onclick="spot(${gr.n})" title="눌러서 발표 내용을 크게 보기"`:''}><b>${gr.n}모둠</b> <span class="m">${m}/${gr.size}명</span><p>${c?esc(wj(c.n+'. '+c.t)):''}</p>${extra(f,gr)}</div>`;};
  if(id===1)return `<div class="sv-panel"><button class="sv-play" onclick="playIntro()">▶ 영상으로 시작하기<small>약 1분 20초 · 키보드 V</small></button></div>`;
- if(id===0){const t=joinText(),n=t.length,fs=n<=16?'min(8.6vw,17cqh)':n<=26?'min(5.4vw,11cqh)':'min(2.6vw,6cqh)';const qr=qrSvg();return `<div class="sv-panel sv-join"><h3>${qr?'노트북은 주소창에 아래 주소를 입력 · 휴대폰은 QR을 카메라로 찍으세요':'접속 주소 · 브라우저 주소창에 입력하세요'}</h3><div class="sv-jrow">${qr?`<div class="sv-qr">${qr}</div>`:''}<div class="sv-url" style="font-size:calc(${fs}*${qr?.62:1}*var(--k))">${esc(t)}</div></div></div>`;}
+ if(id===0){const t=joinText(),n=t.length,fs=n<=16?'min(8.6vw,17cqh)':n<=26?'min(5.4vw,11cqh)':'min(2.6vw,6cqh)';return `<div class="sv-panel sv-join"><h3>접속 주소 · 브라우저 주소창에 입력하세요</h3><div class="sv-url" style="font-size:calc(${fs}*var(--k))">${esc(t)}</div></div>`;}
  if(id===3)return `<div class="sv-panel"><h3>모둠별 담당 문장 · 개인 조사 진행</h3><div class="sv-groups">${G.map(gr=>card(gr,(f,g)=>{const m=S.filter(s=>+s.group===g.n);return `<span class="m">판정 ${m.filter(s=>s.data.i_verdict).length}/${m.length}명</span>`;})).join('')}</div></div>`;
  if(id===7)return `<div class="sv-panel"><h3>모둠 정리 · 발표할 내용</h3><div class="sv-groups">${G.map(gr=>card(gr,f=>`<span class="m">${f._rec?'✍️ 기록자 정함':'✍️ 기록자 미정'} · 근거 ${f.g_reason&&f.g_reason.v?'✓':'–'} · 확인 포인트 ${f.g_find&&f.g_find.v?'✓':'–'}</span> `+vb(f.g_verdict&&f.g_verdict.v))).join('')}</div></div>`;
  if(id===4){
@@ -535,7 +530,7 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
  if(id===6){const fin={};LS.groups.forEach(g=>{const f=(DB.groups[g.n]||{}).g_find;if(f&&f.v&&f.v.trim())fin[g.n]=f.v.trim();});const it=(typeof mergeSummary==='function'?mergeSummary:(a)=>a)((LS.summary&&LS.summary.items)||[],fin);
   return `<div class="sv-panel"><h3>🧩 우리가 찾은 AI 자료 확인 포인트</h3>${it.length?`<div class="sv-groups">${it.map((x,i)=>`<div class="sv-g"><b>${i+1}${x.title?'. '+esc(wj(x.title)):''}</b><p>${esc(wj(x.text))}</p>${x.by?`<span class="m">— ${esc(x.by)}</span>`:''}</div>`).join('')}</div>`:'<p class="m">정리본이 아직 없어요. 모둠이 확인 포인트를 저장하면 자동으로 나타나요(⚙ 설정 ⑥에서 따로 만들 수도 있어요).</p>'}</div>`;}
  if(id===5){const n=S.length,d=S.filter(submitted).length;return `<div class="sv-panel"><h3>제출 현황</h3><div class="sv-prog"><i style="width:${n?Math.round(d/n*100):0}%"></i></div><div style="font-size:1.6rem"><b>${d}</b> / ${n}명 제출</div></div>`;}
- if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">확인됨</span><p>${wj('신뢰할 수 있는 자료와 일치')}</p></div><div class="sv-g"><span class="sv-v part">부분적으로 맞음</span><p>${wj('맞지만 조건·범위 설명이 빠짐')}</p></div><div class="sv-g"><span class="sv-v unk">확인 불가</span><p>${wj('출처를 찾을 수 없음')}</p></div><div class="sv-g"><span class="sv-v bad">사실 아님</span><p>${wj('신뢰할 수 있는 자료와 어긋남')}</p></div></div></div>`;
+ if(id===2)return `<div class="sv-panel"><h3>판정 4단계</h3><div class="sv-groups"><div class="sv-g"><span class="sv-v ok">${VEMO['확인됨']} 확인됨</span><p>${wj('신뢰할 수 있는 자료와 일치')}</p></div><div class="sv-g"><span class="sv-v part">${VEMO['부분적으로 맞음']} 부분적으로 맞음</span><p>${wj('맞지만 조건·범위 설명이 빠짐')}</p></div><div class="sv-g"><span class="sv-v unk">${VEMO['확인 불가']} 확인 불가</span><p>${wj('출처를 찾을 수 없음')}</p></div><div class="sv-g"><span class="sv-v bad">${VEMO['사실 아님']} 사실 아님</span><p>${wj('신뢰할 수 있는 자료와 어긋남')}</p></div></div></div>`;
  return '';
 }
 function renderStageView(){
