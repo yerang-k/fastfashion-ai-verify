@@ -131,8 +131,8 @@ body.stagemode-on #stageView{display:flex}
 #stageView.spotfull .sv-panel.sv-spot{border:0;background:none;padding:0}
 #stageView.spotfull .sv2g{flex:1 1 0}#stageView.spotfull .sv2g.b{flex:1.5 1 0}#stageView.spotfull .sv2claim{margin:auto 0}
 #stageView .sv-inner.mir{height:100%}
-#stageView .sv-mir{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.46fr);gap:2vw;height:100%}
-#stageView .sv-mirhost{min-width:0;min-height:0;border-radius:14px;background:#181816;border:1.5px solid #3a3a38}
+#stageView .sv-mir{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2vw;height:100%}
+#stageView .sv-mirhost{width:min(68cqw,calc(100cqh*16/9));aspect-ratio:16/9;align-self:center;min-width:0;min-height:0;border-radius:14px;background:#181816;border:1.5px solid #3a3a38}
 #stageView .sv-mirside{min-width:0;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:1.6vh;scrollbar-width:thin;scrollbar-color:#5a5a58 transparent}
 #stageView .sv-mirside .sv-todo{white-space:normal;overflow:visible;font-size:clamp(1.1rem,min(2vw,3.4vh),2.2rem);letter-spacing:0;line-height:1.45}
 #stageView .sv-mirside .sv-points{flex-direction:column;flex-wrap:nowrap}
@@ -235,7 +235,7 @@ body.present{font-size:20px}body.present header,body.present .tabs,body.present 
 .pv .pvbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
 .pv .pvbar .small{margin-right:4px}
 .pv .pvbox{position:relative;width:100%;overflow:hidden;border-radius:10px;border:1px solid #ddd;background:#f4f1ea}
-.pv iframe{position:absolute;left:0;top:0;width:1100px;height:760px;border:0;transform-origin:0 0}
+.pv iframe{position:absolute;left:0;top:0;width:1280px;height:720px;border:0;transform-origin:0 0}
 .prog .row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:6px 0;border-bottom:1px solid #eee;font-size:.9rem}
 .prog .row:last-child{border:0}
 .prog .row b{min-width:3.6em}
@@ -400,7 +400,7 @@ async function refresh(force){
 }
 /* 미리보기: 학생 화면(index.html?preview=1)을 iframe으로 끼워 넣고 화면 폭에 맞게 축소. 서버에는 쓰지 않는 읽기 전용 모드 */
 let PVG=1,PVSRC='';
-function fitPreview(){const b=$('pvBox'),f=$('pvFrame');if(!b||!f||!b.clientWidth)return;const k=b.clientWidth/1100;f.style.transform='scale('+k+')';b.style.height=Math.round(760*k)+'px';}
+function fitPreview(){const b=$('pvBox'),f=$('pvFrame');if(!b||!f||!b.clientWidth)return;const k=b.clientWidth/1280;f.style.transform='scale('+k+')';b.style.height=Math.round(720*k)+'px';}
 const PV_T=Date.now(); // 미리보기가 옛 학생 화면(브라우저 캐시)을 보여 주지 않도록, 교사 화면을 열 때마다 새 주소로 불러옴
 function pvGroup(g){PVG=g;renderBoard();}
 function renderBoard(){
@@ -561,8 +561,8 @@ function mirSync(){const f=MIRFR;if(!f||f.style.display==='none'||LS.current==nu
 function placeMirror(){const f=MIRFR,h=$('svMirHost');if(!(document.body.classList.contains('stagemode-on')&&h)){if(f)f.style.display='none';return;}
  const fr=mirFrame(),r=h.getBoundingClientRect();if(r.width<50||r.height<50){fr.style.display='none';return;}
  const src=BASE+'index.html?preview=1&bare=1&pg='+PVG+(CLASS_ID?'&class='+encodeURIComponent(CLASS_ID):'')+'&_='+PV_T;if(src!==MIRSRC){MIRSRC=src;fr.src=src;}
- const k=Math.max(.8,Math.min(r.width/720,r.height/520,2.2)),lw=r.width/k,lh=r.height/k; // 학생 화면은 가로 약 720px 이상으로 그려서 글자가 같은 모양이 되게 하고 k배로 키움
- Object.assign(fr.style,{display:'block',left:r.left+'px',top:r.top+'px',width:lw+'px',height:lh+'px',transform:'scale('+k+')'});mirSync();}
+ const k=r.width/1280; // 실제 학생 노트북 화면과 같은 16:9(1280x720)로 그린 뒤 칸에 맞춰 줄여서(또는 키워서) 보여 줌 — 비율이 달라지지 않음
+ Object.assign(fr.style,{display:'block',left:r.left+'px',top:r.top+'px',width:'1280px',height:Math.round(r.height/k)+'px',transform:'scale('+k+')'});mirSync();}
 function renderStageView(){
  if(!DB)return;const vs=visStages(LS),cur=LS.current,pos=vs.findIndex(s=>s.id===cur),st=vs[pos],S=DB.students,help=S.filter(x=>x.helpAt).length,g=st&&STAGE_GUIDE[st.id];
  if(cur!==4&&SPOT){SPOT=null;spotReset();}
