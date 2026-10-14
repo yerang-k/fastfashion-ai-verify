@@ -154,6 +154,7 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv3 .sv2cite{margin-top:.6em}
 #stageView .sv3 .c1{display:flex;flex-direction:column}#stageView .sv3mid{margin:calc(1cqh*var(--k)) 0 0;padding:0}#stageView .sv3stampbox{display:flex;justify-content:flex-end;margin-top:auto;min-height:calc(13cqh*var(--k));padding-top:calc(1cqh*var(--k))}
 #stageView .sv3rs{flex:0 0 auto;margin-top:calc(2cqh*var(--k));font-size:calc(clamp(.9rem,2.5cqh,1.5rem)*var(--k));line-height:1.6;color:#d6d6d2;word-break:keep-all;overflow-wrap:break-word}
+#stageView .sv-focus.measure .stamp,#stageView .sv-focus.measure .c1,#stageView .sv-focus.measure .sv3rs{animation:none!important}
 #stageView .sv3rs.off{visibility:hidden}
 #stageView .sv3rs.new{animation:sv3rs .5s .45s backwards}
 @keyframes sv3rs{from{opacity:0}to{opacity:1}}
@@ -622,7 +623,9 @@ function fitStage(){const v=$('stageView');if(!v||getComputedStyle(v).display===
  if(v.querySelector('.sv-mir')){v.style.setProperty('--k',1);placeMirror();return;}
  placeMirror();fitTodo(v);
  const foc=v.querySelector('.sv-spot .sv-focus');
- if(foc){v.removeAttribute('data-clamp');for(let k=2.6;k>=.6;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(foc.scrollHeight<=foc.clientHeight+1&&[...foc.querySelectorAll('.sv3 .blk,.sv3 .quote')].every(c=>c.scrollHeight<=c.clientHeight+8))return;}v.style.setProperty('--k',.6);return;} // 1배로도 길면 스크롤
+ if(foc){v.removeAttribute('data-clamp');foc.classList.add('measure');let done=false; /* 크기를 재는 동안은 도장·흔들림 움직임을 꺼서(도장이 처음에 크게 시작해 카드가 넘쳐 보임) 배율이 갑자기 작아지지 않게 함 */
+  for(let k=2.6;k>=.6&&!done;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(foc.scrollHeight<=foc.clientHeight+1&&[...foc.querySelectorAll('.sv3 .blk,.sv3 .quote')].every(c=>c.scrollHeight<=c.clientHeight+8))done=true;}
+  if(!done)v.style.setProperty('--k',.6);foc.classList.remove('measure');return;}
  const body=v.querySelector('.sv-body'),inner=v.querySelector('.sv-inner');if(!body||!inner)return;
  const fits=()=>inner.scrollHeight<=body.clientHeight+1&&v.scrollHeight<=v.clientHeight+1;
  const tryK=from=>{for(let k=from;k>=.5;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(fits())return true;}return false;};
