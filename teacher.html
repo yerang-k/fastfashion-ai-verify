@@ -147,6 +147,27 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv2dots i.done{background:var(--accent);border-color:var(--accent)}#stageView .sv2dots i.on{background:#f4f4f2;border-color:#f4f4f2}
 #stageView .sv2tm{margin-left:1vw;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:800;cursor:pointer;font-size:calc(clamp(1.1rem,3.4cqh,1.9rem)*var(--k))}
 #stageView .sv2tm.warn{color:#ff9d7a}
+#stageView .sv3{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:calc(.9vw*var(--k));flex:1 1 0;min-height:0}
+#stageView .sv3 .c1{grid-row:1/3;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#5a5a58 transparent}
+#stageView .sv3 .c2,#stageView .sv3 .c4{min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#5a5a58 transparent}
+#stageView .sv3 .sv2claim{font-size:calc(clamp(1.1rem,3.6cqh,2.4rem)*var(--k));line-height:1.5;font-weight:600;margin:0}
+#stageView .sv3 .sv2cite{margin-top:.6em}
+#stageView .sv3 .c1{display:flex;flex-direction:column}#stageView .sv3mid{margin:auto 0;padding:calc(1.4cqh*var(--k)) 0}#stageView .sv3foot{display:flex;align-items:flex-end;gap:calc(1.2vw*var(--k));margin-top:calc(1.4cqh*var(--k));padding-bottom:calc(1.8cqh*var(--k))}
+#stageView .sv3rs{flex:1 1 0;min-width:0;font-size:calc(clamp(.9rem,2.5cqh,1.5rem)*var(--k));line-height:1.6;color:#d6d6d2;word-break:keep-all;overflow-wrap:break-word}
+#stageView .sv3rs.new{animation:sv3rs .5s .45s backwards}
+@keyframes sv3rs{from{opacity:0}to{opacity:1}}
+#stageView .stamp{position:relative;flex:0 0 auto;margin:0 calc(.8vw*var(--k)) calc(1cqh*var(--k)) 0;transform:rotate(-8deg);border:calc(.5cqh*var(--k)) solid var(--sc);color:var(--sc);border-radius:12px;padding:calc(.9cqh*var(--k)) calc(1.4vw*var(--k));text-align:center;background:rgba(17,17,17,.6);box-shadow:inset 0 0 0 2px #111,inset 0 0 0 4px var(--sc);pointer-events:none}
+#stageView .stamp .s1{font-size:calc(clamp(.7rem,1.9cqh,1rem)*var(--k));letter-spacing:.08em}
+#stageView .stamp .s2{font-size:calc(clamp(1.2rem,4.2cqh,2.8rem)*var(--k));font-weight:800;white-space:nowrap;line-height:1.2}
+#stageView .stamp.go{animation:sv3slam .55s cubic-bezier(.2,.9,.3,1.2) backwards}
+@keyframes sv3slam{0%{opacity:0;transform:rotate(-8deg) scale(2.8)}55%{opacity:1;transform:rotate(-8deg) scale(.92)}75%{transform:rotate(-8deg) scale(1.05)}100%{opacity:1;transform:rotate(-8deg) scale(1)}}
+#stageView .c1.hit{animation:sv3hit .3s .3s}
+@keyframes sv3hit{0%,100%{transform:translate(0)}25%{transform:translate(-4px,3px)}50%{transform:translate(4px,-3px)}75%{transform:translate(-3px,-1px)}}
+#stageView .sv2o{cursor:pointer}
+#stageView .sv2o span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#stageView .sv2o.open{grid-column:1/-1}#stageView .sv2o.open span{-webkit-line-clamp:unset;display:block}
+@media (orientation:landscape){#stageView .sv2o span{-webkit-line-clamp:2}#stageView .sv2o.open span{-webkit-line-clamp:unset}}
+@media (orientation:portrait){#stageView .sv3{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1.25fr) minmax(0,1fr) minmax(0,.7fr)}#stageView .sv3 .c1{grid-row:auto}}
 #stageView .sv2g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:calc(.9vw*var(--k));margin-bottom:calc(.9vw*var(--k))}
 #stageView .sv2g.b{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);margin-bottom:0}
 #stageView .blk{position:relative;border:1.5px solid #3a3a38;border-radius:14px;padding:calc(1.2cqh*var(--k)) calc(1vw*var(--k));background:#1e1e1c;min-width:0}
@@ -536,15 +557,16 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
  if(id===4){
   const sp=SPOT&&G.find(x=>x.n===SPOT);
   if(sp){const c=claimOfGroup(LS,sp.n),f=DB.groups[sp.n]||{},val=k=>(f[k]&&f[k].v)||'',none='<span class="m">(아직 정리하지 않았어요)</span>';
-   const T=SPOT_STEP,nw=k=>SPOT_NEW===k?' new':'',hid=k=>T<k-1,VC={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'},vv=val('g_verdict');
+   const T=SPOT_STEP,nw=k=>SPOT_NEW===k?' new':'',hid=k=>T<k-1,VC={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'},SC={'확인됨':'#6fbf8a','부분적으로 맞음':'#e9965a','확인 불가':'#b9b4d8','사실 아님':'#e5706a'},vv=val('g_verdict');
    const members=S.filter(x=>+x.group===sp.n&&x.data&&(x.data.i_verdict||x.data.i_reason||x.data.i_odd)).slice(0,4),odds=members.filter(x=>x.data.i_odd&&x.data.i_odd.trim());
       const idx=G.findIndex(x=>x.n===sp.n),left=SPOT_T0?Math.max(0,SPOT_LIMIT-Math.floor((Date.now()-SPOT_T0)/1000)):SPOT_LIMIT;
    const last=idx===G.length-1,nextLabel=T<SPOT_MAX?'다음 ▶':(last?'모두 보기 ▶':'다음 모둠 ▶');
    return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><div class="sv2h"><span class="sv2no">${sp.n}</span><span class="sv2t">${sp.n}모둠 발표</span><span class="sv2dots"><span class="sv2tm" id="spTimer" onclick="spotTimerReset(event)" title="눌러서 시간 다시 시작">${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}</span></span></div>
-    <div class="sv-focus"><div class="sv2g"><div class="blk"><div class="lb">1 · AI가 한 말</div><div class="sv2claim">${c?esc(wj(c.n+'. '+c.t)):''}</div>${c&&c.cite&&c.cite.ref?`<div class="sv2cite">AI가 댄 근거: ${esc(c.cite.ref)}</div>`:''}</div>
-     <div class="blk${hid(2)?' hid':''}${nw(2)}" onclick="${hid(2)?'event.stopPropagation();spotReveal(2)':''}"><div class="lb">2 · 모둠원이 조사하며 찾은 이상한 점</div>${members.length?`<div class="sv2tally">${['확인됨','부분적으로 맞음','확인 불가','사실 아님'].map(v=>[v,members.filter(m=>m.data.i_verdict===v).length]).filter(x=>x[1]).map(([v,n])=>`<span>${VEMO[v]} ${n}</span>`).join('')}</div>${odds.length?`<div class="sv2odd">${odds.map(m=>`<div class="sv2o"><b>${VEMO[m.data.i_verdict]||'•'}</b><span>${esc(wj(m.data.i_odd.trim()))}</span></div>`).join('')}</div>`:'<div class="sv2m"><span class="tx">(이상한 점을 적은 모둠원이 없어요)</span></div>'}`:'<div class="sv2m"><span class="tx">(저장한 모둠원 기록이 없어요)</span></div>'}</div></div>
-     <div class="sv2g b"><div class="vcard ${hid(3)?'hid':VC[vv]||'none'}${nw(3)}" onclick="${hid(3)?'event.stopPropagation();spotReveal(3)':''}"><div class="lb">3 · 모둠 판정</div><div class="vv">${VEMO[vv]?VEMO[vv]+' ':''}${esc(vv||'미판정')}</div><div class="vr">${val('g_reason')?esc(wj(val('g_reason'))):none}</div></div>
-      <div class="quote${hid(4)?' hid':''}${nw(4)}" onclick="${hid(4)?'event.stopPropagation();spotReveal(4)':''}"><div class="lb">4 · 🔎 우리 모둠이 찾은 확인 포인트</div><div class="qq">${val('g_find')?`“${esc(wj(val('g_find')))}”`:none}</div></div></div></div>
+    <div class="sv-focus"><div class="sv3">
+     <div class="blk c1${vv&&T>=2?' st':''}${T>=2&&SPOT_NEW===3?' hit':''}"><div class="lb">1 · AI가 한 말</div><div class="sv3mid"><div class="sv2claim">${c?esc(wj(c.n+'. '+c.t)):''}</div>${c&&c.cite&&c.cite.ref?`<div class="sv2cite">AI가 댄 근거: ${esc(c.cite.ref)}</div>`:''}</div>
+      ${T>=2?`<div class="sv3foot"><div class="sv3rs${SPOT_NEW===3?' new':''}"><b style="color:${SC[vv]||'#a8a8a4'}">판정 근거</b> ${val('g_reason')?esc(wj(val('g_reason'))):none}</div><div class="stamp${SPOT_NEW===3?' go':''}" style="--sc:${SC[vv]||'#8a8a86'}"><div class="s1">모둠 판정</div><div class="s2">${VEMO[vv]?VEMO[vv]+' ':''}${esc(vv||'미판정')}</div></div></div>`:''}</div>
+     <div class="blk c2${hid(2)?' hid':''}${nw(2)}" onclick="${hid(2)?'event.stopPropagation();spotReveal(2)':''}"><div class="lb">2 · 모둠원이 조사하며 찾은 이상한 점</div>${members.length?`<div class="sv2tally">${['확인됨','부분적으로 맞음','확인 불가','사실 아님'].map(v=>[v,members.filter(m=>m.data.i_verdict===v).length]).filter(x=>x[1]).map(([v,n])=>`<span>${VEMO[v]} ${n}</span>`).join('')}</div>${odds.length?`<div class="sv2odd">${odds.map(m=>`<div class="sv2o" title="눌러서 전체 보기/접기" onclick="event.stopPropagation();this.classList.toggle('open')"><b>${VEMO[m.data.i_verdict]||'•'}</b><span>${esc(wj(m.data.i_odd.trim()))}</span></div>`).join('')}</div>`:'<div class="sv2m"><span class="tx">(이상한 점을 적은 모둠원이 없어요)</span></div>'}`:'<div class="sv2m"><span class="tx">(저장한 모둠원 기록이 없어요)</span></div>'}</div>
+     <div class="quote c4${hid(4)?' hid':''}${nw(4)}" onclick="${hid(4)?'event.stopPropagation();spotReveal(4)':''}"><div class="lb">3 · 🔎 우리 모둠이 찾은 확인 포인트</div><div class="qq">${val('g_find')?`“${esc(wj(val('g_find')))}”`:none}</div></div></div></div>
     <div class="sv2bar"><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spotGo(${x.n})">${x.n}모둠</span>`).join('')}</div><span class="hint">${T===0?'화면을 눌러 시작':T<SPOT_MAX?'눌러서 다음 공개':'발표 끝'} · ${T}/${SPOT_MAX}</span><div class="rt"><button onclick="event.stopPropagation();spotStep(-1)">◀ 이전</button><button class="go" onclick="event.stopPropagation();spotStep(1)">${nextLabel}</button><button onclick="event.stopPropagation();spot(null)">✕ 모든 모둠</button></div></div></div>`;}
   /* 한눈에 보기(비교 보드): 모둠마다 한 줄 — 번호 · AI가 한 말 · 판정 · 확인 포인트. 줄을 누르면 그 모둠 발표 화면으로. 판정 공개 전에는 ‘발표 대기’ */
   return `<div class="sv-panel"><h3>모둠 발표 · 한눈에 보기 <small style="font-weight:400;color:#8a8a86">눌러서 그 모둠 발표 화면으로</small></h3><div class="cmpb"><div class="bhead"><span></span><span>AI가 한 말</span><span>모둠 판정</span><span>우리가 찾은 확인 포인트</span></div>${G.map(gr=>{const c=claimOfGroup(LS,gr.n),f=DB.groups[gr.n]||{},v=f.g_verdict&&f.g_verdict.v,fd=f.g_find&&f.g_find.v,op=DB.shareOpen;
@@ -598,7 +620,7 @@ function fitStage(){const v=$('stageView');if(!v||getComputedStyle(v).display===
  if(v.querySelector('.sv-mir')){v.style.setProperty('--k',1);placeMirror();return;}
  placeMirror();fitTodo(v);
  const foc=v.querySelector('.sv-spot .sv-focus');
- if(foc){v.removeAttribute('data-clamp');for(let k=2.6;k>=1;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(foc.scrollHeight<=foc.clientHeight+1)return;}v.style.setProperty('--k',1);return;} // 1배로도 길면 스크롤
+ if(foc){v.removeAttribute('data-clamp');for(let k=2.6;k>=.6;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(foc.scrollHeight<=foc.clientHeight+1&&[...foc.querySelectorAll('.sv3 .blk,.sv3 .quote')].every(c=>c.classList.contains('hid')||c.scrollHeight<=c.clientHeight+8))return;}v.style.setProperty('--k',.6);return;} // 1배로도 길면 스크롤
  const body=v.querySelector('.sv-body'),inner=v.querySelector('.sv-inner');if(!body||!inner)return;
  const fits=()=>inner.scrollHeight<=body.clientHeight+1&&v.scrollHeight<=v.clientHeight+1;
  const tryK=from=>{for(let k=from;k>=.5;k=Math.round((k-.05)*100)/100){v.style.setProperty('--k',k);if(fits())return true;}return false;};
