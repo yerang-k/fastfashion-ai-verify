@@ -198,6 +198,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
   <h3>① 판정 근거 한 문장 <span class="small" style="font-weight:400">(발표 때 그대로 읽을 문장)</span></h3>
   <p>모둠원이 조사한 것을 비교해서, 이 문장이 <b>왜 그렇게 판정되는지</b> 한 문장으로 써요.</p>
   <textarea id="g_reason" data-save placeholder="예: 자료 ○에서 …를 확인했지만, 자료 △에서는 …라고 하여 …"></textarea>
+  <div class="small" id="reasonHint" style="display:none;color:#8a5a00;margin-top:4px">💡 발표 때 그대로 읽는 문장이에요. 한두 문장으로 줄여 볼까요? (줄이지 않아도 저장돼요)</div>
   <h3>② 모둠 판정 (발표용)</h3>
   <p class="small" style="margin-top:0">위 근거에 맞는 판정을 골라요.</p>
   <div class="verdict">
@@ -208,6 +209,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
   </div>
   <h3>③ 🔎 우리 모둠이 찾은 확인 포인트 (발표의 중심)</h3>
   <p>위 근거와 판정에서 얻은 것을, 또는 모둠원이 찾은 확인 포인트 중에서 골라 <b>“AI 자료를 쓸 때는 ○○을 확인해야 한다”</b> 한 줄로 정해요.</p>
+  <p class="small" style="margin-top:-4px">💡 ‘수치를 확인한다’처럼 어떤 주장에나 쓸 수 있는 말 말고, <b>우리 문장에서 실제로 어긋났던 것</b>(기간·범위·단위·출처의 종류 등)을 넣어요.</p>
   <textarea id="g_find" data-save placeholder="예: AI가 댄 ________이(가) 실제로 있는지, ________인지 확인해야 한다."></textarea>
   <div class="role" style="margin-top:8px"><input type="text" data-save id="g_speaker" placeholder="발표자 학번 (예: 20101)"></div>
   <div style="margin-top:16px;padding:12px 14px;border:1.5px solid var(--main);border-radius:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="saveBtn7" onclick="saveActivity(7)">💾 저장하기</button> <span class="small" id="saveState7"></span></div>
@@ -401,6 +403,8 @@ function renderGroup(){
 }
 /* 단계 이동: 화면 표시(show) / 이동(go) / 진행 통제를 지키는 이동(tryGo·step) */
 function updateReadyCard(){const c=$('readyCard');if(!c)return;const on=!!data._ready&&cur===0;c.classList.toggle('on',on);if(on)$('rcWho').textContent=(data.code||'')+(data.studentName?' '+data.studentName:'');} // 준비 단계에서 준비 완료한 학생에게만, 선생님이 다음 단계로 넘기면 사라짐
+function reasonHint(){const t=$('g_reason'),h=$('reasonHint');if(t&&h)h.style.display=t.value.length>100?'':'none';}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='g_reason')reasonHint();});
 function show(i){const o=order();if(!o.includes(i))i=o[0];if(cur!==i){closeSrc();closeSum();}cur=i;updateReadyCard();
  document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('show',+s.dataset.i===i));
  const p=o.indexOf(i),lp=locked()?o.indexOf(LESSON.current):o.length-1;
@@ -568,7 +572,7 @@ async function askHelp(){if(!ONLINE){toast('선생님께 손을 들어 알려 �
  if(!data.code||!data.group){toast('준비 단계에서 학번과 모둠을 먼저 입력해 주세요');return;}
  try{let r=await api('help',{code:data.code,dev:DEV},true);if(!r||!r.ok){await pushStudent();r=await api('help',{code:data.code,dev:DEV},true);}
   if(!r||!r.ok)throw new Error('help');toast('선생님께 도움 요청을 보냈어요 🙋');}catch(e){toast('요청을 보내지 못했어요. 손을 들어 알려 주세요');}}
-function restore(){document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!(k in data))return;
+function restore(){setTimeout(reasonHint,0);document.querySelectorAll('[data-save]').forEach(el=>{const k=el.id||el.name;if(!(k in data))return;
  if(el.type==='radio')el.checked=(el.value===data[k]);else if(el.type==='checkbox')el.checked=!!data[k];else el.value=data[k];});
  if(data.code)$('codeBadge').textContent='학번: '+data.code+(data.studentName?' ('+data.studentName+')':'');}
 async function submitAll(){collect();const miss=[];
