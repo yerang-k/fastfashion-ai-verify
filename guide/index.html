@@ -362,6 +362,13 @@ button { font-family: inherit; }
   .hint span { animation: none; }
   .seg i { transition: none; }
 }
+.pvcard { padding: 14px; }
+.pvchips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.pvchips button { font: inherit; font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; color: var(--text); cursor: pointer; }
+.pvchips button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.pvbox { position: relative; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--mute-bg); height: min(62vh, 640px); min-height: 360px; }
+.pvbox iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.pvstart { position: absolute; inset: 0; width: 100%; font: inherit; font-size: 16px; font-weight: 700; border: 0; background: transparent; color: var(--accent-deep); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -432,9 +439,10 @@ button { font-family: inherit; }
           <button class="tchip" type="button" data-go="10"><span class="tt"><strong>4단계 판정</strong><em>11쪽</em></span></button>
           <button class="tchip" type="button" data-go="11"><span class="tt"><strong>체크리스트 예시</strong><em>12쪽</em></span></button>
           <button class="tchip" type="button" data-go="12"><span class="tt"><strong>수업 도구</strong><em>13쪽</em></span></button>
-          <button class="tchip" type="button" data-go="13"><span class="tt"><strong>성취기준·목표</strong><em>14쪽</em></span></button>
-          <button class="tchip" type="button" data-go="14"><span class="tt"><strong>확인 기준 5가지</strong><em>15쪽</em></span></button>
-          <button class="tchip" type="button" data-go="15"><span class="tt"><strong>수업자의 고민</strong><em>16–19쪽</em></span></button>
+          <button class="tchip" type="button" data-go="13"><span class="tt"><strong>학생 화면 보기</strong><em>14쪽</em></span></button>
+          <button class="tchip" type="button" data-go="14"><span class="tt"><strong>성취기준·목표</strong><em>15쪽</em></span></button>
+          <button class="tchip" type="button" data-go="15"><span class="tt"><strong>확인 기준 5가지</strong><em>16쪽</em></span></button>
+          <button class="tchip" type="button" data-go="16"><span class="tt"><strong>수업자의 고민</strong><em>17–20쪽</em></span></button>
           </div>
         </div>
       </div>
@@ -655,6 +663,22 @@ button { font-family: inherit; }
       </div>
     </section>
 
+    <!-- 학생 화면 미리보기(참관용, 읽기 전용) -->
+    <section class="slide" data-sec="학생 화면 보기">
+      <div class="in">
+        <div class="head">
+          <h2 class="h2">학생 화면 보기</h2>
+          <span class="tag">읽기 전용 · 실시간</span>
+        </div>
+        <div class="card pvcard">
+          <p class="note" style="margin:0 0 10px"><span id="pvCls">2-6반</span> 학생 화면을 그대로 보여 줍니다. 수업자가 넘기는 단계를 따라가며, 입력은 되지 않고 저장도 되지 않습니다.</p>
+          <div class="pvchips" id="pvChips"></div>
+          <div class="pvbox" id="pvBox"><button class="pvstart" id="pvStart" type="button">▶ 학생 화면 열기</button><iframe id="pvFrame" title="학생 화면 미리보기" hidden></iframe></div>
+        </div>
+        <p class="note">모둠 번호를 바꾸면 그 모둠 학생이 보는 화면(담당 AI 문장, 자료 카드)으로 바뀝니다.</p>
+      </div>
+    </section>
+
     <!-- 13 성취기준·목표 -->
     <section class="slide" data-sec="성취기준·목표">
       <div class="in">
@@ -744,7 +768,7 @@ button { font-family: inherit; }
 
   <nav class="nav" aria-label="슬라이드 이동">
     <button class="nb" id="prev" type="button" aria-label="이전 슬라이드">‹</button>
-    <button class="count" id="count" type="button" data-go="1" aria-label="목차로 이동"><b>1</b> / 19 · 목차</button>
+    <button class="count" id="count" type="button" data-go="1" aria-label="목차로 이동"><b>1</b> / 20 · 목차</button>
     <button class="nb next" id="next" type="button" aria-label="다음 슬라이드">›</button>
   </nav>
 
@@ -822,6 +846,25 @@ button { font-family: inherit; }
     else if (e.key === 'Home') { e.preventDefault(); go(0); }
     else if (e.key === 'End') { e.preventDefault(); go(N - 1); }
   });
+
+  (function () { // 학생 화면 미리보기: 반은 주소의 ?class= (없으면 2-6)
+    var q = new URLSearchParams(location.search), cls = (q.get('class') || '2-6').replace(/[^A-Za-z0-9가-힣_-]/g, '').slice(0, 20) || '2-6';
+    var frame = document.getElementById('pvFrame'), start = document.getElementById('pvStart'), chips = document.getElementById('pvChips'), g = 1, opened = false;
+    document.getElementById('pvCls').textContent = cls + '반';
+    function paintChips() {
+      chips.innerHTML = '';
+      for (var n = 1; n <= 5; n++) {
+        (function (n) {
+          var b = document.createElement('button'); b.type = 'button'; b.textContent = n + '모둠'; b.className = n === g ? 'on' : '';
+          b.addEventListener('click', function () { g = n; paintChips(); if (opened) load(); });
+          chips.appendChild(b);
+        })(n);
+      }
+    }
+    function load() { frame.hidden = false; start.hidden = true; frame.src = '../index.html?preview=1&obs=1&pg=' + g + '&class=' + encodeURIComponent(cls) + '&_=' + Date.now(); }
+    start.addEventListener('click', function () { opened = true; load(); });
+    paintChips();
+  })();
 
   Array.prototype.forEach.call(document.querySelectorAll('[data-go]'), function (b) {
     b.addEventListener('click', function () { go(+b.getAttribute('data-go')); });
