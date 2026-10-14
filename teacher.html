@@ -572,7 +572,7 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
   const sp=SPOT&&G.find(x=>x.n===SPOT);
   if(sp){const c=claimOfGroup(LS,sp.n),f=DB.groups[sp.n]||{},val=k=>(f[k]&&f[k].v)||'',none='<span class="m">(아직 정리하지 않았어요)</span>';
    const T=SPOT_STEP,nw=k=>SPOT_NEW===k?' new':'',hid=k=>T<k-1,VC={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'},SC={'확인됨':'#6fbf8a','부분적으로 맞음':'#e9965a','확인 불가':'#b9b4d8','사실 아님':'#e5706a'},vv=val('g_verdict');
-   const members=S.filter(x=>+x.group===sp.n&&x.data&&(x.data.i_verdict||x.data.i_reason||x.data.i_odd||x.data.i_did)).slice(0,6),odds=members,otxt=m=>(m.data.i_odd||m.data.i_did||m.data.i_reason||'').trim(),OP=(T>=1&&SPOT_OPEN>=0&&SPOT_OPEN<odds.length)?SPOT_OPEN:-1;
+   const members=S.filter(x=>+x.group===sp.n&&x.data&&(x.data.i_verdict||x.data.i_reason||x.data.i_odd||x.data.i_did)).slice(0,6),otxt=m=>(m.data.i_odd||m.data.i_did||m.data.i_reason||'').trim(),odds=members.filter(m=>otxt(m)),OP=(T>=1&&SPOT_OPEN>=0&&SPOT_OPEN<odds.length)?SPOT_OPEN:-1;
       const idx=G.findIndex(x=>x.n===sp.n),left=SPOT_T0?Math.max(0,SPOT_LIMIT-Math.floor((Date.now()-SPOT_T0)/1000)):SPOT_LIMIT;
    const last=idx===G.length-1,nextLabel=T<SPOT_MAX?'다음 ▶':(last?'모두 보기 ▶':'다음 모둠 ▶');
    return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><div class="sv2h"><span class="sv2no">${sp.n}</span><span class="sv2t">${sp.n}모둠 발표</span><span class="sv2dots"><span class="sv2tm" id="spTimer" onclick="spotTimerReset(event)" title="눌러서 시간 다시 시작">${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}</span></span></div>
