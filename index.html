@@ -90,7 +90,7 @@ a.btn{text-decoration:none;display:inline-block}
 @media(max-width:720px){.srcmodal{padding:0}.srcpanel{max-width:none;height:100%;border-radius:0}.srcview{padding:12px}}
 /* 미리보기 모드: 눌러서 바꿀 수 없게(스크롤만 가능), 도움 요청·상태 배지는 숨김 */
 .sumitem{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px}.sumitem b{font-size:1.15rem}.sumitem p{margin:6px 0 2px;font-size:1.05rem;line-height:1.7;white-space:pre-wrap}
-.hintbox{margin-top:6px}.hintbox summary{cursor:pointer;color:var(--sub);font-size:.92rem}
+.watch{margin:8px 0 0;padding:8px 10px;border-left:4px solid var(--main);background:#f7f2e8;border-radius:6px;font-size:.95rem;line-height:1.5}.hintbox{margin-top:6px}.hintbox summary{cursor:pointer;color:var(--sub);font-size:.92rem}
 .cref{color:var(--accent-dk);font-weight:700;margin-left:2px}
 .refs{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.92rem;color:var(--sub)}.refs b{color:var(--txt)}
 .tag.cited{background:var(--accent);color:#111;font-weight:700}
@@ -390,7 +390,7 @@ function renderGroup(){
  document.querySelectorAll('.groups label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
  $('myIndiv').innerHTML=[['판정',data.i_verdict],['근거 한 문장',data.i_reason]].map(([l,v])=>`<p style="margin:4px 0"><b>${l}:</b> ${escH(v)||'<span class="small">(아직 안 썼어요)</span>'}</p>`).join('');
  if(!c){const none='<div class="box" style="border-color:var(--bad)">준비 단계에서 모둠을 먼저 선택해 주세요.</div>';$('myClaim').innerHTML=none;$('myClaim7').innerHTML=none;renderSrc([]);return;}
- const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p>${c.cite&&c.cite.ref?`<p class="small">📎 AI가 댄 근거: <b>${escH(c.cite.ref)}</b></p>`:''}${c.hint?`<details class="hintbox"><summary>💡 막막하면 힌트 보기</summary><p class="small">${c.hint}</p></details>`:''}</div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
+ const claimHtml=`<div class="ai-box"><p><span class="num">${c.n}</span> <b>${c.t}</b></p>${c.cite&&c.cite.ref?`<p class="small">📎 AI가 댄 근거: <b>${escH(c.cite.ref)}</b></p>`:''}${c.watch?`<p class="watch">👀 <b>주의 깊게 볼 곳</b> ${escH(c.watch)}</p>`:''}${c.hint?`<details class="hintbox"><summary>💡 막막하면 힌트 보기</summary><p class="small">${c.hint}</p></details>`:''}</div>`;$('myClaim').innerHTML=claimHtml;$('myClaim7').innerHTML=claimHtml;
  renderSrc(c.src,c.cite);
  document.querySelectorAll('.shpanel').forEach(r=>{r.classList.remove('mine');r.querySelectorAll('textarea,input').forEach(e=>e.disabled=false);const m=$('shMine'+r.id.slice(3));if(m)m.hidden=true;});
  const row=$('row'+g);if(row){row.classList.add('mine');$('shMine'+g).hidden=false;
