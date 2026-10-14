@@ -44,7 +44,7 @@ function normLesson(raw){
   const i=st.findIndex(s=>s.id===0);if(i>0)st.unshift(st.splice(i,1)[0]); // 준비는 항상 맨 앞
   L.stages=st;}
  if(Array.isArray(raw.claims)&&raw.claims.length)
-  L.claims=raw.claims.slice(0,MAX_CLAIMS).map((c,i)=>({n:i+1,t:String(c.t||''),hint:String(c.hint||''),cite:normCite(c.cite),
+  L.claims=raw.claims.slice(0,MAX_CLAIMS).map((c,i)=>({n:i+1,t:String(c.t||''),hint:String(c.hint||''),watch:c.watch===undefined?String(((CLAIMS.find(d=>d.t===c.t))||{}).watch||''):String(c.watch||''),cite:normCite(c.cite),
    src:(Array.isArray(c.src)?c.src:[]).slice(0,MAX_SRC).map(s=>({type:String(s.type||''),title:String(s.title||''),body:String(s.body||''),url:safeUrl(s.url),pdf:drivePdf(s.pdf)}))}));
  const ncl=(L.claims||CLAIMS).length;
  if(Array.isArray(raw.groups)&&raw.groups.length)
