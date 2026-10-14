@@ -137,9 +137,6 @@ body.stagemode-on #stageView{display:flex}
 #stageView .sv-mirside .sv-todo{white-space:normal;overflow:visible;font-size:clamp(1.1rem,min(2vw,3.4vh),2.2rem);letter-spacing:0;line-height:1.45}
 #stageView .sv-mirside .sv-points{flex-direction:column;flex-wrap:nowrap}
 #stageView .sv-mirside .sv-points div{min-width:0;font-size:clamp(1rem,min(1.6vw,2.8vh),1.7rem)}
-#stageView .sv-mirgrp{display:flex;gap:.6vw;flex-wrap:wrap;margin-top:auto}
-#stageView .sv-mirgrp button{font:inherit;font-size:clamp(.8rem,1.4vw,1.1rem);font-weight:700;color:#f4f4f2;background:#2a2a28;border:1.5px solid #4a4a48;border-radius:20px;padding:.3em 1em;cursor:pointer}
-#stageView .sv-mirgrp button.on{background:var(--accent);color:#111;border-color:var(--accent)}
 #svMirrorFrame{position:fixed;z-index:15;border:0;background:#fff;border-radius:14px;transform-origin:top left;display:none}
 #stageView .sv2h{display:flex;align-items:center;gap:1vw;flex:0 0 auto;margin-bottom:calc(1.2cqh*var(--k))}
 #stageView .sv2no{background:var(--accent);color:#111;border-radius:50%;width:2.1em;height:2.1em;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:calc(clamp(.9rem,2.6cqh,1.4rem)*var(--k))}
@@ -561,7 +558,6 @@ function mirFrame(){if(MIRFR)return MIRFR;const f=document.createElement('iframe
   document.dispatchEvent(new KeyboardEvent('keydown',{key:e.key,code:e.code,shiftKey:e.shiftKey,bubbles:true,cancelable:true}));if(['ArrowLeft','ArrowRight',' ','PageUp','PageDown'].includes(e.key))e.preventDefault();});}catch(x){}mirSync();});
  MIRFR=f;return f;}
 function mirSync(){const f=MIRFR;if(!f||f.style.display==='none'||LS.current==null)return;try{const w=f.contentWindow;if(w.show&&w.eval('cur')!==LS.current)w.show(LS.current);}catch(e){}} // 교사가 고른 단계를 바로 따라가게(자유 이동 중이어도)
-function mirGroup(n){PVG=n;renderBoard();renderStageView();}
 function placeMirror(){const f=MIRFR,h=$('svMirHost');if(!(document.body.classList.contains('stagemode-on')&&h)){if(f)f.style.display='none';return;}
  const fr=mirFrame(),r=h.getBoundingClientRect();if(r.width<50||r.height<50){fr.style.display='none';return;}
  const src=BASE+'index.html?preview=1&pg='+PVG+(CLASS_ID?'&class='+encodeURIComponent(CLASS_ID):'')+'&_='+PV_T;if(src!==MIRSRC){MIRSRC=src;fr.src=src;}
@@ -577,7 +573,7 @@ function renderStageView(){
    <div class="sv-hr"><div class="sv-time" id="svTime">${esc(clockText(st))}</div><div class="sv-timer" id="stageTimer">${fmt(elapsed())}</div></div></div>
   <div class="sv-bar"><i id="stageBar" style="width:${clockPct()}%"></i></div>
   <div class="sv-body"><div class="sv-inner${MIR?' mir':(st&&svPanel(st.id)?'':' nopanel')}${!MIR&&st&&(st.id===0||st.id===1)?' big':''}${st&&st.id===4&&SPOT?' spot':''}">
-   ${MIR?`<div class="sv-mir"><div class="sv-mirhost" id="svMirHost"></div><div class="sv-mirside">${g?`<div class="sv-todo">${esc(g.todo)}</div><div class="sv-points">${g.points.map(p=>`<div><span>${esc(wj(p))}</span></div>`).join('')}</div>`:''}${st.id===1?svPanel(1):''}<div class="sv-mirgrp">${LS.groups.map(x=>`<button class="${x.n===PVG?'on':''}" onclick="mirGroup(${x.n})">${x.n}모둠 화면</button>`).join('')}</div></div></div>`:`${g?`<div class="sv-todo">${esc(g.todo)}</div>`:(st?'':'<div class="sv-todo">학생이 자유롭게 이동할 수 있어요</div>')}
+   ${MIR?`<div class="sv-mir"><div class="sv-mirhost" id="svMirHost"></div><div class="sv-mirside">${g?`<div class="sv-todo">${esc(g.todo)}</div><div class="sv-points">${g.points.map(p=>`<div><span>${esc(wj(p))}</span></div>`).join('')}</div>`:''}${st.id===1?svPanel(1):''}</div></div>`:`${g?`<div class="sv-todo">${esc(g.todo)}</div>`:(st?'':'<div class="sv-todo">학생이 자유롭게 이동할 수 있어요</div>')}
    ${g&&!(st&&st.id===4&&SPOT)?`<div class="sv-points">${g.points.map(p=>`<div><span>${esc(wj(p))}</span></div>`).join('')}</div>`:''}
    ${st?svPanel(st.id):''}`}
   </div></div>
