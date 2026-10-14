@@ -246,11 +246,14 @@ function cfgSet_(key, val) {
 }
 // 현재 단계: 'stage' 키에 따로 저장('null'=자유 이동). 없으면 수업 설정 JSON 안의 current를 씀(옛 방식과 호환)
 function stageOverride_() { var v = cfgGet_('stage'); return v === '' ? undefined : (v === 'null' ? null : parseInt(v, 10)); }
+// 자유 이동일 때 무대 화면이 보여 줄 단계(교사가 고름). 학생 화면에는 영향 없음
+function stageShow_() { var v = cfgGet_('stageShow'); return v === '' ? undefined : parseInt(v, 10); }
 function lessonGet_() {
   var t = cfgGet_('lesson'), l = null;
   if (t) { try { l = JSON.parse(t); } catch (e) { l = null; } }
   var st = stageOverride_();
   if (st !== undefined) { l = l || {}; l.current = st; }
+  if (l) { delete l.show; if (st === null) { var sh = stageShow_(); if (sh !== undefined && !isNaN(sh)) l.show = sh; } }
   return l;
 }
 // 학생·무대 화면이 자주 묻는 가벼운 요청: 지금 단계 + 수업 설정 버전(lv) + 판정 공개 여부(so). 시트를 읽지 않고 캐시만 읽는다
@@ -258,7 +261,8 @@ function getStage_() {
   var st = stageOverride_(), cur;
   if (st !== undefined) cur = st; else { var l = lessonGet_() || {}; cur = ('current' in l) ? l.current : 0; }
   var vc = ''; try { vc = CacheService.getScriptCache().get('vid:' + CLASS_) || ''; } catch (e) {}
-  return { ok: true, current: cur, lv: cfgGet_('lessonVer'), so: cfgGet_('shareOpen') === 'true', vc: vc };
+  var sh = cur === null ? stageShow_() : undefined;
+  return { ok: true, current: cur, sh: (sh === undefined || isNaN(sh)) ? null : sh, lv: cfgGet_('lessonVer'), so: cfgGet_('shareOpen') === 'true', vc: vc };
 }
 // 교사 화면 → 무대 화면 영상 리모컨: '시각:명령'을 캐시에 두면 무대 화면이 단계 조회(getStage) 때 새 값을 보고 재생·일시정지·닫기를 한다. (명령: play | pause | close)
 function setVideo_(p) {
@@ -310,12 +314,15 @@ function setStage_(p) {
   if (p.stage === null || p.stage === '' || p.stage === undefined) val = 'null';
   else if (isNaN(n) || n < 0 || n > 7) return { ok: false, error: 'bad stage' };
   else val = String(n);
+  // 자유 이동(null)일 때 무대 화면에 보여 줄 단계(show)를 함께 받음: 먼저 저장해 두어야 학생이 자유 이동으로 바뀌는 순간 무대 화면이 같이 맞음
+  var show = parseInt(p.show, 10), showOk = val === 'null' && !isNaN(show) && show >= 0 && show <= 7;
+  if (showOk) { try { CacheService.getScriptCache().put('cfg:' + ck_('stageShow'), JSON.stringify({ v: String(show) }), 21600); } catch (e) {} }
   // 캐시에 먼저 넣어 학생들이 곧바로 새 단계를 보게 하고, 시트에는 그 뒤에 저장(다른 학생의 저장 때문에 기다리지 않도록 문서 잠금을 따로 씀)
   try { CacheService.getScriptCache().put('cfg:' + ck_('stage'), JSON.stringify({ v: val }), 21600); } catch (e) {}
   var lk = null;
   try { lk = LockService.getDocumentLock(); lk.waitLock(10000); } catch (e) { lk = null; }
-  try { cfgSet_('stage', val); } finally { if (lk) { try { lk.releaseLock(); } catch (x) {} } }
-  return { ok: true, current: val === 'null' ? null : n };
+  try { if (showOk) cfgSet_('stageShow', String(show)); cfgSet_('stage', val); } finally { if (lk) { try { lk.releaseLock(); } catch (x) {} } }
+  return { ok: true, current: val === 'null' ? null : n, show: showOk ? show : null, showSupported: true };
 }
 
 /* ---------- 명단 · 학생 관리 (교사) ---------- */

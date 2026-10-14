@@ -54,6 +54,7 @@ function normLesson(raw){
  L.joinUrl=safeUrl(raw.joinUrl);
  L.summary=normSummary(raw.summary);
  const vis=L.stages.filter(s=>s.on);
+ L.show=(raw.show==null||raw.show==='')?null:(L.stages.some(s=>s.on&&s.id===+raw.show)?+raw.show:null); // 자유 이동일 때 무대 화면이 보여 줄 단계(교사 화면용)
  if(raw.current===null)L.current=null; // 명시적으로 null이면 제한 없음
  else{const c=raw.current==null?0:+raw.current;L.current=vis.some(s=>s.id===c)?c:vis[0].id;} // 숨겨진 단계면 첫 단계로
  return L;
