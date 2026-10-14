@@ -165,6 +165,16 @@ body.stagemode-on #stageView{display:flex}
 @keyframes sv3slam{0%{opacity:0;transform:rotate(-8deg) scale(2.8)}55%{opacity:1;transform:rotate(-8deg) scale(.92)}75%{transform:rotate(-8deg) scale(1.05)}100%{opacity:1;transform:rotate(-8deg) scale(1)}}
 #stageView .c1.hit{animation:sv3hit .3s .3s}
 @keyframes sv3hit{0%,100%{transform:translate(0)}25%{transform:translate(-4px,3px)}50%{transform:translate(4px,-3px)}75%{transform:translate(-3px,-1px)}}
+#stageView .sv3 .c2{display:flex;flex-direction:column}
+#stageView .sv2odd.has-open{display:block;flex:1 1 0;min-height:0}
+#stageView .sv2odd.has-open .sv2o{display:none}
+#stageView .sv2odd.has-open .sv2o.open{display:flex;height:100%;overflow-y:auto;align-items:flex-start;gap:.7em;padding:calc(1.6cqh*var(--k)) calc(1.2vw*var(--k));font-size:calc(clamp(1.1rem,3.4cqh,2.2rem)*var(--k));line-height:1.6;cursor:zoom-out;scrollbar-width:thin;scrollbar-color:#5a5a58 transparent}
+#stageView .sv2odd.has-open .sv2o.open span{display:block;-webkit-line-clamp:unset;overflow:visible}
+#stageView .sv-focus.measure .sv2odd.has-open{display:grid;flex:0 0 auto}
+#stageView .sv-focus.measure .sv2odd.has-open .sv2o{display:flex;height:auto;overflow:hidden;padding:calc(1cqh*var(--k)) calc(.8vw*var(--k));font-size:calc(clamp(.85rem,2.5cqh,1.35rem)*var(--k));line-height:1.4}
+#stageView .sv-focus.measure .sv2odd.has-open .sv2o.open{grid-column:auto}
+#stageView .sv-focus.measure .sv2odd.has-open .sv2o span{display:-webkit-box;-webkit-line-clamp:3;overflow:hidden}
+@media (orientation:landscape){#stageView .sv-focus.measure .sv2odd.has-open .sv2o span{-webkit-line-clamp:2}}
 #stageView .sv2o{cursor:pointer}
 #stageView .sv2o span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #stageView .sv2o.open{grid-column:1/-1}#stageView .sv2o.open span{-webkit-line-clamp:unset;display:block}
@@ -533,7 +543,9 @@ function stepClick(id){if(id===LS.current&&SPOT){spot(null);return;}setStage(id)
 /* 모둠 발표 크게 보기: 발표자가 화면을 눌러(또는 →·Space·PageDown) 한 단계씩 공개한다.
    0단계: ① AI가 한 말만 · 1단계: ② 우리가 자료에서 확인한 것(모둠원 조사) · 2단계: ③ 모둠 판정과 근거 · 3단계: ④ 확인 포인트. 발표 시간(1분 30초)은 첫 공개부터 셈 */
 let SPOT_STEP=0,SPOT_T0=null,SPOT_NEW=0;const SPOT_MAX=3,SPOT_LIMIT=90;
-function spotReset(){SPOT_STEP=0;SPOT_T0=null;SPOT_NEW=0;}
+let SPOT_OPEN=-1,SPOT_SIG=''; // SPOT_OPEN: ② 카드 중 지금 가득 채워 보고 있는 카드 번호(없으면 -1). 화면이 다시 그려져도 유지됨 · SPOT_SIG: 마지막으로 그린 내용의 요약(바뀐 게 없으면 다시 그리지 않음)
+function spotReset(){SPOT_STEP=0;SPOT_T0=null;SPOT_NEW=0;SPOT_OPEN=-1;}
+function spotOdd(i){SPOT_OPEN=(SPOT_OPEN===i?-1:i);renderStageView();} // 카드를 누르면 그 카드가 ② 영역을 가득 채우고, 다시 누르면 원래대로. 한 번에 하나만
 function spotClick(e){const f=e.currentTarget.querySelector('.sv-focus');if(f&&e.target===f&&e.offsetX>f.clientWidth)return;spotStep(1);} // 스크롤바를 누른 경우는 넘기지 않음
 function spot(n){const was=SPOT;SPOT=(n==null||SPOT===n)?null:n;if(SPOT!==was)spotReset();renderStageView();}
 function spotGo(n){if(SPOT!==n){SPOT=n;spotReset();}renderStageView();} // 모둠 칩: 같은 모둠을 다시 눌러도 닫히지 않음
@@ -560,7 +572,7 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
   const sp=SPOT&&G.find(x=>x.n===SPOT);
   if(sp){const c=claimOfGroup(LS,sp.n),f=DB.groups[sp.n]||{},val=k=>(f[k]&&f[k].v)||'',none='<span class="m">(아직 정리하지 않았어요)</span>';
    const T=SPOT_STEP,nw=k=>SPOT_NEW===k?' new':'',hid=k=>T<k-1,VC={'확인됨':'ok','부분적으로 맞음':'part','확인 불가':'unk','사실 아님':'bad'},SC={'확인됨':'#6fbf8a','부분적으로 맞음':'#e9965a','확인 불가':'#b9b4d8','사실 아님':'#e5706a'},vv=val('g_verdict');
-   const members=S.filter(x=>+x.group===sp.n&&x.data&&(x.data.i_verdict||x.data.i_reason||x.data.i_odd)).slice(0,4),odds=members.filter(x=>x.data.i_odd&&x.data.i_odd.trim());
+   const members=S.filter(x=>+x.group===sp.n&&x.data&&(x.data.i_verdict||x.data.i_reason||x.data.i_odd)).slice(0,4),odds=members.filter(x=>x.data.i_odd&&x.data.i_odd.trim()),OP=(T>=1&&SPOT_OPEN>=0&&SPOT_OPEN<odds.length)?SPOT_OPEN:-1;
       const idx=G.findIndex(x=>x.n===sp.n),left=SPOT_T0?Math.max(0,SPOT_LIMIT-Math.floor((Date.now()-SPOT_T0)/1000)):SPOT_LIMIT;
    const last=idx===G.length-1,nextLabel=T<SPOT_MAX?'다음 ▶':(last?'모두 보기 ▶':'다음 모둠 ▶');
    return `<div class="sv-panel sv-spot" onclick="spotClick(event)"><div class="sv2h"><span class="sv2no">${sp.n}</span><span class="sv2t">${sp.n}모둠 발표</span><span class="sv2dots"><span class="sv2tm" id="spTimer" onclick="spotTimerReset(event)" title="눌러서 시간 다시 시작">${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}</span></span></div>
@@ -568,7 +580,7 @@ function svPanel(id){ // 단계별로 지금 필요한 정보를 크게 보여 �
      <div class="blk c1${vv&&T>=2?' st':''}${T>=2&&SPOT_NEW===3?' hit':''}"><div class="lb">1 · AI가 한 말</div><div class="sv3mid"><div class="sv2claim">${c?esc(wj(c.n+'. '+c.t)):''}</div>${c&&c.cite&&c.cite.ref?`<div class="sv2cite">AI가 댄 근거: ${esc(c.cite.ref)}</div>`:''}</div>
       <div class="sv3rs${T<2?' off':''}${T>=2&&SPOT_NEW===3?' new':''}"><b style="color:${SC[vv]||'#a8a8a4'}">판정 근거</b> ${val('g_reason')?esc(wj(val('g_reason'))):none}</div>
       <div class="sv3stampbox">${T>=2?`<div class="stamp${SPOT_NEW===3?' go':''}" style="--sc:${SC[vv]||'#8a8a86'}"><div class="s1">모둠 판정</div><div class="s2">${VEMO[vv]?VEMO[vv]+' ':''}${esc(vv||'미판정')}</div></div>`:''}</div></div>
-     <div class="blk c2${hid(2)?' hid':''}${nw(2)}" onclick="${hid(2)?'event.stopPropagation();spotReveal(2)':''}"><div class="lb">2 · 모둠원이 조사한 내용</div>${members.length?`${odds.length?`<div class="sv2odd">${odds.map(m=>`<div class="sv2o" title="눌러서 전체 보기/접기" onclick="event.stopPropagation();this.classList.toggle('open')"><b>${VEMO[m.data.i_verdict]||'•'}</b><span>${esc(wj(m.data.i_odd.trim()))}</span></div>`).join('')}</div>`:'<div class="sv2m"><span class="tx">(조사한 내용을 적은 모둠원이 없어요)</span></div>'}`:'<div class="sv2m"><span class="tx">(저장한 모둠원 기록이 없어요)</span></div>'}</div>
+     <div class="blk c2${hid(2)?' hid':''}${nw(2)}" onclick="${hid(2)?'event.stopPropagation();spotReveal(2)':''}"><div class="lb">2 · 모둠원이 조사한 내용</div>${members.length?`${odds.length?`<div class="sv2odd${OP>=0?' has-open':''}">${odds.map((m,i)=>`<div class="sv2o${i===OP?' open':''}" title="${i===OP?'눌러서 원래 크기로':'눌러서 크게 보기'}" onclick="event.stopPropagation();spotOdd(${i})"><b>${VEMO[m.data.i_verdict]||'•'}</b><span>${esc(wj(m.data.i_odd.trim()))}</span></div>`).join('')}</div>`:'<div class="sv2m"><span class="tx">(조사한 내용을 적은 모둠원이 없어요)</span></div>'}`:'<div class="sv2m"><span class="tx">(저장한 모둠원 기록이 없어요)</span></div>'}</div>
      <div class="quote c4${hid(4)?' hid':''}${nw(4)}" onclick="${hid(4)?'event.stopPropagation();spotReveal(4)':''}"><div class="lb">3 · 🔎 우리 모둠이 찾은 확인 포인트</div><div class="qq">${val('g_find')?`“${esc(wj(val('g_find')))}”`:none}</div></div></div></div>
     <div class="sv2bar"><div class="sv-mini">${G.map(x=>`<span class="${x.n===sp.n?'on':''}" onclick="event.stopPropagation();spotGo(${x.n})">${x.n}모둠</span>`).join('')}</div><span class="hint">${T===0?'화면을 눌러 시작':T<SPOT_MAX?'눌러서 다음 공개':'발표 끝'} · ${T}/${SPOT_MAX}</span><div class="rt"><button onclick="event.stopPropagation();spotStep(-1)">◀ 이전</button><button class="go" onclick="event.stopPropagation();spotStep(1)">${nextLabel}</button><button onclick="event.stopPropagation();spot(null)">✕ 모든 모둠</button></div></div></div>`;}
   /* 한눈에 보기(비교 보드): 모둠마다 한 줄 — 번호 · AI가 한 말 · 판정 · 확인 포인트. 줄을 누르면 그 모둠 발표 화면으로. 판정 공개 전에는 ‘발표 대기’ */
@@ -596,6 +608,10 @@ function placeMirror(){const f=MIRFR,h=$('svMirHost');if(!(document.body.classLi
 function renderStageView(){
  if(!DB)return;const vs=visStages(LS),cur=LS.current,pos=vs.findIndex(s=>s.id===cur),st=vs[pos],S=DB.students,help=S.filter(x=>x.helpAt).length,g=st&&STAGE_GUIDE[st.id];
  if(cur!==4&&SPOT){SPOT=null;spotReset();}
+ /* 모둠 발표 화면은 몇 초마다 서버 소식으로 다시 그려지는데, 보이는 내용이 그대로면 건너뜀(카드가 번쩍이거나 열어 둔 카드가 닫히는 것을 막음) */
+ if(st&&st.id===4&&SPOT&&document.body.classList.contains('stagemode-on')){
+  const sig=JSON.stringify([SPOT,SPOT_STEP,SPOT_OPEN,DB.shareOpen,cur,FREE,LS.groups.map(x=>x.n),DB.groups[SPOT]||null,S.filter(x=>+x.group===SPOT).map(x=>x.data||null),innerWidth,innerHeight]);
+  if(sig===SPOT_SIG&&$('stageView').querySelector('.sv-spot'))return;SPOT_SIG=sig;}else SPOT_SIG='';
  $('stageView').classList.toggle('spotfull',!!(st&&st.id===4&&SPOT));
  const MIR=!!(st&&MIRROR_STAGES.includes(st.id));
  $('stageView').innerHTML=`<div class="sv-top"><span>AI 답변, 믿어도 될까? · ${esc(clsLabel(CLASS_ID))}${FREE?' · 학생 자유 이동 중':''}</span><span>${esc(location.host)}</span></div>
