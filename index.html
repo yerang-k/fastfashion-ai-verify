@@ -94,7 +94,7 @@ a.btn{text-decoration:none;display:inline-block}
 .cref{color:var(--accent-dk);font-weight:700;margin-left:2px}
 .refs{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.92rem;color:var(--sub)}.refs b{color:var(--txt)}
 .tag.cited{background:var(--accent);color:#111;font-weight:700}
-body.preview .help,body.preview .status{display:none}
+body.preview .help,body.preview .status,body.preview .toast{display:none}
 body.preview button,body.preview input,body.preview textarea,body.preview select,body.preview label,body.preview a,body.preview summary{pointer-events:none}
 </style></head><body>
 <div id="classPick" style="display:none;position:fixed;inset:0;z-index:999;background:#f6f3ee;overflow:auto">
@@ -293,7 +293,7 @@ body.preview button,body.preview input,body.preview textarea,body.preview select
 <script src="config.js"></script><script src="content.js"></script><script src="lesson.js"></script><script>
 /* 미리보기 모드(?preview=1&pg=모둠번호): 교사 화면에 끼워 넣는 읽기 전용 학생 화면. 진짜 학생 기록과 섞이지 않게 저장소를 따로 쓰고,
    서버에는 아무것도 저장하지 않으며(api에서 쓰기 요청 차단), 교사가 정한 단계를 그대로 따라간다. */
-const QP=new URLSearchParams(location.search),PREVIEW=QP.get('preview')==='1',PG=parseInt(QP.get('pg'),10)||1;
+const QP=new URLSearchParams(location.search),PREVIEW=QP.get('preview')==='1',OBS=QP.get('obs')==='1',PG=parseInt(QP.get('pg'),10)||1;
 (function(){const c=(typeof CLASS_ID!=='undefined'&&CLASS_ID)||'';const t=document.getElementById('clsTag');if(t)t.textContent=c?(/반$/.test(c)?c:c+'반'):'기본 반';})();
 if(QP.get('reset')==='1'){try{Object.keys(localStorage).filter(k=>k.indexOf('aiverify_fashion_v1')===0).forEach(k=>localStorage.removeItem(k));}catch(e){}
  const u=new URL(location.href);u.searchParams.delete('reset');location.replace(u.toString());} // 시험 입력 지우기: ?reset=1 로 열면 이 기기의 임시 저장 기록을 지우고 처음 상태로 시작
@@ -616,6 +616,6 @@ async function pollTick(){if(polling)return;polling=true;
  try{tickN++;if(Date.now()-STAGE_OK>10000||tickN%3===1)await pollLesson(); // 빠른 조회가 잘 되는 동안은 전체 설정 조회를 드물게(내 코드·모둠 변경 확인용)
   if(needGroup())await pollGroup();if(cur===7)await pollGroupIndiv();await pollShare();}finally{polling=false;}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ONLINE){pollStage();pollLesson();if(needGroup())pollGroup();if(cur===7)pollGroupIndiv();}}); // 다른 탭에서 돌아오면 바로 최신 상태로
-if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();if(cur===7)pollGroupIndiv();}pollLesson();setInterval(pollTick,6000);setInterval(pollStage,2500);}
+if(ONLINE){if(data.group){data._grpApplied=data._grpApplied||data.group;pollGroup();if(cur===7)pollGroupIndiv();}pollLesson();setInterval(pollTick,OBS?20000:6000);setInterval(pollStage,OBS?7000:2500);}
 if(!HAS_CLASS){$('classPick').style.display='block';populateClassPick();}
 </script></body></html>
