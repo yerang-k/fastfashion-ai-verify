@@ -46,6 +46,7 @@ td select,td input{padding:6px;font-size:.9rem}
 .readycard.on{opacity:1;visibility:visible}
 .readycard .rc1{font-size:1.6rem;font-weight:800;white-space:nowrap}.readycard .rc2{margin-top:6px;font-size:1.05rem;color:#e0c9a3}.readycard .rc3{margin-top:10px;font-size:.95rem;opacity:.85;word-break:keep-all;text-wrap:balance}
 body.preview .readycard{display:none}
+body.bare header,body.bare .stagebar,body.bare .steps{display:none} /* 무대 화면에 끼우는 학생 화면(bare=1): 제목 줄·진행 안내·단계 이동 알약 버튼은 숨기고 그 아래 내용만 */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;pointer-events:none;z-index:9}.toast.on{opacity:1}
 .toast.ok{background:var(--accent);color:#111;font-weight:800;font-size:1.2rem;padding:14px 30px;bottom:14vh;border:2px solid #111;box-shadow:0 8px 28px rgba(0,0,0,.4)}
 .savestat{font-weight:700}.savestat.okk{color:#1b5e20;background:var(--accent-soft);padding:3px 10px;border-radius:12px}.savestat.warn{color:#a8875a}
@@ -298,7 +299,7 @@ const QP=new URLSearchParams(location.search),PREVIEW=QP.get('preview')==='1',OB
 if(QP.get('reset')==='1'){try{Object.keys(localStorage).filter(k=>k.indexOf('aiverify_fashion_v1')===0).forEach(k=>localStorage.removeItem(k));}catch(e){}
  const u=new URL(location.href);u.searchParams.delete('reset');location.replace(u.toString());} // 시험 입력 지우기: ?reset=1 로 열면 이 기기의 임시 저장 기록을 지우고 처음 상태로 시작
 const KEY='aiverify_fashion_v1'+(CLASS_ID?'_'+CLASS_ID:'')+(PREVIEW?'_preview':'');let data=JSON.parse(localStorage.getItem(KEY)||'{}');
-if(PREVIEW){document.body.classList.add('preview');data.code='미리보기';data.group=PG;data._ready=true;delete data._submitted;}
+if(PREVIEW){document.body.classList.add('preview');if(QP.get('bare')==='1')document.body.classList.add('bare');data.code='미리보기';data.group=PG;data._ready=true;delete data._submitted;}
 if(data.code&&(data.code.length>12||/\s/.test(data.code)))delete data.code; // 서버에서 잘못 내려온 코드(날짜 문자열 등)는 버림
 let cur=data._stage||0;
 const $=id=>document.getElementById(id);
