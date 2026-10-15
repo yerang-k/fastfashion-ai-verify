@@ -819,9 +819,10 @@ function keyNav(d){
  if(LS.current==null)return; // 자유 이동일 때는 키로 단계를 지정하지 않음
  stepStage(d);}
 /* 생각 열기 도입 영상(media/intro-think.mp4, tools/make-intro-video.js로 제작): 무대 화면의 '영상으로 시작하기' 버튼 또는 V 키 */
-let INTRO_LOADED=false;
-function preloadIntro(){if(INTRO_LOADED)return;INTRO_LOADED=true;const v=$('introVid');v.preload='auto';v.load();} // 무대 화면을 켤 때 미리 받아 두어 재생 시 지연 없게
+let INTRO_LOADED=false;const INTRO_RATE=1.25; // 도입 영상 기본 재생 속도(1배는 느리다는 의견). 영상 재생 줄의 속도 메뉴로 그 자리에서 바꿀 수도 있음
+function preloadIntro(){if(INTRO_LOADED)return;INTRO_LOADED=true;const v=$('introVid');v.preload='auto';v.defaultPlaybackRate=INTRO_RATE;v.load();v.playbackRate=INTRO_RATE;} // 무대 화면을 켤 때 미리 받아 두어 재생 시 지연 없게
 function playIntro(){const v=$('introVid');$('introVideo').hidden=false;try{v.currentTime=0;}catch(e){}
+ v.defaultPlaybackRate=INTRO_RATE;v.playbackRate=INTRO_RATE;
  v.play().catch(()=>{toast('영상을 재생하려면 이 화면을 한 번 눌러 주세요(브라우저가 소리 자동 재생을 막았어요)');});}
 function closeIntro(){const v=$('introVid');v.pause();$('introVideo').hidden=true;}
 function pauseIntro(){const v=$('introVid');if($('introVideo').hidden)return;v.paused?v.play().catch(()=>{}):v.pause();}
